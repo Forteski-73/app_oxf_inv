@@ -37,7 +37,6 @@ class SplashScreen extends StatelessWidget {
               ),
             ),
           ),
-          // Logo centralizada com ação de clique
           Center(
             child: GestureDetector(
               onTap: () {
