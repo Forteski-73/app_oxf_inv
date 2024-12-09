@@ -46,8 +46,8 @@ class ConfiguracoesScreenState extends State<SettingsPage> {
       {"_id": 6, "nome": "Lote",                      "exibir": 1, "obrigatorio": 0},
       {"_id": 7, "nome": "Andar",                     "exibir": 1, "obrigatorio": 0},
       {"_id": 8, "nome": "Código de Barras",          "exibir": 1, "obrigatorio": 0},
-      {"_id": 9, "nome": "Qtde Padrão da pilha",      "exibir": 1, "obrigatorio": 0},
-      {"_id": 10, "nome": "Qtde de Pilhas Completar", "exibir": 1, "obrigatorio": 0},
+      {"_id": 9, "nome": "Qtde Padrão da Pilha",      "exibir": 1, "obrigatorio": 0},
+      {"_id": 10, "nome": "Qtde de Pilhas Completas", "exibir": 1, "obrigatorio": 0},
       {"_id": 11, "nome": "Qtde de Itens Avulsos",    "exibir": 1, "obrigatorio": 0},
     ];
 
