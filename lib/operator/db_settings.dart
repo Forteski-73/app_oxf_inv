@@ -44,49 +44,19 @@ class DBSettings {
     ''');
   }
 
-  // Inserir
+  // insert
   Future<int> insert(Map<String, dynamic> row) async {
     Database db = await instance.database;
     return await db.insert(table, row);
   }
 
-  // Atualizar
+  // Update
   Future<int> update(Map<String, dynamic> row) async {
     Database db = await instance.database;
     int id = row[columnId];
     return await db.update(table, row, where: '$columnId = ?', whereArgs: [id]);
   }
-  /*
-  Future<int> update(Map<String, dynamic> row) async {
-    Database db = await instance.database;
-    int id = row[columnId];
 
-    // Construa a string SQL manualmente
-    String sql = '''
-    UPDATE $table
-    SET ${row.keys.map((key) => '$key = ?').join(', ')}
-    WHERE $columnId = $id;
-    ''';
-
-    // Exiba no console
-    //print("SQL de atualização: $sql");
-    //print("Valores: ${row.values.toList()}");
-
-    // Execute o comando no banco de dados
-    return await db.update(
-      table,
-      row,
-      where: '$columnId = ?',
-      whereArgs: [id],
-    );
-  }
-  */
-
-  // Função para obter todos os campos
-  /*Future<List<Map<String, dynamic>>> queryAllRows() async {
-    Database db = await instance.database;
-    return await db.query(table);
-  }*/
   Future<List<Map<String, dynamic>>> queryAllRows() async {
     Database db = await instance.database;
     final result = await db.query(table);
@@ -94,7 +64,7 @@ class DBSettings {
     return List<Map<String, dynamic>>.from(result); // Converte o resultado para uma lista mutável
   }
 
-  // Função para deletar um campo
+  // Delete
   Future<int> delete(int id) async {
     Database db = await instance.database;
     return await db.delete(table, where: '$columnId = ?', whereArgs: [id]);
