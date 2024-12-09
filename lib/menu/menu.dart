@@ -96,7 +96,6 @@ class MenuPage extends StatelessWidget {
     );
   }
 
-// Corrigindo a assinatura da função _menuItem
   Widget _menuItem(BuildContext context, {
     required IconData icon,
     required String label,
