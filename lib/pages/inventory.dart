@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'inventRecords.dart';
+//import 'Pages/inventory_page.dart';
 
 void main() {
   runApp(MaterialApp(
@@ -58,7 +60,7 @@ class InventoryPage extends StatelessWidget {
                       children: [
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: const [
+                          children: [
                             Text('Código do Inventário'),
                             Text('Data de criação'),
                           ],
@@ -66,7 +68,7 @@ class InventoryPage extends StatelessWidget {
                         SizedBox(height: 4),
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: const [
+                          children: [
                             Text(
                               'INV-20241202-001',
                               style: TextStyle(fontWeight: FontWeight.bold),
@@ -100,12 +102,20 @@ class InventoryPage extends StatelessWidget {
               children: [
                 ElevatedButton(
                   onPressed: () {
-                    // método iniciar
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const InventoryRecordsPage(),
+                      ),
+                    );
                   },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.blue,
                     padding: const EdgeInsets.symmetric(vertical: 15),
                     minimumSize: const Size(double.infinity, 50),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
                   ),
                   child: const Text(
                     'INICIAR',
@@ -121,6 +131,9 @@ class InventoryPage extends StatelessWidget {
                     backgroundColor: Colors.grey,
                     padding: const EdgeInsets.symmetric(vertical: 15),
                     minimumSize: const Size(double.infinity, 50),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
                   ),
                   child: const Text(
                     'FINALIZAR',
@@ -136,6 +149,9 @@ class InventoryPage extends StatelessWidget {
                     backgroundColor: Colors.grey,
                     padding: const EdgeInsets.symmetric(vertical: 15),
                     minimumSize: const Size(double.infinity, 50),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
                   ),
                   child: const Text(
                     'CANCELAR',

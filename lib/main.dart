@@ -44,6 +44,7 @@ class SplashScreen extends StatelessWidget {
               image: DecorationImage(
                 image: AssetImage('assets/images/oxf_background.png'), // Imagem de fundo
                 fit: BoxFit.cover,
+                alignment: Alignment.topLeft,
               ),
             ),
           ),

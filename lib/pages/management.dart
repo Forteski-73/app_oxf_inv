@@ -20,70 +20,93 @@ class InventoryManagementPage extends StatelessWidget {
         backgroundColor: Colors.black,
         iconTheme: const IconThemeData(color: Colors.white),
       ),
-      body: Column(
-        crossAxisAlignment: CrossAxisAlignment.center,
+      body: Stack(
         children: [
-          const SizedBox(height: 50),
-          // Logo
-          Center(
-            child: Column(
-              children: [
-                Image.asset(
-                  'assets/images/oxf_logo.png',
-                  height: 100,
-                ),
-              ],
+          Positioned.fill(
+            child: Image.asset(
+              'assets/images/oxf_background.png',
+              fit: BoxFit.cover, // tela toda
+              alignment: Alignment.topLeft,
             ),
           ),
-          const SizedBox(height: 30),
-          // Título
-          const Text(
-            'Selecione a ação desejada',
-            style: TextStyle(fontSize: 18, /*fontWeight: FontWeight.bold,*/),
-          ),
-          const SizedBox(height: 20),
-          // Botões
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 20),
-            child: Column(
-              children: [
-                ElevatedButton(
-                  onPressed: () {
-                    // Chamar criar Inventário
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (context) => InventoryPage()),
-                    );
-                  },
-                  style: ElevatedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(vertical: 15),
-                    minimumSize: const Size(double.infinity, 50),
-                    backgroundColor: Colors.grey[300],
-                    foregroundColor: Colors.black,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              const SizedBox(height: 50),
+              // Logo
+              Center(
+                child: Column(
+                  children: [
+                    Image.asset(
+                      'assets/images/oxf_logo.png',
+                      height: 100,
                     ),
-                  ),
-                  child: const Text('Criar Inventário'),
+                  ],
                 ),
-                const SizedBox(height: 20),
-                ElevatedButton(
-                  onPressed: () {
-                    // Chamar Histórico Inventários
-                  },
-                  style: ElevatedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(vertical: 15),
-                    minimumSize: const Size(double.infinity, 50),
-                    backgroundColor: Colors.grey[300],
-                    foregroundColor: Colors.black,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
+              ),
+              const SizedBox(height: 30),
+              // Título
+              const Text(
+                'Selecione a ação desejada',
+                style: TextStyle(fontSize: 18),
+              ),
+              const SizedBox(height: 20),
+              // Botões
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 20),
+                child: Column(
+                  children: [
+                    ElevatedButton(
+                      onPressed: () {
+                        // Chamar criar Inventário
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (context) => InventoryPage()),
+                        );
+                      },
+                      style: ElevatedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 15),
+                        minimumSize: const Size(double.infinity, 50),
+                        backgroundColor: Colors.grey[300],
+                        foregroundColor: Colors.black,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                      ),
+                      child: const Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text('Criar Inventário'),
+                          Icon(Icons.arrow_forward),
+                        ],
+                      ),
                     ),
-                  ),
-                  child: const Text('Histórico Inventários'),
+                    const SizedBox(height: 20),
+                    ElevatedButton(
+                      onPressed: () {
+                        // Chamar Histórico Inventários
+                      },
+                      style: ElevatedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 15),
+                        minimumSize: const Size(double.infinity, 50),
+                        backgroundColor: Colors.grey[300],
+                        foregroundColor: Colors.black,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                      ),
+                      child: const Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text('Histórico Inventários'),
+                          Icon(Icons.arrow_forward),
+                        ],
+                      ),
+                    ),
+                  ],
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
         ],
       ),

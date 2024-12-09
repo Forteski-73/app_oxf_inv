@@ -96,7 +96,7 @@ void _confirmRestoreDefault(BuildContext context) {
             style: TextButton.styleFrom(
               foregroundColor: Colors.white,
               backgroundColor: const Color.fromARGB(255, 150, 150, 150),
-              padding: const EdgeInsets.symmetric(vertical: 15, horizontal: 28), // tamanho do botão
+              padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 25), // tamanho do botão
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(8),
               ),
@@ -117,7 +117,7 @@ void _confirmRestoreDefault(BuildContext context) {
             style: TextButton.styleFrom(
               foregroundColor: Colors.white,
               backgroundColor: Colors.blue,
-              padding: const EdgeInsets.symmetric(vertical: 15, horizontal: 28),
+              padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 25),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(8),
               ),
@@ -138,124 +138,133 @@ void _confirmRestoreDefault(BuildContext context) {
 
 @override
 Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Configurações', style: TextStyle(color: Colors.white)),
-        backgroundColor: Colors.black,
-        iconTheme: const IconThemeData(color: Colors.white),
-      ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          children: [
-            // Cabeçalho das colunas
-            const Padding(
-              padding: const EdgeInsets.symmetric(vertical: 8.0),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: const [
-                  Expanded(
-                    child: Text(
-                      'Campo',
+  return Scaffold(
+    appBar: AppBar(
+      title: const Text('Configurações', style: TextStyle(color: Colors.white)),
+      backgroundColor: Colors.black,
+      iconTheme: const IconThemeData(color: Colors.white),
+    ),
+    body: Stack(
+      children: [
+        // Imagem de fundo
+        Positioned.fill(
+          child: Image.asset('assets/images/oxf_background.png',
+            fit: BoxFit.cover,
+            alignment: Alignment.topLeft,
+          ),
+        ),
+        Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            children: [
+              // Cabeçalho das colunas
+              const Padding(
+                padding: EdgeInsets.symmetric(vertical: 8.0),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Expanded(
+                      child: Text(
+                        'Campo',
+                        style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                      ),
+                    ),
+                    Text(
+                      'Exibir',
                       style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
                     ),
-                  ),
-                  Text(
-                    'Exibir',
-                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-                  ),
-                  SizedBox(width: 22),
-                  Text(
-                    'Obrigatório',
-                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-                  ),
-                ],
-              ),
-            ),
-            const Divider(), // Divisória abaixo do cabeçalho
-            Expanded(
-              child: ListView.separated(
-                itemCount: campos.length,
-                separatorBuilder: (context, index) => const Divider(),
-                itemBuilder: (context, index) {
-                  final campo = campos[index];
-                  return Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Expanded(
-                        child: Text(campo['nome'], style: const TextStyle(fontSize: 16)),
-                      ),
-                      Switch(
-                        value: campo['exibir'] == 1,
-                        onChanged: (value) {
-                          setState(() {
-                            campos[index] = {
-                              ...campo, // Copia os valores do mapa atual // Cria uma cópia mutável do item antes de atualizá-lo
-                              'exibir': value ? 1 : 0, // Altera o valor
-                            };
-                          });
-                          _updateField(campo['_id'], value, campo['obrigatorio'] == 1);
-                        },
-                        activeColor: Colors.green,
-                      ),
-                      const SizedBox(width: 48),
-                      Switch(
-                        value: campo['obrigatorio'] == 1,
-                        onChanged: (value) {
-                          setState(() {
-                            campos[index] = {
-                              ...campo, // Copia os valores do mapa atual // Cria uma cópia mutável do item antes de atualizá-lo
-                              'obrigatorio': value ? 1 : 0, // Altera o valor
-                            };
-                          });
-                          _updateField(campo['_id'], campo['exibir'] == 1, value);
-                        },
-                        activeColor: Colors.green,
-                      ),
-                    ],
-                  );
-                },
-              ),
-            ),
-            SizedBox(
-              width: double.infinity, 
-              child: TextButton(
-                onPressed: () {
-                  _confirmRestoreDefault(context);
-                  //restaurarPadrao();
-                },
-                style: TextButton.styleFrom(
-                  foregroundColor: Colors.white, backgroundColor: Colors.black,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                ),
-                child: const Text("Restaurar Padrão", style: TextStyle(color: Colors.white),
+                    SizedBox(width: 25),
+                    Text(
+                      'Obrigatório',
+                      style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                    ),
+                  ],
                 ),
               ),
-            ),
-          ],
+              const Divider(), // Divisória abaixo do cabeçalho
+              Expanded(
+                child: ListView.separated(
+                  itemCount: campos.length,
+                  separatorBuilder: (context, index) => const Divider(),
+                  itemBuilder: (context, index) {
+                    final campo = campos[index];
+                    return Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Expanded(
+                          child: Text(campo['nome'], style: const TextStyle(fontSize: 16)),
+                        ),
+                        Switch(
+                          value: campo['exibir'] == 1,
+                          onChanged: (value) {
+                            setState(() {
+                              campos[index] = {
+                                ...campo, // Copia os valores do mapa atual
+                                'exibir': value ? 1 : 0, // Altera o valor
+                              };
+                            });
+                            _updateField(campo['_id'], value, campo['obrigatorio'] == 1);
+                          },
+                          activeColor: Colors.green,
+                        ),
+                        const SizedBox(width: 45),
+                        Switch(
+                          value: campo['obrigatorio'] == 1,
+                          onChanged: (value) {
+                            setState(() {
+                              campos[index] = {
+                                ...campo, // Copia os valores do mapa atual
+                                'obrigatorio': value ? 1 : 0, // Altera o valor
+                              };
+                            });
+                            _updateField(campo['_id'], campo['exibir'] == 1, value);
+                          },
+                          activeColor: Colors.green,
+                        ),
+                      ],
+                    );
+                  },
+                ),
+              ),
+              SizedBox(
+                width: double.infinity, 
+                child: TextButton(
+                  onPressed: () {
+                    _confirmRestoreDefault(context);
+                  },
+                  style: TextButton.styleFrom(
+                    foregroundColor: Colors.white, backgroundColor: Colors.black,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                  ),
+                  child: const Text("Restaurar Padrão", style: TextStyle(color: Colors.white)),
+                ),
+              ),
+            ],
+          ),
         ),
+      ],
+    ),
+    bottomNavigationBar: Container(
+      color: Colors.grey[200],
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+      child: const Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text("Oxford Porcelanas", style: TextStyle(fontSize: 14)),
+          Text("Versão: 1.0", style: TextStyle(fontSize: 14)),
+        ],
       ),
-      bottomNavigationBar: Container(
-        color: Colors.grey[200],
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-        child: const Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Text("Oxford Porcelanas", style: TextStyle(fontSize: 14)),
-            Text("Versão: 1.0", style: TextStyle(fontSize: 14)),
-          ],
-        ),
-      ),
-    );
-  }
+    ),
+  );
 }
 
-void main() {
-  runApp(MaterialApp(
-    debugShowCheckedModeBanner: false,
-    theme: ThemeData.dark(),
-    home: const SettingsPage(),
-  ));
+  void main() {
+    runApp(MaterialApp(
+      debugShowCheckedModeBanner: false,
+      theme: ThemeData.dark(),
+      home: const SettingsPage(),
+    ));
+  }
 }
