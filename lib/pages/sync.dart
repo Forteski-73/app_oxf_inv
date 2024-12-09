@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 
 class SyncPage extends StatelessWidget {
-  const SyncPage({Key? key}) : super(key: key);
+  const SyncPage({super.key});
 
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
@@ -18,7 +19,7 @@ class SyncPage extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
         child: const Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: const [
+          children: [
             Text(
               "Oxford Porcelanas",
               style: TextStyle(fontSize: 14),
@@ -38,6 +39,6 @@ void main() {
   runApp(MaterialApp(
     debugShowCheckedModeBanner: false,
     theme: ThemeData.dark(), 
-    home: SyncPage(),
+    home: const SyncPage(),
   ));
 }

@@ -13,7 +13,7 @@ void main() {
 }
 
 class MyApp extends StatelessWidget {
-  const MyApp({Key? key}) : super(key: key);
+  const MyApp({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -25,7 +25,7 @@ class MyApp extends StatelessWidget {
 }
 
 class MenuPage extends StatelessWidget {
-  const MenuPage({Key? key}) : super(key: key);
+  const MenuPage({super.key});
 
   @override
   Widget build(BuildContext context) { 
@@ -79,7 +79,7 @@ class MenuPage extends StatelessWidget {
             padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
             child: const Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: const [
+              children: [
                 Text(
                   "Oxford Porcelanas",
                   style: TextStyle(fontSize: 14),
@@ -104,7 +104,7 @@ class MenuPage extends StatelessWidget {
   }) {
     return ListTile(
       leading: Icon(icon, color: Colors.black),
-      title: Text(label, style: TextStyle(color: Colors.black)),
+      title: Text(label, style: const TextStyle(color: Colors.black)),
       onTap: () {
         Navigator.push(
           context,

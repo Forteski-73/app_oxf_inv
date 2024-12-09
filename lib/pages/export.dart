@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 
 class ExportPage extends StatelessWidget {
-  const ExportPage({Key? key}) : super(key: key);
+  const ExportPage({super.key});
 
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
@@ -18,7 +19,7 @@ class ExportPage extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
         child: const Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: const [
+          children: [
             Text(
               "Oxford Porcelanas",
               style: TextStyle(fontSize: 14),
@@ -38,6 +39,6 @@ void main() {
   runApp(MaterialApp(
     debugShowCheckedModeBanner: false,
     theme: ThemeData.dark(), 
-    home: ExportPage(),
+    home: const ExportPage(),
   ));
 }

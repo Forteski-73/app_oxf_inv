@@ -1,29 +1,88 @@
 import 'package:flutter/material.dart';
+import 'package:app_oxf_inv/operator/db_settings.dart';
 
 class SettingsPage extends StatefulWidget {
-  const SettingsPage({Key? key}) : super(key: key);
+  const SettingsPage({super.key});
 
   @override
-  _ConfiguracoesScreenState createState() => _ConfiguracoesScreenState();
+  ConfiguracoesScreenState createState() => ConfiguracoesScreenState();
 }
 
-class _ConfiguracoesScreenState extends State<SettingsPage> {
-    // Definição da lista de campos
-    final List<Map<String, dynamic>> campos = [
-      {"nome": "Utilizador",                "exibir": true, "obrigatorio": false},
-      {"nome": "Posição",                   "exibir": true, "obrigatorio": false},
-      {"nome": "Depósito",                  "exibir": true, "obrigatorio": false},
-      {"nome": "Bloco",                     "exibir": true, "obrigatorio": false},
-      {"nome": "Quadra",                    "exibir": true, "obrigatorio": false},
-      {"nome": "Lote",                      "exibir": true, "obrigatorio": false},
-      {"nome": "Andar",                     "exibir": true, "obrigatorio": false},
-      {"nome": "Código de Barras",          "exibir": true, "obrigatorio": false},
-      {"nome": "Qtde Padrão da Pilha",      "exibir": true, "obrigatorio": false},
-      {"nome": "Qtde de Pilhas Completas",  "exibir": true, "obrigatorio": false},
-      {"nome": "Qtde de Itens Avulsos",     "exibir": true, "obrigatorio": false},
-    ];
+class ConfiguracoesScreenState extends State<SettingsPage> {
+  late List<Map<String, dynamic>> campos = [];
+
   @override
-  Widget build(BuildContext context) {
+  void initState() {
+    super.initState();
+    loadData();
+  }
+
+  Future<void> loadData() async {
+    final dbHelper = DBSettings.instance;
+      final rows = await dbHelper.queryAllRows();
+
+      if (!rows.isNotEmpty) {
+        await _insertDefaultValues();
+        //return const Center(child: CircularProgressIndicator()); // Exibe um indicador de carregamento enquanto os dados não são carregados
+      }
+      // Atualiza a lista de campos com os dados carregados do banco
+      setState(() {
+        campos = rows.isNotEmpty 
+        ? List<Map<String, dynamic>>.from(rows)
+        : [
+          {"_id": 1, "nome": "Utilizador",          "exibir": 1, "obrigatorio": 0},
+          {"_id": 2, "nome": "Posição",             "exibir": 1, "obrigatorio": 0},
+          {"_id": 3, "nome": "Depósito",            "exibir": 1, "obrigatorio": 0},
+          {"_id": 4, "nome": "Bloco",               "exibir": 1, "obrigatorio": 0},
+          {"_id": 5, "nome": "Quadra",              "exibir": 1, "obrigatorio": 0},
+          {"_id": 6, "nome": "Lote",                "exibir": 1, "obrigatorio": 0},
+          {"_id": 7, "nome": "Andar",               "exibir": 1, "obrigatorio": 0},
+          {"_id": 8, "nome": "Código de Barras",    "exibir": 1, "obrigatorio": 0},
+          {"_id": 9, "nome": "Qtde Padrão da pilha", "exibir": 1, "obrigatorio": 0},
+          {"_id": 10, "nome": "Qtde de Pilhas Completar", "exibir": 1, "obrigatorio": 0},
+          {"_id": 11, "nome": "Qtde de Itens Avulsos", "exibir": 1, "obrigatorio": 0},
+        ];
+      });
+  }
+
+  // Atualizar um campo no banco
+  Future<void> _updateField(int id, bool exibir, bool obrigatorio) async {
+    final dbHelper = DBSettings.instance;
+    await dbHelper.update({
+      DBSettings.columnId: id,
+      DBSettings.columnExibir: exibir ? 1 : 0,
+      DBSettings.columnObrigatorio: obrigatorio ? 1 : 0,
+    });
+    loadData();  // Recarregar os dados após a atualização
+  }
+
+  // Função para inserir valores padrão
+  Future<void> _insertDefaultValues() async {
+    final dbHelper = DBSettings.instance;
+
+    // Definir os valores padrões a serem inseridos
+    final List<Map<String, dynamic>> defaultValues = [
+      {"_id": 1, "nome": "Utilizador",          "exibir": 1, "obrigatorio": 0},
+      {"_id": 2, "nome": "Posição",             "exibir": 1, "obrigatorio": 0},
+      {"_id": 3, "nome": "Depósito",            "exibir": 1, "obrigatorio": 0},
+      {"_id": 4, "nome": "Bloco",               "exibir": 1, "obrigatorio": 0},
+      {"_id": 5, "nome": "Quadra",              "exibir": 1, "obrigatorio": 0},
+      {"_id": 6, "nome": "Lote",                "exibir": 1, "obrigatorio": 0},
+      {"_id": 7, "nome": "Andar",               "exibir": 1, "obrigatorio": 0},
+      {"_id": 8, "nome": "Código de Barras",    "exibir": 1, "obrigatorio": 0},
+      {"_id": 9, "nome": "Qtde Padrão da pilha", "exibir": 1, "obrigatorio": 0},
+      {"_id": 10, "nome": "Qtde de Pilhas Completar", "exibir": 1, "obrigatorio": 0},
+      {"_id": 11, "nome": "Qtde de Itens Avulsos", "exibir": 1, "obrigatorio": 0},
+    ];
+
+    // Inserir os valores padrões na tabela
+    for (var campo in defaultValues) {
+      await dbHelper.insert(campo);
+    }
+  }
+
+@override
+Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Configurações', style: TextStyle(color: Colors.white)),
@@ -34,6 +93,31 @@ class _ConfiguracoesScreenState extends State<SettingsPage> {
         padding: const EdgeInsets.all(16.0),
         child: Column(
           children: [
+            // Cabeçalho das colunas
+            const Padding(
+              padding: const EdgeInsets.symmetric(vertical: 8.0),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: const [
+                  Expanded(
+                    child: Text(
+                      'Campo',
+                      style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                    ),
+                  ),
+                  Text(
+                    'Exibir',
+                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                  ),
+                  SizedBox(width: 22),
+                  Text(
+                    'Obrigatório',
+                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                  ),
+                ],
+              ),
+            ),
+            const Divider(), // Linha divisória abaixo do cabeçalho
             Expanded(
               child: ListView.separated(
                 itemCount: campos.length,
@@ -45,42 +129,55 @@ class _ConfiguracoesScreenState extends State<SettingsPage> {
                     children: [
                       Expanded(
                         child: Text(campo['nome'], style: const TextStyle(fontSize: 16)),
-                        
                       ),
                       Switch(
-                        value: campo['exibir'],
+                        value: campo['exibir'] == 1,
                         onChanged: (value) {
                           setState(() {
-                            campo['exibir'] = value;
+                            // Cria uma cópia mutável do item antes de atualizá-lo
+                            campos[index] = {
+                              ...campo, // Copia os valores do mapa atual
+                              'exibir': value ? 1 : 0, // Altera o valor necessário
+                            };
                           });
+                          _updateField(campo['_id'], value, campo['obrigatorio'] == 1);
                         },
                         activeColor: Colors.green,
                       ),
-                      //if (campo['obrigatorio'] != null)
-                        Switch(
-                          value: campo['obrigatorio'],
-                          onChanged: (value) {
-                            setState(() {
-                              campo['obrigatorio'] = value;
-                            });
-                          },
-                          activeColor: Colors.green,
-                        )
-                      /*else
-                        Icon(
-                            Icons.block,
-                            color: campo['obrigatorio'] != null ? Colors.green : Colors.grey,
-                        ),*/
+                      const SizedBox(width: 48),
+                      Switch(
+                        value: campo['obrigatorio'] == 1,
+                        onChanged: (value) {
+                          setState(() {
+                            campos[index] = {
+                              ...campo, // Copia os valores do mapa atual
+                              'obrigatorio': value ? 1 : 0, // Altera o valor necessário
+                            };
+                          });
+                          _updateField(campo['_id'], campo['exibir'] == 1, value);
+                        },
+                        activeColor: Colors.green,
+                      ),
                     ],
                   );
                 },
               ),
             ),
-            TextButton(
-              onPressed: () {},
-              child: const Text(
-                "Restaurar Padrão",
-                style: TextStyle(color: Colors.red),
+            SizedBox(
+              width: double.infinity, 
+              child: TextButton(
+                onPressed: () {
+                  // Aqui você pode implementar a lógica para restaurar os padrões
+                },
+                style: TextButton.styleFrom(
+                  foregroundColor: Colors.white, // Cor do texto para se destacar no tema escuro
+                  backgroundColor: Colors.black, // Cor de fundo para o botão
+                  //padding: const EdgeInsets.symmetric(vertical: 12.0, horizontal: 16.0),
+                ),
+                child: const Text(
+                  "Restaurar Padrão",
+                  style: TextStyle(color: Colors.white),
+                ),
               ),
             ),
           ],
@@ -92,14 +189,8 @@ class _ConfiguracoesScreenState extends State<SettingsPage> {
         child: const Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Text(
-              "Oxford Porcelanas",
-              style: TextStyle(fontSize: 14),
-            ),
-            Text(
-              "Versão: 1.0",
-              style: TextStyle(fontSize: 14),
-            ),
+            Text("Oxford Porcelanas", style: TextStyle(fontSize: 14)),
+            Text("Versão: 1.0", style: TextStyle(fontSize: 14)),
           ],
         ),
       ),

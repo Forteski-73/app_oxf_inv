@@ -1,7 +1,17 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'menu/menu.dart';
+import 'package:sqflite_common_ffi/sqflite_ffi.dart';
+import 'package:app_oxf_inv/menu/menu.dart';
 
 void main() {
+  WidgetsFlutterBinding.ensureInitialized();
+  // Inicializar o databaseFactory para sqflite_common_ffi
+  if (kIsWeb || !kIsWeb && (defaultTargetPlatform == TargetPlatform.windows || defaultTargetPlatform == TargetPlatform.linux || defaultTargetPlatform == TargetPlatform.macOS)) {
+    // Inicialize para desktop
+    sqfliteFfiInit();
+    databaseFactory = databaseFactoryFfi;
+  }
+
   runApp(MaterialApp(
     theme: ThemeData.dark(), // Tema escuro global
     home: const MyApp(),
@@ -9,7 +19,7 @@ void main() {
 }
 
 class MyApp extends StatelessWidget {
-  const MyApp({Key? key}) : super(key: key);
+  const MyApp({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -21,7 +31,7 @@ class MyApp extends StatelessWidget {
 }
 
 class SplashScreen extends StatelessWidget {
-  const SplashScreen({Key? key}) : super(key: key);
+  const SplashScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
