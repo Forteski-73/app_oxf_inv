@@ -11,11 +11,10 @@ class DBSettings {
   static const columnExibir       = 'exibir';
   static const columnObrigatorio  = 'obrigatorio';
 
-  // Definindo a classe Singleton
+  // Instanciando o construtor DB
   DBSettings._privateConstructor();
   static final DBSettings instance = DBSettings._privateConstructor();
 
-  // Banco de dados
   static Database? _database;
 
   Future<Database> get database async {
@@ -33,7 +32,7 @@ class DBSettings {
     return await openDatabase(path, version: _databaseVersion, onCreate: _onCreate);
   }
 
-  // Função para criar a tabela
+  // Create table
   Future _onCreate(Database db, int version) async {
     await db.execute('''
       CREATE TABLE $table (
@@ -45,19 +44,19 @@ class DBSettings {
     ''');
   }
 
-  // Função para inserir um novo registro
+  // Inserir
   Future<int> insert(Map<String, dynamic> row) async {
     Database db = await instance.database;
     return await db.insert(table, row);
   }
 
-  // Função para atualizar um campo
-  /*Future<int> update(Map<String, dynamic> row) async {
+  // Atualizar
+  Future<int> update(Map<String, dynamic> row) async {
     Database db = await instance.database;
     int id = row[columnId];
     return await db.update(table, row, where: '$columnId = ?', whereArgs: [id]);
-  }*/
-
+  }
+  /*
   Future<int> update(Map<String, dynamic> row) async {
     Database db = await instance.database;
     int id = row[columnId];
@@ -81,6 +80,7 @@ class DBSettings {
       whereArgs: [id],
     );
   }
+  */
 
   // Função para obter todos os campos
   /*Future<List<Map<String, dynamic>>> queryAllRows() async {
@@ -88,12 +88,11 @@ class DBSettings {
     return await db.query(table);
   }*/
   Future<List<Map<String, dynamic>>> queryAllRows() async {
-  Database db = await instance.database;
-  // Realiza a consulta
-  final result = await db.query(table);
-  // Converte o resultado para uma lista mutável
-  return List<Map<String, dynamic>>.from(result);
-}
+    Database db = await instance.database;
+    final result = await db.query(table);
+    
+    return List<Map<String, dynamic>>.from(result); // Converte o resultado para uma lista mutável
+  }
 
   // Função para deletar um campo
   Future<int> delete(int id) async {

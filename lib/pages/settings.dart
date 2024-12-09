@@ -19,30 +19,42 @@ class ConfiguracoesScreenState extends State<SettingsPage> {
 
   Future<void> loadData() async {
     final dbHelper = DBSettings.instance;
-      final rows = await dbHelper.queryAllRows();
+      List<Map<String, dynamic>> rows = await dbHelper.queryAllRows();
 
       if (!rows.isNotEmpty) {
         await _insertDefaultValues();
-        //return const Center(child: CircularProgressIndicator()); // Exibe um indicador de carregamento enquanto os dados não são carregados
+        rows = await dbHelper.queryAllRows();
       }
+
       // Atualiza a lista de campos com os dados carregados do banco
       setState(() {
-        campos = rows.isNotEmpty 
-        ? List<Map<String, dynamic>>.from(rows)
-        : [
-          {"_id": 1, "nome": "Utilizador",          "exibir": 1, "obrigatorio": 0},
-          {"_id": 2, "nome": "Posição",             "exibir": 1, "obrigatorio": 0},
-          {"_id": 3, "nome": "Depósito",            "exibir": 1, "obrigatorio": 0},
-          {"_id": 4, "nome": "Bloco",               "exibir": 1, "obrigatorio": 0},
-          {"_id": 5, "nome": "Quadra",              "exibir": 1, "obrigatorio": 0},
-          {"_id": 6, "nome": "Lote",                "exibir": 1, "obrigatorio": 0},
-          {"_id": 7, "nome": "Andar",               "exibir": 1, "obrigatorio": 0},
-          {"_id": 8, "nome": "Código de Barras",    "exibir": 1, "obrigatorio": 0},
-          {"_id": 9, "nome": "Qtde Padrão da pilha", "exibir": 1, "obrigatorio": 0},
-          {"_id": 10, "nome": "Qtde de Pilhas Completar", "exibir": 1, "obrigatorio": 0},
-          {"_id": 11, "nome": "Qtde de Itens Avulsos", "exibir": 1, "obrigatorio": 0},
-        ];
+        campos = List<Map<String, dynamic>>.from(rows);
       });
+  }
+
+  // Função para inserir valores padrão
+  Future<void> _insertDefaultValues() async {
+    final dbHelper = DBSettings.instance;
+
+    // Definir os valores padrões a serem inseridos
+    final List<Map<String, dynamic>> defaultValues = [
+      {"_id": 1, "nome": "Unitizador",                "exibir": 1, "obrigatorio": 0},
+      {"_id": 2, "nome": "Posição",                   "exibir": 1, "obrigatorio": 0},
+      {"_id": 3, "nome": "Depósito",                  "exibir": 1, "obrigatorio": 0},
+      {"_id": 4, "nome": "Bloco",                     "exibir": 1, "obrigatorio": 0},
+      {"_id": 5, "nome": "Quadra",                    "exibir": 1, "obrigatorio": 0},
+      {"_id": 6, "nome": "Lote",                      "exibir": 1, "obrigatorio": 0},
+      {"_id": 7, "nome": "Andar",                     "exibir": 1, "obrigatorio": 0},
+      {"_id": 8, "nome": "Código de Barras",          "exibir": 1, "obrigatorio": 0},
+      {"_id": 9, "nome": "Qtde Padrão da pilha",      "exibir": 1, "obrigatorio": 0},
+      {"_id": 10, "nome": "Qtde de Pilhas Completar", "exibir": 1, "obrigatorio": 0},
+      {"_id": 11, "nome": "Qtde de Itens Avulsos",    "exibir": 1, "obrigatorio": 0},
+    ];
+
+    // Inserir os valores padrões na tabela
+    for (var campo in defaultValues) {
+      await dbHelper.insert(campo);
+    }
   }
 
   // Atualizar um campo no banco
@@ -56,30 +68,73 @@ class ConfiguracoesScreenState extends State<SettingsPage> {
     loadData();  // Recarregar os dados após a atualização
   }
 
-  // Função para inserir valores padrão
-  Future<void> _insertDefaultValues() async {
-    final dbHelper = DBSettings.instance;
+  // Função para restaurar os padrões
+  Future<void> restoreDefault() async {
+    setState(() {
+      for (var i = 0; i < campos.length; i++) {
+        campos[i] = {...campos[i], 'exibir': 1, 'obrigatorio': 0,};
+      }
+    });
 
-    // Definir os valores padrões a serem inseridos
-    final List<Map<String, dynamic>> defaultValues = [
-      {"_id": 1, "nome": "Utilizador",          "exibir": 1, "obrigatorio": 0},
-      {"_id": 2, "nome": "Posição",             "exibir": 1, "obrigatorio": 0},
-      {"_id": 3, "nome": "Depósito",            "exibir": 1, "obrigatorio": 0},
-      {"_id": 4, "nome": "Bloco",               "exibir": 1, "obrigatorio": 0},
-      {"_id": 5, "nome": "Quadra",              "exibir": 1, "obrigatorio": 0},
-      {"_id": 6, "nome": "Lote",                "exibir": 1, "obrigatorio": 0},
-      {"_id": 7, "nome": "Andar",               "exibir": 1, "obrigatorio": 0},
-      {"_id": 8, "nome": "Código de Barras",    "exibir": 1, "obrigatorio": 0},
-      {"_id": 9, "nome": "Qtde Padrão da pilha", "exibir": 1, "obrigatorio": 0},
-      {"_id": 10, "nome": "Qtde de Pilhas Completar", "exibir": 1, "obrigatorio": 0},
-      {"_id": 11, "nome": "Qtde de Itens Avulsos", "exibir": 1, "obrigatorio": 0},
-    ];
-
-    // Inserir os valores padrões na tabela
-    for (var campo in defaultValues) {
-      await dbHelper.insert(campo);
+    // Atualizar os valores no banco
+    for (var campo in campos) {
+      await _updateField(campo['_id'], true, false);
     }
   }
+
+void _confirmRestoreDefault(BuildContext context) {
+  showDialog(
+    context: context,
+    builder: (BuildContext context) {
+      return AlertDialog(
+        content: const Text("Deseja mesmo restaurar o padrão?", style: TextStyle(fontWeight: FontWeight.bold,),),
+        actions: [
+          TextButton(
+            onPressed: () {
+              Navigator.of(context).pop();
+            },
+            style: TextButton.styleFrom(
+              foregroundColor: Colors.white,
+              backgroundColor: const Color.fromARGB(255, 150, 150, 150),
+              padding: const EdgeInsets.symmetric(vertical: 15, horizontal: 28), // tamanho do botão
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
+            ),
+            child: const Text(
+              "Cancelar",
+              style: TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.bold, // negrito
+              ),
+            ),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.of(context).pop();
+              restoreDefault();
+            },
+            style: TextButton.styleFrom(
+              foregroundColor: Colors.white,
+              backgroundColor: const Color.fromARGB(255, 65, 80, 225),
+              padding: const EdgeInsets.symmetric(vertical: 15, horizontal: 28),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
+            ),
+            child: const Text(
+              "Sim",
+              style: TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ),
+        ],
+      );
+    },
+  );
+}
 
 @override
 Widget build(BuildContext context) {
@@ -117,7 +172,7 @@ Widget build(BuildContext context) {
                 ],
               ),
             ),
-            const Divider(), // Linha divisória abaixo do cabeçalho
+            const Divider(), // Divisória abaixo do cabeçalho
             Expanded(
               child: ListView.separated(
                 itemCount: campos.length,
@@ -134,10 +189,9 @@ Widget build(BuildContext context) {
                         value: campo['exibir'] == 1,
                         onChanged: (value) {
                           setState(() {
-                            // Cria uma cópia mutável do item antes de atualizá-lo
                             campos[index] = {
-                              ...campo, // Copia os valores do mapa atual
-                              'exibir': value ? 1 : 0, // Altera o valor necessário
+                              ...campo, // Copia os valores do mapa atual // Cria uma cópia mutável do item antes de atualizá-lo
+                              'exibir': value ? 1 : 0, // Altera o valor
                             };
                           });
                           _updateField(campo['_id'], value, campo['obrigatorio'] == 1);
@@ -150,8 +204,8 @@ Widget build(BuildContext context) {
                         onChanged: (value) {
                           setState(() {
                             campos[index] = {
-                              ...campo, // Copia os valores do mapa atual
-                              'obrigatorio': value ? 1 : 0, // Altera o valor necessário
+                              ...campo, // Copia os valores do mapa atual // Cria uma cópia mutável do item antes de atualizá-lo
+                              'obrigatorio': value ? 1 : 0, // Altera o valor
                             };
                           });
                           _updateField(campo['_id'], campo['exibir'] == 1, value);
@@ -167,16 +221,16 @@ Widget build(BuildContext context) {
               width: double.infinity, 
               child: TextButton(
                 onPressed: () {
-                  // Aqui você pode implementar a lógica para restaurar os padrões
+                  _confirmRestoreDefault(context);
+                  //restaurarPadrao();
                 },
                 style: TextButton.styleFrom(
-                  foregroundColor: Colors.white, // Cor do texto para se destacar no tema escuro
-                  backgroundColor: Colors.black, // Cor de fundo para o botão
-                  //padding: const EdgeInsets.symmetric(vertical: 12.0, horizontal: 16.0),
+                  foregroundColor: Colors.white, backgroundColor: Colors.black,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
                 ),
-                child: const Text(
-                  "Restaurar Padrão",
-                  style: TextStyle(color: Colors.white),
+                child: const Text("Restaurar Padrão", style: TextStyle(color: Colors.white),
                 ),
               ),
             ),
