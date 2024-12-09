@@ -116,7 +116,7 @@ void _confirmRestoreDefault(BuildContext context) {
             },
             style: TextButton.styleFrom(
               foregroundColor: Colors.white,
-              backgroundColor: const Color.fromARGB(255, 65, 80, 225),
+              backgroundColor: Colors.blue,
               padding: const EdgeInsets.symmetric(vertical: 15, horizontal: 28),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(8),

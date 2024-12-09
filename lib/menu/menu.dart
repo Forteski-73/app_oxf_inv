@@ -44,7 +44,7 @@ class MenuPage extends StatelessWidget {
                 context,
                 icon: Icons.inventory_2_outlined,
                 label: "Gerenciamento de Inventário",
-                page: const InventoryPage(), // Página de Gerenciamento de Inventário
+                page: const InventoryManagementPage(), // Página de Gerenciamento de Inventário
               ),
               _menuItem(
                 context,

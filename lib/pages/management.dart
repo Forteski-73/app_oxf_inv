@@ -1,18 +1,92 @@
 import 'package:flutter/material.dart';
+import 'inventory.dart';
 
-class InventoryPage extends StatelessWidget {
-  const InventoryPage({super.key});
+void main() {
+  runApp(MaterialApp(
+    debugShowCheckedModeBanner: false,
+    theme: ThemeData.dark(), 
+    home: const InventoryManagementPage(),
+  ));
+}
 
-  @override
+class InventoryManagementPage extends StatelessWidget {
+  const InventoryManagementPage({super.key});
+
+ @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Configurações', style: TextStyle(color: Colors.white)),
+        title: const Text('Gerenciamento de Inventário', style: TextStyle(color: Colors.white)),
         backgroundColor: Colors.black,
         iconTheme: const IconThemeData(color: Colors.white),
       ),
-      body: const Center(child: Text('Conteúdo de Gerenciamento de Inventário')),
-
+      body: Column(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          const SizedBox(height: 50),
+          // Logo
+          Center(
+            child: Column(
+              children: [
+                Image.asset(
+                  'assets/images/oxf_logo.png',
+                  height: 100,
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 30),
+          // Título
+          const Text(
+            'Selecione a ação desejada',
+            style: TextStyle(fontSize: 18, /*fontWeight: FontWeight.bold,*/),
+          ),
+          const SizedBox(height: 20),
+          // Botões
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20),
+            child: Column(
+              children: [
+                ElevatedButton(
+                  onPressed: () {
+                    // Chamar criar Inventário
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (context) => InventoryPage()),
+                    );
+                  },
+                  style: ElevatedButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(vertical: 15),
+                    minimumSize: const Size(double.infinity, 50),
+                    backgroundColor: Colors.grey[300],
+                    foregroundColor: Colors.black,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                  ),
+                  child: const Text('Criar Inventário'),
+                ),
+                const SizedBox(height: 20),
+                ElevatedButton(
+                  onPressed: () {
+                    // Chamar Histórico Inventários
+                  },
+                  style: ElevatedButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(vertical: 15),
+                    minimumSize: const Size(double.infinity, 50),
+                    backgroundColor: Colors.grey[300],
+                    foregroundColor: Colors.black,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                  ),
+                  child: const Text('Histórico Inventários'),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
       // Rodapé
       bottomNavigationBar: Container(
         color: Colors.grey[200],
@@ -35,10 +109,3 @@ class InventoryPage extends StatelessWidget {
   }
 }
 
-void main() {
-  runApp(MaterialApp(
-    debugShowCheckedModeBanner: false,
-    theme: ThemeData.dark(), 
-    home: const InventoryPage(),
-  ));
-}
