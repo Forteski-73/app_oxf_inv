@@ -1,17 +1,87 @@
 import 'package:flutter/material.dart';
 import 'inventRecords.dart';
-//import 'Pages/inventory_page.dart';
+import 'package:app_oxf_inv/operator/db_inventory.dart';
+import 'package:intl/intl.dart';
 
-void main() {
-  runApp(MaterialApp(
-    debugShowCheckedModeBanner: false,
-    theme: ThemeData.dark(), 
-    home: const InventoryPage(),
-  ));
+class InventoryPage extends StatefulWidget {
+  const InventoryPage({super.key});
+
+  @override
+  _InventoryPageState createState() => _InventoryPageState();
 }
 
-class InventoryPage extends StatelessWidget { 
-  const InventoryPage({super.key});
+class _InventoryPageState extends State<InventoryPage> {
+  // Criar controladores para os campos de texto
+  final TextEditingController _codeController   = TextEditingController();
+  final TextEditingController _dateController   = TextEditingController(); 
+  final TextEditingController _nameController   = TextEditingController();
+  final TextEditingController _sectorController = TextEditingController(); 
+  Map<String, dynamic>? inventory;
+
+  @override
+  void initState() {
+    super.initState();
+
+    // Chama o método createInventory quando a página é carregada
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      createInventory();
+    });
+  }
+
+  Future<void> startInventory() async {
+    // Busca o inventário com status Não Iniciado ou Iniciado
+    DBInventory db = DBInventory.instance;
+    Map<String, dynamic>? inventory = await db.queryFirstInventoryByStatus();
+
+    if (inventory != null) { // Atualizapara iniciado
+      await updateInventoryStatus(inventory["_id"], 'INICIADO');
+    }
+  }
+
+  Future<void> createInventory() async {
+    //String date = DateTime.now().toIso8601String().split('T').first;
+    String currentDate = DateFormat('yyyyMMdd').format(DateTime.now());
+    String code = 'INV-$currentDate';
+    String date = DateFormat('dd/MM/yyyy').format(DateTime.now());
+    String hour = DateTime.now().toIso8601String().split('T').last.split('.').first;
+    String name = "";
+    String sector = "";
+
+    //code = "INV-20242010-001";
+
+    Map<String, dynamic> inventoryRow = {
+      DBInventory.columnCode: code,
+      DBInventory.columnDate: date,
+      DBInventory.columnHour: hour,
+      DBInventory.columnName: name,
+      DBInventory.columnSector: sector,
+      DBInventory.columnStatus: 'NÃO INICIADO', // Set status to INICIADO
+    };
+
+    DBInventory db = DBInventory.instance;
+     inventory = await db.queryFirstInventoryByStatus();
+    
+    if (inventory == null) { 
+      int st = await db.insertInventory(inventoryRow);
+      print("Stuação.........................................: $st");
+      inventory = await db.queryFirstInventoryByStatus();
+    }
+    if (inventory != null) { 
+      _codeController.text = inventory?["code"];
+      _dateController.text = inventory?["date"];
+      _nameController.text = inventory?["name"];
+      _sectorController.text = inventory?["sector"];
+    }
+  }
+
+  Future<void> updateInventoryStatus(int inventoryId, String status) async {
+    final db = DBInventory.instance;
+    await db.update({
+      DBInventory.columnId: inventoryId,
+      DBInventory.columnStatus: status,
+    });
+    //loadData();  // Recarregar os dados após a atualização
+  }
 
   @override
     @override
@@ -66,6 +136,7 @@ class InventoryPage extends StatelessWidget {
                                 decoration: InputDecoration(
                                   labelText: 'Código do Inventário',
                                   border: OutlineInputBorder(),
+                                  //controller: inventoryRow.columnCode,
                                 ),
                               ),
                             ),
@@ -128,7 +199,10 @@ class InventoryPage extends StatelessWidget {
             const SizedBox(height: 10),
             ElevatedButton(
               onPressed: () {
-                // método finalizar
+                // método INICIAR
+                //iniciarInventory();
+                //String nomeInventario = _nomeController.text;
+                updateInventoryStatus(inventory?["_id"],"INICIADO");
               },
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.grey,
@@ -168,7 +242,7 @@ class InventoryPage extends StatelessWidget {
       bottomNavigationBar: Container(
         color: Colors.grey[200],
         padding: EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-        child: Row(
+        child: const Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             Text(
@@ -183,5 +257,13 @@ class InventoryPage extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  void main() {
+    runApp(MaterialApp(
+      debugShowCheckedModeBanner: false,
+      theme: ThemeData.dark(), 
+      home: const InventoryPage(),
+    ));
   }
 }

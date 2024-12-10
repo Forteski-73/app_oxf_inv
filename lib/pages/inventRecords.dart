@@ -92,215 +92,209 @@ class InventoryPageState extends State<InventoryRecordsPage> {
   }
 
   @override
-Widget build(BuildContext context) {
-  return Scaffold(
-    appBar: AppBar(
-      title: const Text('Inventário XXXXXXX', style: TextStyle(color: Colors.white)),
-      backgroundColor: Colors.black,
-      iconTheme: const IconThemeData(color: Colors.white),
-    ),
-    
-    body: SingleChildScrollView(
-      child: FutureBuilder<Map<String, Map<String, dynamic>>>(
-        future: _settingsFuture,
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
-          } else if (snapshot.hasError) {
-            return const Center(child: Text('Erro ao carregar configurações.'));
-          } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
-            return const Center(child: Text('Nenhuma configuração encontrada.'));
-          }
-          final settings = snapshot.data!;
-          return Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Column(
-              children: [
-                Align(
-                  alignment: Alignment.centerLeft, 
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 8.0),
-                    child: Text(
-                      'Total de Registros: ${settings.length}',
-                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
-                    ),
-                  ),
-                ),
-                _buildTextField(
-                  label: 'Unitizador',
-                  visible: settings['Unitizador']?['exibir'] == 1,
-                  enabled: settings['Unitizador']?['obrigatorio'] == 1,
-                  controller: controllers[0],
-                  settings: settings,
-                  suffixIcon: const Icon(Icons.barcode_reader),
-                ),
-                _buildTextField(
-                  label: 'Posição',
-                  visible: settings['Posição']?['exibir'] == 1,
-                  enabled: settings['Posição']?['obrigatorio'] == 1,
-                  controller: controllers[1],
-                  settings: settings,
-                  suffixIcon: const Icon(Icons.barcode_reader),
-                ),
-                const SizedBox(height: 16),
-                Row(
-                  children: [
-                    Expanded(
-                      child: _buildTextField(
-                        label: 'Depósito',
-                        visible: settings['Depósito']?['exibir'] == 1,
-                        enabled: settings['Depósito']?['obrigatorio'] == 1,
-                        controller: controllers[2],
-                        settings: settings,
-                        //suffixIcon: const Icon(Icons.filter_alt),
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: _buildTextField(
-                        label: 'Bloco',
-                        visible: settings['Bloco']?['exibir'] == 1,
-                        enabled: settings['Bloco']?['obrigatorio'] == 1,
-                        controller: controllers[3],
-                        settings: settings,
-                        //suffixIcon: const Icon(Icons.filter_alt),
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 8),
-                Row(
-                  children: [
-                    Expanded(
-                      child: _buildTextField(
-                        label: 'Quadra',
-                        visible: settings['Quadra']?['exibir'] == 1,
-                        enabled: settings['Quadra']?['obrigatorio'] == 1,
-                        controller: controllers[4],
-                        settings: settings,
-                        //suffixIcon: const Icon(Icons.filter_alt),
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: _buildTextField(
-                        label: 'Lote',
-                        visible: settings['Lote']?['exibir'] == 1,
-                        enabled: settings['Lote']?['obrigatorio'] == 1,
-                        controller: controllers[5],
-                        settings: settings,
-                        //suffixIcon: const Icon(Icons.filter_alt),
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 8),
-                _buildTextField(
-                  label: 'Andar',
-                  visible: settings['Andar']?['exibir'] == 1,
-                  enabled: settings['Andar']?['obrigatorio'] == 1,
-                  controller: controllers[6],
-                  settings: settings,
-                  //suffixIcon: const Icon(Icons.filter_alt),
-                ),
-                const SizedBox(height: 16),
-                _buildTextField(
-                  label: 'Código de Barras',
-                  visible: settings['Código de Barras']?['exibir'] == 1,
-                  enabled: settings['Código de Barras']?['obrigatorio'] == 1,
-                  controller: controllers[7],
-                  settings: settings,
-                  suffixIcon: const Icon(Icons.barcode_reader),
-                ),
-                const SizedBox(height: 16),
-                Row(
-                  children: [
-                    Expanded(
-                      child: _buildTextField(
-                        label: 'Qtde Padrão da Pilha',
-                        visible: settings['Qtde Padrão da Pilha']?['exibir'] == 1,
-                        enabled: settings['Qtde Padrão da Pilha']?['obrigatorio'] == 1,
-                        controller: controllers[8],
-                        settings: settings,
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: _buildTextField(
-                        label: 'Qtde de Pilhas Completas',
-                        visible: settings['Qtde de Pilhas Completas']?['exibir'] == 1,
-                        enabled: settings['Qtde de Pilhas Completas']?['obrigatorio'] == 1,
-                        controller: controllers[9],
-                        settings: settings,
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 8),
-                _buildTextField(
-                  label: 'Qtde de Itens Avulsos',
-                  visible: settings['Qtde de Itens Avulsos']?['exibir'] == 1,
-                  enabled: settings['Qtde de Itens Avulsos']?['obrigatorio'] == 1,
-                  controller: controllers[10],
-                  settings: settings,
-                ),
-                Align(
-                  alignment: Alignment.bottomCenter,
-                  child: Padding(
-                    padding: const EdgeInsets.all(16.0),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        ElevatedButton.icon(
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.red,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                          ),
-                          onPressed: () {
-                            for (var controller in _controllers.values) {
-                              controller.clear();
-                            }
-                          },
-                          icon: const Icon(Icons.close, color: Colors.white),
-                          label: const Text('LIMPAR', style: TextStyle(color: Colors.white),),
-                        ),
-                        const SizedBox(width: 16),
-                        ElevatedButton.icon(
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: _isSaveButtonEnabled ? Colors.blue : Colors.grey,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                          ),
-                          onPressed: _isSaveButtonEnabled
-                            ? () {
-                                if (_validateMandatoryFields(settings)) {
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    const SnackBar(content: Text('Dados salvos!')),
-                                  );
-                                } else {
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    const SnackBar(content: Text('Campos obrigatórios não preenchidos.')),
-                                  );
-                                }
-                              }
-                            : null,
-                          icon: const Icon(Icons.save, color: Colors.white),
-                          label: const Text('GRAVAR', style: TextStyle(color: Colors.white),),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          );
-        },
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Criação de Inventário', style: TextStyle(color: Colors.white)),
+        backgroundColor: Colors.black,
+        iconTheme: const IconThemeData(color: Colors.white),
       ),
-    ),
+      body: SingleChildScrollView( // SingleChildScrollView para rolar o conteúdo
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: FutureBuilder<Map<String, Map<String, dynamic>>>( 
+            future: _settingsFuture,
+            builder: (context, snapshot) {
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                return const Center(child: CircularProgressIndicator());
+              } else if (snapshot.hasError) {
+                return const Center(child: Text('Erro ao carregar inventário.'));
+              } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
+                return const Center(child: Text('Nenhuma inventário encontrado.'));
+              }
+              final settings = snapshot.data!;
+              return Column(
+                children: [
+                  Align(
+                    alignment: Alignment.centerLeft, 
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 8.0),
+                      child: Text(
+                        'Total de Registros: ${settings.length}',
+                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+                      ),
+                    ),
+                  ),
+                  _buildTextField(
+                    label: 'Unitizador',
+                    visible: settings['Unitizador']?['exibir'] == 1,
+                    enabled: settings['Unitizador']?['obrigatorio'] == 1,
+                    controller: controllers[0],
+                    settings: settings,
+                    suffixIcon: const Icon(Icons.barcode_reader),
+                  ),
+                  _buildTextField(
+                    label: 'Posição',
+                    visible: settings['Posição']?['exibir'] == 1,
+                    enabled: settings['Posição']?['obrigatorio'] == 1,
+                    controller: controllers[1],
+                    settings: settings,
+                    suffixIcon: const Icon(Icons.barcode_reader),
+                  ),
+                  const SizedBox(height: 16),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: _buildTextField(
+                          label: 'Depósito',
+                          visible: settings['Depósito']?['exibir'] == 1,
+                          enabled: settings['Depósito']?['obrigatorio'] == 1,
+                          controller: controllers[2],
+                          settings: settings,
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: _buildTextField(
+                          label: 'Bloco',
+                          visible: settings['Bloco']?['exibir'] == 1,
+                          enabled: settings['Bloco']?['obrigatorio'] == 1,
+                          controller: controllers[3],
+                          settings: settings,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: _buildTextField(
+                          label: 'Quadra',
+                          visible: settings['Quadra']?['exibir'] == 1,
+                          enabled: settings['Quadra']?['obrigatorio'] == 1,
+                          controller: controllers[4],
+                          settings: settings,
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: _buildTextField(
+                          label: 'Lote',
+                          visible: settings['Lote']?['exibir'] == 1,
+                          enabled: settings['Lote']?['obrigatorio'] == 1,
+                          controller: controllers[5],
+                          settings: settings,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  _buildTextField(
+                    label: 'Andar',
+                    visible: settings['Andar']?['exibir'] == 1,
+                    enabled: settings['Andar']?['obrigatorio'] == 1,
+                    controller: controllers[6],
+                    settings: settings,
+                  ),
+                  const SizedBox(height: 16),
+                  _buildTextField(
+                    label: 'Código de Barras',
+                    visible: settings['Código de Barras']?['exibir'] == 1,
+                    enabled: settings['Código de Barras']?['obrigatorio'] == 1,
+                    controller: controllers[7],
+                    settings: settings,
+                    suffixIcon: const Icon(Icons.barcode_reader),
+                  ),
+                  const SizedBox(height: 16),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: _buildTextField(
+                          label: 'Qtde Padrão da Pilha',
+                          visible: settings['Qtde Padrão da Pilha']?['exibir'] == 1,
+                          enabled: settings['Qtde Padrão da Pilha']?['obrigatorio'] == 1,
+                          controller: controllers[8],
+                          settings: settings,
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: _buildTextField(
+                          label: 'Qtde de Pilhas Completas',
+                          visible: settings['Qtde de Pilhas Completas']?['exibir'] == 1,
+                          enabled: settings['Qtde de Pilhas Completas']?['obrigatorio'] == 1,
+                          controller: controllers[9],
+                          settings: settings,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  _buildTextField(
+                    label: 'Qtde de Itens Avulsos',
+                    visible: settings['Qtde de Itens Avulsos']?['exibir'] == 1,
+                    enabled: settings['Qtde de Itens Avulsos']?['obrigatorio'] == 1,
+                    controller: controllers[10],
+                    settings: settings,
+                  ),
+                  Align(
+                    alignment: Alignment.bottomCenter,
+                    child: Padding(
+                      padding: const EdgeInsets.all(16.0),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          ElevatedButton.icon(
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.red,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                            ),
+                            onPressed: () {
+                              for (var controller in _controllers.values) {
+                                controller.clear();
+                              }
+                            },
+                            icon: const Icon(Icons.close, color: Colors.white),
+                            label: const Text('LIMPAR', style: TextStyle(color: Colors.white),),
+                          ),
+                          const SizedBox(width: 16),
+                          ElevatedButton.icon(
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: _isSaveButtonEnabled ? Colors.blue : Colors.grey,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                            ),
+                            onPressed: _isSaveButtonEnabled
+                              ? () {
+                                  if (_validateMandatoryFields(settings)) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      const SnackBar(content: Text('Dados salvos!')),
+                                    );
+                                  } else {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      const SnackBar(content: Text('Campos obrigatórios não preenchidos.')),
+                                    );
+                                  }
+                                }
+                              : null,
+                            icon: const Icon(Icons.save, color: Colors.white),
+                            label: const Text('GRAVAR', style: TextStyle(color: Colors.white),),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              );
+            },
+          ),
+        ),
+      ),
       bottomNavigationBar: Container(
         color: Colors.grey[200],
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
