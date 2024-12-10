@@ -238,7 +238,14 @@ Widget build(BuildContext context) {
                       borderRadius: BorderRadius.circular(8),
                     ),
                   ),
-                  child: const Text("Restaurar Padrão", style: TextStyle(color: Colors.white)),
+                  child: const Row(
+                    mainAxisSize: MainAxisSize.min, // Ajusta o tamanho para caber no conteúdo
+                    children: [
+                      Icon(Icons.refresh, color: Colors.white),
+                      SizedBox(width: 8), // Espaçamento entre ícone e texto
+                      Text("Restaurar Padrão",style: TextStyle(color: Colors.white),),
+                    ],
+                  ),
                 ),
               ),
             ],

@@ -14,6 +14,7 @@ class InventoryPage extends StatelessWidget {
   const InventoryPage({super.key});
 
   @override
+    @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
@@ -59,37 +60,41 @@ class InventoryPage extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            Text('Código do Inventário'),
-                            Text('Data de criação'),
+                            Expanded(
+                              child: TextField(
+                                decoration: InputDecoration(
+                                  labelText: 'Código do Inventário',
+                                  border: OutlineInputBorder(),
+                                ),
+                              ),
+                            ),
+                            SizedBox(width: 16),
+                            Expanded(
+                              child: const TextField(
+                                decoration: InputDecoration(
+                                  labelText: 'Data de criação',
+                                  border: OutlineInputBorder(),
+                                ),
+                              ),
+                            ),
                           ],
                         ),
-                        SizedBox(height: 4),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Text(
-                              'INV-20241202-001',
-                              style: TextStyle(fontWeight: FontWeight.bold),
-                            ),
-                            Text(
-                              '01/08/2024',
-                              style: TextStyle(fontWeight: FontWeight.bold),
-                            ),
-                          ],
+                        SizedBox(height: 10),
+                        Divider(thickness: 1, color: Colors.grey), // divider
+                        SizedBox(height: 10),
+                        TextField(
+                          decoration: InputDecoration(
+                            labelText: 'Nome do Inventário',
+                            border: OutlineInputBorder(),
+                          ),
                         ),
                         SizedBox(height: 16),
-                        Text('Nome do Inventário'),
-                        Text(
-                          'Inventário Semestral - Loja X',
-                          style: TextStyle(fontWeight: FontWeight.bold),
-                        ),
-                        SizedBox(height: 16),
-                        Text('Setor'),
-                        Text(
-                          'Loja',
-                          style: TextStyle(fontWeight: FontWeight.bold),
+                        TextField(
+                          decoration: InputDecoration(
+                            labelText: 'Setor',
+                            border: OutlineInputBorder(),
+                          ),
                         ),
                       ],
                     ),
@@ -98,67 +103,63 @@ class InventoryPage extends StatelessWidget {
               ),
             ),
             const Spacer(),
-            Column(
-              children: [
-                ElevatedButton(
-                  onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => const InventoryRecordsPage(),
-                      ),
-                    );
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.blue,
-                    padding: const EdgeInsets.symmetric(vertical: 15),
-                    minimumSize: const Size(double.infinity, 50),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
+            ElevatedButton(
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const InventoryRecordsPage(),
                   ),
-                  child: const Text(
-                    'INICIAR',
-                    style: TextStyle(fontSize: 16),
-                  ),
+                );
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.blue,
+                padding: const EdgeInsets.symmetric(vertical: 15),
+                minimumSize: const Size(double.infinity, 50),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
                 ),
-                const SizedBox(height: 10),
-                ElevatedButton(
-                  onPressed: () {
-                    // método finalizar
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.grey,
-                    padding: const EdgeInsets.symmetric(vertical: 15),
-                    minimumSize: const Size(double.infinity, 50),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                  ),
-                  child: const Text(
-                    'FINALIZAR',
-                    style: TextStyle(fontSize: 16),
-                  ),
+              ),
+              child: const Text(
+                'INICIAR',
+                style: TextStyle(fontSize: 16),
+              ),
+            ),
+            const SizedBox(height: 10),
+            ElevatedButton(
+              onPressed: () {
+                // método finalizar
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.grey,
+                padding: const EdgeInsets.symmetric(vertical: 15),
+                minimumSize: const Size(double.infinity, 50),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
                 ),
-                const SizedBox(height: 10),
-                ElevatedButton(
-                  onPressed: () {
-                    // método cancelar
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.grey,
-                    padding: const EdgeInsets.symmetric(vertical: 15),
-                    minimumSize: const Size(double.infinity, 50),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                  ),
-                  child: const Text(
-                    'CANCELAR',
-                    style: TextStyle(fontSize: 16),
-                  ),
+              ),
+              child: const Text(
+                'FINALIZAR',
+                style: TextStyle(fontSize: 16),
+              ),
+            ),
+            const SizedBox(height: 10),
+            ElevatedButton(
+              onPressed: () {
+                // método cancelar
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.grey,
+                padding: const EdgeInsets.symmetric(vertical: 15),
+                minimumSize: const Size(double.infinity, 50),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
                 ),
-              ],
+              ),
+              child: const Text(
+                'CANCELAR',
+                style: TextStyle(fontSize: 16),
+              ),
             ),
           ],
         ),
@@ -166,8 +167,8 @@ class InventoryPage extends StatelessWidget {
       // Rodapé
       bottomNavigationBar: Container(
         color: Colors.grey[200],
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-        child: const Row(
+        padding: EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+        child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             Text(

@@ -1,85 +1,87 @@
 import 'package:flutter/material.dart';
-import 'package:sqflite/sqflite.dart';
-import 'package:path/path.dart';
 import 'package:app_oxf_inv/operator/db_settings.dart';
 
 class InventoryRecordsPage extends StatefulWidget {
   const InventoryRecordsPage({super.key});
 
   @override
-  _InventoryPageState createState() => _InventoryPageState();
+  InventoryPageState createState() => InventoryPageState();
 }
 
-class _InventoryPageState extends State<InventoryRecordsPage> {
+class InventoryPageState extends State<InventoryRecordsPage> {
   final Map<String, TextEditingController> _controllers = {};
-  List<Map<String, dynamic>> _fields = [];
   bool _isSaveButtonEnabled = false;
   late Future<Map<String, Map<String, dynamic>>> _settingsFuture;
+  
+  final List<TextEditingController> controllers = List.generate(11,(index) => TextEditingController(),);
 
   @override
   void initState() {
     super.initState();
-    //_loadFieldsFromDatabase();
     _settingsFuture = _loadSettings();
-    //_deleteTable(); 
   }
-
-  Future<void> _deleteTable() async {
-    await DBSettings.instance.database.then((db) async {
-
-      await db.execute('DROP TABLE IF EXISTS settings');
-      print("Tabela deletada com sucesso");
-    });
-  }
-
-  Future<void> _loadFieldsFromDatabase() async {
-    final results = await DBSettings.instance.queryAllRows();
-    
-    setState(() {
-      _fields = results.where((row) => row['exibir'] == 1).toList();
-      for (var field in _fields) {
-        _controllers[field['nome']] = TextEditingController();
-      }
-    });
-  }
-
-  void _checkMandatoryFields() {
-    bool allMandatoryFilled = true;
-
-    for (var field in _fields) {
-      if (field['obrigatorio'] == 1 &&
-          (_controllers[field['nome']]?.text.isEmpty ?? true)) {
-        allMandatoryFilled = false;
-        break;
-      }
-    }
-
-    setState(() {
-      _isSaveButtonEnabled = allMandatoryFilled;
-    });
-  }
-
-//*************************** /
   
   Future<Map<String, Map<String, dynamic>>> _loadSettings() async {
     final rows = await DBSettings.instance.queryAllRows();
+
     return {
       for (var row in rows) row['nome']: row,
     };
+  }
+
+  bool _validateMandatoryFields(Map<String, Map<String, dynamic>> settings) {
+  for (var key in settings.keys) {
+    final fieldSettings = settings[key];
+    final isVisible = fieldSettings?['exibir'] == 1;
+    final isRequired = fieldSettings?['obrigatorio'] == 1;
+    final controller = controllers[_getControllerIndexForField(key)];
+
+    if (isVisible && isRequired && controller?.text.isEmpty == true) {
+      setState(() {
+        _isSaveButtonEnabled = false;
+      });
+      return false;
+    }
+  }
+  setState(() {
+    _isSaveButtonEnabled = true;
+  });
+  return true;
+}
+
+  int _getControllerIndexForField(String field) {
+    const fieldMap = {
+      'Unitizador': 0,
+      'Posição': 1,
+      'Depósito': 2,
+      'Bloco': 3,
+      'Quadra': 4,
+      'Lote': 5,
+      'Andar': 6,
+      'Código de Barras': 7,
+      'Qtde Padrão da Pilha': 8,
+      'Qtde de Pilhas Completas': 9,
+      'Qtde de Itens Avulsos': 10,
+    };
+    return fieldMap[field] ?? -1; // Retorna -1 se o campo não for encontrado
   }
 
   Widget _buildTextField({
     required String label,
     required bool visible,
     required bool enabled,
-    Icon? suffixIcon,
+    required TextEditingController controller, // Torne o controlador obrigatório
+    required Map<String, Map<String, dynamic>> settings,
+    Icon? suffixIcon
   }) {
     return Visibility(
       visible: visible,
       child: Padding(
         padding: const EdgeInsets.only(bottom: 8.0),
         child: TextField(
+          controller: controller, // Associa o controlador
           enabled: enabled,
+          onChanged: (_) => _validateMandatoryFields(settings),
           decoration: InputDecoration(
             labelText: label,
             suffixIcon: suffixIcon,
@@ -89,16 +91,17 @@ class _InventoryPageState extends State<InventoryRecordsPage> {
     );
   }
 
-//********************************************/
   @override
- Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Inventário XXXXXXX', style: TextStyle(color: Colors.white)),
-        backgroundColor: Colors.black,
-        iconTheme: const IconThemeData(color: Colors.white),
-      ),
-      body: FutureBuilder<Map<String, Map<String, dynamic>>>(
+Widget build(BuildContext context) {
+  return Scaffold(
+    appBar: AppBar(
+      title: const Text('Inventário XXXXXXX', style: TextStyle(color: Colors.white)),
+      backgroundColor: Colors.black,
+      iconTheme: const IconThemeData(color: Colors.white),
+    ),
+    
+    body: SingleChildScrollView(
+      child: FutureBuilder<Map<String, Map<String, dynamic>>>(
         future: _settingsFuture,
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
@@ -108,25 +111,36 @@ class _InventoryPageState extends State<InventoryRecordsPage> {
           } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
             return const Center(child: Text('Nenhuma configuração encontrada.'));
           }
-
           final settings = snapshot.data!;
           return Padding(
             padding: const EdgeInsets.all(16.0),
             child: Column(
               children: [
-                // Campo "Unutilizador"
+                Align(
+                  alignment: Alignment.centerLeft, 
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 8.0),
+                    child: Text(
+                      'Total de Registros: ${settings.length}',
+                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+                    ),
+                  ),
+                ),
                 _buildTextField(
                   label: 'Unitizador',
                   visible: settings['Unitizador']?['exibir'] == 1,
                   enabled: settings['Unitizador']?['obrigatorio'] == 1,
-                  suffixIcon: const Icon(Icons.filter_alt),
+                  controller: controllers[0],
+                  settings: settings,
+                  suffixIcon: const Icon(Icons.barcode_reader),
                 ),
-                // Campo "Posição"
                 _buildTextField(
                   label: 'Posição',
                   visible: settings['Posição']?['exibir'] == 1,
                   enabled: settings['Posição']?['obrigatorio'] == 1,
-                  suffixIcon: const Icon(Icons.filter_alt),
+                  controller: controllers[1],
+                  settings: settings,
+                  suffixIcon: const Icon(Icons.barcode_reader),
                 ),
                 const SizedBox(height: 16),
                 Row(
@@ -136,6 +150,9 @@ class _InventoryPageState extends State<InventoryRecordsPage> {
                         label: 'Depósito',
                         visible: settings['Depósito']?['exibir'] == 1,
                         enabled: settings['Depósito']?['obrigatorio'] == 1,
+                        controller: controllers[2],
+                        settings: settings,
+                        //suffixIcon: const Icon(Icons.filter_alt),
                       ),
                     ),
                     const SizedBox(width: 8),
@@ -144,6 +161,9 @@ class _InventoryPageState extends State<InventoryRecordsPage> {
                         label: 'Bloco',
                         visible: settings['Bloco']?['exibir'] == 1,
                         enabled: settings['Bloco']?['obrigatorio'] == 1,
+                        controller: controllers[3],
+                        settings: settings,
+                        //suffixIcon: const Icon(Icons.filter_alt),
                       ),
                     ),
                   ],
@@ -156,6 +176,9 @@ class _InventoryPageState extends State<InventoryRecordsPage> {
                         label: 'Quadra',
                         visible: settings['Quadra']?['exibir'] == 1,
                         enabled: settings['Quadra']?['obrigatorio'] == 1,
+                        controller: controllers[4],
+                        settings: settings,
+                        //suffixIcon: const Icon(Icons.filter_alt),
                       ),
                     ),
                     const SizedBox(width: 8),
@@ -164,6 +187,9 @@ class _InventoryPageState extends State<InventoryRecordsPage> {
                         label: 'Lote',
                         visible: settings['Lote']?['exibir'] == 1,
                         enabled: settings['Lote']?['obrigatorio'] == 1,
+                        controller: controllers[5],
+                        settings: settings,
+                        //suffixIcon: const Icon(Icons.filter_alt),
                       ),
                     ),
                   ],
@@ -173,13 +199,18 @@ class _InventoryPageState extends State<InventoryRecordsPage> {
                   label: 'Andar',
                   visible: settings['Andar']?['exibir'] == 1,
                   enabled: settings['Andar']?['obrigatorio'] == 1,
+                  controller: controllers[6],
+                  settings: settings,
+                  //suffixIcon: const Icon(Icons.filter_alt),
                 ),
                 const SizedBox(height: 16),
                 _buildTextField(
                   label: 'Código de Barras',
                   visible: settings['Código de Barras']?['exibir'] == 1,
                   enabled: settings['Código de Barras']?['obrigatorio'] == 1,
-                  suffixIcon: const Icon(Icons.search),
+                  controller: controllers[7],
+                  settings: settings,
+                  suffixIcon: const Icon(Icons.barcode_reader),
                 ),
                 const SizedBox(height: 16),
                 Row(
@@ -189,6 +220,8 @@ class _InventoryPageState extends State<InventoryRecordsPage> {
                         label: 'Qtde Padrão da Pilha',
                         visible: settings['Qtde Padrão da Pilha']?['exibir'] == 1,
                         enabled: settings['Qtde Padrão da Pilha']?['obrigatorio'] == 1,
+                        controller: controllers[8],
+                        settings: settings,
                       ),
                     ),
                     const SizedBox(width: 8),
@@ -197,6 +230,8 @@ class _InventoryPageState extends State<InventoryRecordsPage> {
                         label: 'Qtde de Pilhas Completas',
                         visible: settings['Qtde de Pilhas Completas']?['exibir'] == 1,
                         enabled: settings['Qtde de Pilhas Completas']?['obrigatorio'] == 1,
+                        controller: controllers[9],
+                        settings: settings,
                       ),
                     ),
                   ],
@@ -206,51 +241,66 @@ class _InventoryPageState extends State<InventoryRecordsPage> {
                   label: 'Qtde de Itens Avulsos',
                   visible: settings['Qtde de Itens Avulsos']?['exibir'] == 1,
                   enabled: settings['Qtde de Itens Avulsos']?['obrigatorio'] == 1,
+                  controller: controllers[10],
+                  settings: settings,
                 ),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                  children: [
-                    ElevatedButton(
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.red,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                      ),
-                      onPressed: () {
-                        // Limpar campos
-                        for (var controller in _controllers.values) {
-                          controller.clear();
-                        }
-                        _checkMandatoryFields();
-                      },
-                      child: const Text('LIMPAR'),
-                    ),
-                    ElevatedButton(
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor:
-                            _isSaveButtonEnabled ? Colors.blue : Colors.grey,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                      ),
-                      onPressed: _isSaveButtonEnabled
-                          ? () {
-                              // Gravar ação
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(content: Text('Dados salvos!')),
-                              );
+                Align(
+                  alignment: Alignment.bottomCenter,
+                  child: Padding(
+                    padding: const EdgeInsets.all(16.0),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        ElevatedButton.icon(
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.red,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                          ),
+                          onPressed: () {
+                            for (var controller in _controllers.values) {
+                              controller.clear();
                             }
-                          : null,
-                      child: const Text('GRAVAR'),
+                          },
+                          icon: const Icon(Icons.close, color: Colors.white),
+                          label: const Text('LIMPAR', style: TextStyle(color: Colors.white),),
+                        ),
+                        const SizedBox(width: 16),
+                        ElevatedButton.icon(
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: _isSaveButtonEnabled ? Colors.blue : Colors.grey,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                          ),
+                          onPressed: _isSaveButtonEnabled
+                            ? () {
+                                if (_validateMandatoryFields(settings)) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(content: Text('Dados salvos!')),
+                                  );
+                                } else {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(content: Text('Campos obrigatórios não preenchidos.')),
+                                  );
+                                }
+                              }
+                            : null,
+                          icon: const Icon(Icons.save, color: Colors.white),
+                          label: const Text('GRAVAR', style: TextStyle(color: Colors.white),),
+                        ),
+                      ],
                     ),
-                  ],
+                  ),
                 ),
               ],
             ),
           );
         },
       ),
+    ),
       bottomNavigationBar: Container(
         color: Colors.grey[200],
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
@@ -265,19 +315,3 @@ class _InventoryPageState extends State<InventoryRecordsPage> {
     );
   }
 }
-
-
-  /*Widget _buildInputField(String label, bool isMandatory) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8.0),
-      child: TextField(
-        controller: _controllers[label],
-        onChanged: (value) => _checkMandatoryFields(),
-        decoration: InputDecoration(
-          labelText: label + (isMandatory ? ' *' : ''),
-          border: const OutlineInputBorder(),
-        ),
-      ),
-    );
-  }
-}*/
