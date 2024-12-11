@@ -85,6 +85,7 @@ class InventoryPageState extends State<InventoryRecordsPage> {
           decoration: InputDecoration(
             labelText: label,
             suffixIcon: suffixIcon,
+            border: const OutlineInputBorder()
           ),
         ),
       ),
@@ -133,6 +134,7 @@ class InventoryPageState extends State<InventoryRecordsPage> {
                     settings: settings,
                     suffixIcon: const Icon(Icons.barcode_reader),
                   ),
+                  const SizedBox(height: 8),
                   _buildTextField(
                     label: 'Posição',
                     visible: settings['Posição']?['exibir'] == 1,
@@ -141,7 +143,7 @@ class InventoryPageState extends State<InventoryRecordsPage> {
                     settings: settings,
                     suffixIcon: const Icon(Icons.barcode_reader),
                   ),
-                  const SizedBox(height: 16),
+                  const SizedBox(height: 8),
                   Row(
                     children: [
                       Expanded(
@@ -197,7 +199,7 @@ class InventoryPageState extends State<InventoryRecordsPage> {
                     controller: controllers[6],
                     settings: settings,
                   ),
-                  const SizedBox(height: 16),
+                  const SizedBox(height: 8),
                   _buildTextField(
                     label: 'Código de Barras',
                     visible: settings['Código de Barras']?['exibir'] == 1,
@@ -206,7 +208,7 @@ class InventoryPageState extends State<InventoryRecordsPage> {
                     settings: settings,
                     suffixIcon: const Icon(Icons.barcode_reader),
                   ),
-                  const SizedBox(height: 16),
+                  const SizedBox(height: 8),
                   Row(
                     children: [
                       Expanded(
@@ -238,6 +240,7 @@ class InventoryPageState extends State<InventoryRecordsPage> {
                     controller: controllers[10],
                     settings: settings,
                   ),
+                  const SizedBox(height: 6),
                   Align(
                     alignment: Alignment.bottomCenter,
                     child: Padding(
@@ -248,6 +251,7 @@ class InventoryPageState extends State<InventoryRecordsPage> {
                         children: [
                           ElevatedButton.icon(
                             style: ElevatedButton.styleFrom(
+                              padding: const EdgeInsets.all(16),
                               backgroundColor: Colors.red,
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(8),
@@ -264,6 +268,7 @@ class InventoryPageState extends State<InventoryRecordsPage> {
                           const SizedBox(width: 16),
                           ElevatedButton.icon(
                             style: ElevatedButton.styleFrom(
+                              padding: const EdgeInsets.all(16),
                               backgroundColor: _isSaveButtonEnabled ? Colors.blue : Colors.grey,
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(8),

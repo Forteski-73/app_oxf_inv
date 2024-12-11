@@ -22,20 +22,50 @@ class _InventoryPageState extends State<InventoryPage> {
   void initState() {
     super.initState();
 
-    // Chama o método createInventory quando a página é carregada
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      createInventory();
+    _codeController.addListener(_updateButtonState);
+    _dateController.addListener(_updateButtonState);
+    _nameController.addListener(_updateButtonState);
+    _sectorController.addListener(_updateButtonState);
+
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      await createInventory();
+      setState(() {
+        // Atualiza o estado para refletir mudanças no inventário
+        _codeController.text = inventory?["code"] ?? '';
+        _dateController.text = inventory?["date"] ?? '';
+        _nameController.text = inventory?["name"] ?? '';
+        _sectorController.text = inventory?["sector"] ?? '';
+      });
     });
   }
 
-  Future<void> startInventory() async {
+  void _updateButtonState() {
+    setState(() {}); // Atualiza a interface quando o texto dos controladores mudar
+  }
+
+  bool updateControlls() {
+    return _codeController.text.isNotEmpty &&
+          _dateController.text.isNotEmpty &&
+          _nameController.text.isNotEmpty &&
+          _sectorController.text.isNotEmpty;
+  }
+
+  Future<int> startInventory() async {
     // Busca o inventário com status Não Iniciado ou Iniciado
     DBInventory db = DBInventory.instance;
-    Map<String, dynamic>? inventory = await db.queryFirstInventoryByStatus();
-
-    if (inventory != null) { // Atualizapara iniciado
-      await updateInventoryStatus(inventory["_id"], 'INICIADO');
+    Map<String, dynamic>? inventoryContext = await db.queryFirstInventoryByStatus();
+    int st = 0;
+    if (inventoryContext != null) { // Atualiza para iniciado
+      // Cria uma cópia mutável do inventário
+      //Map<String, dynamic> mutableInventory = Map.from(inventory);
+      //mutableInventory["status"] = "INICIADO";
+      inventoryContext["status"] = "EM ANDAMENTO";
+      st = await updateInventoryStatus(inventoryContext);
+      inventory = inventoryContext;
+      if(st==1) _updateButtonState();
+      
     }
+    return st;
   }
 
   Future<void> createInventory() async {
@@ -63,7 +93,6 @@ class _InventoryPageState extends State<InventoryPage> {
     
     if (inventory == null) { 
       int st = await db.insertInventory(inventoryRow);
-      print("Stuação.........................................: $st");
       inventory = await db.queryFirstInventoryByStatus();
     }
     if (inventory != null) { 
@@ -72,14 +101,18 @@ class _InventoryPageState extends State<InventoryPage> {
       _nameController.text = inventory?["name"];
       _sectorController.text = inventory?["sector"];
     }
+    setState(() {});
   }
 
-  Future<void> updateInventoryStatus(int inventoryId, String status) async {
+  Future<int> updateInventoryStatus(Map<String, dynamic> inventory) async {
     final db = DBInventory.instance;
-    await db.update({
-      DBInventory.columnId: inventoryId,
-      DBInventory.columnStatus: status,
+    int st = await db.update({
+      DBInventory.columnId: inventory["_id"],
+      DBInventory.columnStatus: inventory["status"]!=''?inventory["status"]:'',
+      DBInventory.columnName: inventory["name"]!=''?inventory["name"]:_nameController.text,
+      DBInventory.columnSector: inventory["sector"]!=''?inventory["sector"]:_sectorController.text,
     });
+    return st;
     //loadData();  // Recarregar os dados após a atualização
   }
 
@@ -106,17 +139,21 @@ class _InventoryPageState extends State<InventoryPage> {
                 children: [
                   Container(
                     width: double.infinity,
-                    padding: const EdgeInsets.all(12),
-                    decoration: const BoxDecoration(
-                      color: Colors.blue,
-                      borderRadius: BorderRadius.only(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: inventory?['status'] == 'EM ANDAMENTO'
+                          ? Colors.orange
+                          : inventory?['status'] == 'CONCLUÍDO'
+                              ? Colors.green
+                              : Colors.blue,
+                      borderRadius: const BorderRadius.only(
                         topLeft: Radius.circular(8),
                         topRight: Radius.circular(8),
                       ),
                     ),
-                    child: const Text(
-                      'NÃO INICIADO',
-                      style: TextStyle(
+                    child: Text(
+                      inventory?['status'] ?? 'NÃO INICIADO', // Atualiza com o valor do status
+                      style: const TextStyle(
                         color: Colors.white,
                         fontWeight: FontWeight.bold,
                         fontSize: 16,
@@ -124,48 +161,55 @@ class _InventoryPageState extends State<InventoryPage> {
                     ),
                   ),
                   // Detalhes do inventário
-                  const Padding(
-                    padding: EdgeInsets.all(16.0),
+                  Padding(
+                    padding: const EdgeInsets.all(16.0),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Row(
                           children: [
-                            Expanded(
+                            Flexible(
+                              flex: 3, // 60% (3/5 da largura total)
                               child: TextField(
-                                decoration: InputDecoration(
+                                decoration: const InputDecoration(
                                   labelText: 'Código do Inventário',
                                   border: OutlineInputBorder(),
-                                  //controller: inventoryRow.columnCode,
                                 ),
+                                controller: _codeController,
                               ),
                             ),
-                            SizedBox(width: 16),
-                            Expanded(
-                              child: const TextField(
-                                decoration: InputDecoration(
-                                  labelText: 'Data de criação',
+                            const SizedBox(width: 5), // Espaço entre os campos
+                            Flexible(
+                              flex: 2, // 40% (2/5 da largura total)
+                              child: TextField(
+                                decoration: const InputDecoration(
+                                  labelText: 'Data de Criação',
                                   border: OutlineInputBorder(),
                                 ),
+                                style: const TextStyle(fontSize: 15),
+                                readOnly: true,
+                                controller: _dateController,
                               ),
                             ),
                           ],
                         ),
-                        SizedBox(height: 10),
-                        Divider(thickness: 1, color: Colors.grey), // divider
-                        SizedBox(height: 10),
+                        const SizedBox(height: 12),
+                        const Divider(thickness: 1, color: Colors.grey), // divider
+                        const SizedBox(height: 12),
                         TextField(
-                          decoration: InputDecoration(
+                          decoration: const InputDecoration(
                             labelText: 'Nome do Inventário',
                             border: OutlineInputBorder(),
                           ),
+                          controller:_nameController,
                         ),
-                        SizedBox(height: 16),
+                        const SizedBox(height: 16),
                         TextField(
-                          decoration: InputDecoration(
+                          decoration: const InputDecoration(
                             labelText: 'Setor',
                             border: OutlineInputBorder(),
                           ),
+                          controller:_sectorController,
                         ),
                       ],
                     ),
@@ -175,16 +219,21 @@ class _InventoryPageState extends State<InventoryPage> {
             ),
             const Spacer(),
             ElevatedButton(
-              onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => const InventoryRecordsPage(),
-                  ),
-                );
-              },
+              onPressed: updateControlls()
+                  ? () async {
+                      int result = await startInventory();
+                      if (result == 1) {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => const InventoryRecordsPage(),
+                          ),
+                        );
+                      }
+                    }
+                  : null,
               style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.blue,
+                backgroundColor: updateControlls() ? Colors.blue : Colors.grey,
                 padding: const EdgeInsets.symmetric(vertical: 15),
                 minimumSize: const Size(double.infinity, 50),
                 shape: RoundedRectangleBorder(
@@ -193,19 +242,19 @@ class _InventoryPageState extends State<InventoryPage> {
               ),
               child: const Text(
                 'INICIAR',
-                style: TextStyle(fontSize: 16),
+                style: TextStyle(fontSize: 16, color: Colors.white),
               ),
             ),
             const SizedBox(height: 10),
             ElevatedButton(
-              onPressed: () {
+              onPressed:updateControlls() ? () {
                 // método INICIAR
                 //iniciarInventory();
                 //String nomeInventario = _nomeController.text;
-                updateInventoryStatus(inventory?["_id"],"INICIADO");
-              },
+                //updateInventoryStatus(inventory?["_id"],"INICIADO");
+              }: null,
               style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.grey,
+                backgroundColor: updateControlls() ? Colors.blue : Colors.grey,
                 padding: const EdgeInsets.symmetric(vertical: 15),
                 minimumSize: const Size(double.infinity, 50),
                 shape: RoundedRectangleBorder(
@@ -214,16 +263,16 @@ class _InventoryPageState extends State<InventoryPage> {
               ),
               child: const Text(
                 'FINALIZAR',
-                style: TextStyle(fontSize: 16),
+                style: TextStyle(fontSize: 16, color: Colors.white),
               ),
             ),
             const SizedBox(height: 10),
             ElevatedButton(
-              onPressed: () {
+              onPressed:updateControlls() ? () {
                 // método cancelar
-              },
+              }:null,
               style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.grey,
+                backgroundColor: updateControlls() ? Colors.blue : Colors.grey,
                 padding: const EdgeInsets.symmetric(vertical: 15),
                 minimumSize: const Size(double.infinity, 50),
                 shape: RoundedRectangleBorder(
@@ -232,7 +281,7 @@ class _InventoryPageState extends State<InventoryPage> {
               ),
               child: const Text(
                 'CANCELAR',
-                style: TextStyle(fontSize: 16),
+                style: TextStyle(fontSize: 16, color: Colors.white),
               ),
             ),
           ],
@@ -241,7 +290,7 @@ class _InventoryPageState extends State<InventoryPage> {
       // Rodapé
       bottomNavigationBar: Container(
         color: Colors.grey[200],
-        padding: EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
         child: const Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [

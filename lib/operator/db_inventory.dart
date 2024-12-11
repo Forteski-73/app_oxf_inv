@@ -68,7 +68,6 @@ class DBInventory {
 
     // Inserção de valores padrões na tabela Status Options
     await db.insert(tableStatusOptions, {'status': 'NÃO INICIADO'});
-    await db.insert(tableStatusOptions, {'status': 'INICIADO'});
     await db.insert(tableStatusOptions, {'status': 'EM ANDAMENTO'});
     await db.insert(tableStatusOptions, {'status': 'CONCLUÍDO'});
 
@@ -136,13 +135,19 @@ class DBInventory {
   List<Map<String, dynamic>> results = await db.query(
     tableInventory,
     where: '${DBInventory.columnStatus} = ? OR ${DBInventory.columnStatus} = ?',
-    whereArgs: ['NÃO INICIADO', 'INICIADO'],
+    whereArgs: ['NÃO INICIADO', 'EM ANDAMENTO'],
     orderBy: '${DBInventory.columnId} ASC',
     limit: 1, // Apenas o primeiro
   );
 
-  // Retorna o primeiro registro, ou null caso não haja nenhum registro
-  return results.isNotEmpty ? results.first : null;
+    // Retorna o primeiro registro, ou null caso não haja nenhum registro
+    if (results.isNotEmpty) {
+    // Cria uma cópia mutável do primeiro item da lista
+    return Map<String, dynamic>.from(results.first);
+    }
+    else {
+      return null;
+    }
 }
 
   Future<int> deleteInventory(int id) async {
