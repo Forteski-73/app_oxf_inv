@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:app_oxf_inv/operator/db_settings.dart';
+import 'package:app_oxf_inv/operator/db_inventory.dart';
 
 class InventoryRecordsPage extends StatefulWidget {
   const InventoryRecordsPage({super.key});
@@ -9,16 +10,32 @@ class InventoryRecordsPage extends StatefulWidget {
 }
 
 class InventoryPageState extends State<InventoryRecordsPage> {
+  Map<String, dynamic> inventoryRecordRow = {};
   final Map<String, TextEditingController> _controllers = {};
   bool _isSaveButtonEnabled = false;
   late Future<Map<String, Map<String, dynamic>>> _settingsFuture;
-  
   final List<TextEditingController> controllers = List.generate(11,(index) => TextEditingController(),);
+  final TextEditingController _totalController = TextEditingController(); 
+
+  @override
+  void dispose() {
+    // Certifique-se de limpar os controladores ao sair
+    for (var controller in controllers) {
+      controller.dispose();
+    }
+    super.dispose();
+  }
 
   @override
   void initState() {
     super.initState();
     _settingsFuture = _loadSettings();
+
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      await createInventoryRecord();
+      setState(() { });
+    });
+
   }
   
   Future<Map<String, Map<String, dynamic>>> _loadSettings() async {
@@ -64,6 +81,113 @@ class InventoryPageState extends State<InventoryRecordsPage> {
       'Qtde de Itens Avulsos': 10,
     };
     return fieldMap[field] ?? -1; // Retorna -1 se o campo não for encontrado
+  }
+
+  Future<void> createInventoryRecord() async {
+    DBInventory db = DBInventory.instance;
+    Map<String, dynamic>? inventory;
+
+    inventory = await db.queryFirstInventoryByStatus();
+
+    if (inventory != null) { 
+      _totalController.text = inventory?["total"]?.toString() ?? "0";
+
+      inventoryRecordRow = {
+        DBInventory.columnInventoryId:          inventory["_id"] ?? '',
+        DBInventory.columnUnitizer:             '',
+        DBInventory.columnPosition:             '',
+        DBInventory.columnDeposit:              '',
+        DBInventory.columnBlockA:               '',
+        DBInventory.columnBlockB:               '',
+        DBInventory.columnLot:                  '',
+        DBInventory.columnFloor:                null,
+        DBInventory.columnBarcode:              '',
+        DBInventory.columnStandardStackQtd:     null,
+        DBInventory.columnNumberCompleteStacks: null,
+        DBInventory.columnNumberLooseItems:     null,
+      };
+    }
+  }
+
+  Future<int> saveData(BuildContext context) async {
+    Map<String, dynamic>? inventory;
+    DBInventory db = DBInventory.instance;
+    int st = 0;
+    int subTotal = 0, total = 0;
+
+    try {
+
+      subTotal = (int.parse(controllers[8].text)*int.parse(controllers[9].text))+int.parse(controllers[10].text);
+      inventory = await db.queryFirstInventoryByStatus();
+      // Mapeamento dos dados
+      inventoryRecordRow = {
+        "inventory_id":           inventory?["_id"] ?? '',
+        "unitizer":               controllers[0].text,
+        "position":               controllers[1].text,
+        "deposit":                controllers[2].text,
+        "block_a":                controllers[3].text,
+        "block_b":                controllers[4].text,
+        "lot":                    controllers[5].text,
+        "floor":                  int.tryParse(controllers[6].text) ?? 0,
+        "barcode":                controllers[7].text,
+        "standard_stack_qtd":     int.tryParse(controllers[8].text) ?? 0,
+        "number_complete_stacks": int.tryParse(controllers[9].text) ?? 0,
+        "number_loose_items":     int.tryParse(controllers[10].text) ?? 0,
+        "total":                  subTotal,
+
+      };
+
+      // Inserção no banco
+      st = await db.insertInventoryRecord(inventoryRecordRow);
+
+      if (st > 0) {
+
+        inventory = await db.queryFirstInventoryByStatus();
+        _totalController.text = inventory?["total"]?.toString() ?? "0";
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Dados salvos com sucesso!')),
+        );
+
+        // Limpar os campos após salvar
+        for (var controller in controllers) {
+          controller.clear();
+        }
+
+        createInventoryRecord(); createInventoryRecord(); // Prepara o próximo registro
+
+        setState(() {
+          _isSaveButtonEnabled = false; // Desabilitar até que os campos obrigatórios sejam preenchidos
+        });
+      }
+      else
+      {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Erro ao salvar os dados.')),
+        );
+      }
+      setState(() {});
+    } catch (e) {
+      //print("Erro ao salvar os dados no banco..: $e");
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Erro ao salvar os dados.')),
+      );
+    }
+
+    return st;
+  }
+
+  void clearFields() {
+    // Limpar os campos após salvar
+    for (var controller in controllers) {
+      controller.clear();
+    }
+    createInventoryRecord(); createInventoryRecord(); // Prepara o próximo registro
+
+    // Opcional: Habilitar o botão de salvar se necessário
+    setState(() {
+      _isSaveButtonEnabled = false; // Desabilitar até que os campos obrigatórios sejam preenchidos
+    });
   }
 
   Widget _buildTextField({
@@ -121,7 +245,7 @@ class InventoryPageState extends State<InventoryRecordsPage> {
                     child: Padding(
                       padding: const EdgeInsets.symmetric(vertical: 8.0),
                       child: Text(
-                        'Total de Registros: ${settings.length}',
+                        'Total de Registros: ${_totalController.text}',
                         style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
                       ),
                     ),
@@ -258,9 +382,7 @@ class InventoryPageState extends State<InventoryRecordsPage> {
                               ),
                             ),
                             onPressed: () {
-                              for (var controller in _controllers.values) {
-                                controller.clear();
-                              }
+                              clearFields();
                             },
                             icon: const Icon(Icons.close, color: Colors.white),
                             label: const Text('LIMPAR', style: TextStyle(color: Colors.white),),
@@ -275,15 +397,19 @@ class InventoryPageState extends State<InventoryRecordsPage> {
                               ),
                             ),
                             onPressed: _isSaveButtonEnabled
-                              ? () {
+                              ? () async {
                                   if (_validateMandatoryFields(settings)) {
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      const SnackBar(content: Text('Dados salvos!')),
-                                    );
-                                  } else {
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      const SnackBar(content: Text('Campos obrigatórios não preenchidos.')),
-                                    );
+                                    int result = await saveData(context);
+                                    if(result>0)
+                                    {
+                                      /*ScaffoldMessenger.of(context).showSnackBar(
+                                        const SnackBar(content: Text('Dados salvos!')),
+                                      );*/
+                                    } else {
+                                      /*ScaffoldMessenger.of(context).showSnackBar(
+                                        const SnackBar(content: Text('Campos obrigatórios não preenchidos.')),
+                                      );*/
+                                    }
                                   }
                                 }
                               : null,

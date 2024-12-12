@@ -56,14 +56,28 @@ class _InventoryPageState extends State<InventoryPage> {
     Map<String, dynamic>? inventoryContext = await db.queryFirstInventoryByStatus();
     int st = 0;
     if (inventoryContext != null) { // Atualiza para iniciado
-      // Cria uma cópia mutável do inventário
-      //Map<String, dynamic> mutableInventory = Map.from(inventory);
-      //mutableInventory["status"] = "INICIADO";
       inventoryContext["status"] = "EM ANDAMENTO";
       st = await updateInventoryStatus(inventoryContext);
       inventory = inventoryContext;
       if(st==1) _updateButtonState();
       
+    }
+    return st;
+  }
+
+  Future<int> finishInventory() async {
+    // Busca o inventário com status Não Iniciado ou Iniciado
+    DBInventory db = DBInventory.instance;
+    Map<String, dynamic>? inventoryContext = await db.queryFirstInventoryByStatus();
+    int st = 0;
+    if (inventoryContext != null) { // Atualiza para concluído
+      inventoryContext["status"] = "CONCLUÍDO";
+      st = await updateInventoryStatus(inventoryContext);
+      inventory = inventoryContext;
+      if(st>0) {
+        createInventory();
+        _updateButtonState();
+      }
     }
     return st;
   }
@@ -248,10 +262,7 @@ class _InventoryPageState extends State<InventoryPage> {
             const SizedBox(height: 10),
             ElevatedButton(
               onPressed:updateControlls() ? () {
-                // método INICIAR
-                //iniciarInventory();
-                //String nomeInventario = _nomeController.text;
-                //updateInventoryStatus(inventory?["_id"],"INICIADO");
+                finishInventory();
               }: null,
               style: ElevatedButton.styleFrom(
                 backgroundColor: updateControlls() ? Colors.blue : Colors.grey,
@@ -269,7 +280,7 @@ class _InventoryPageState extends State<InventoryPage> {
             const SizedBox(height: 10),
             ElevatedButton(
               onPressed:updateControlls() ? () {
-                // método cancelar
+                //finishInventory();
               }:null,
               style: ElevatedButton.styleFrom(
                 backgroundColor: updateControlls() ? Colors.blue : Colors.grey,
