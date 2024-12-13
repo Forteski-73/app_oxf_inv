@@ -128,10 +128,18 @@ class DBInventory {
     return await db.update(tableInvent, row, where: '$columnId = ?', whereArgs: [id]);
   }
 
-  Future<List<Map<String, dynamic>>> queryAllInventory() async {
+  /*Future<List<Map<String, dynamic>>> queryAllInventory() async {
     Database db = await instance.database;
     return await db.query(tableInventory);
-  }
+  }*/
+
+Future<List<Map<String, dynamic>>> queryAllInventory() async {
+  Database db = await instance.database;
+  return await db.query(
+    tableInventory,
+    orderBy: '_id DESC',
+  );
+}
 
   Future<Map<String, dynamic>?> queryFirstInventoryByStatus() async {
   Database db = await instance.database;

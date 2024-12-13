@@ -77,7 +77,7 @@ class InventoryManagementPage extends StatelessWidget {
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
                           Text('Criar Inventário'),
-                          Icon(Icons.arrow_forward),
+                          Icon(Icons.navigate_next_sharp),
                         ],
                       ),
                     ),
@@ -99,7 +99,7 @@ class InventoryManagementPage extends StatelessWidget {
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
                           Text('Histórico Inventários'),
-                          Icon(Icons.arrow_forward),
+                          Icon(Icons.navigate_next_sharp),
                         ],
                       ),
                     ),

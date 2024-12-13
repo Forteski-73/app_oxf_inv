@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
-import '../pages/export.dart';
+import '../pages/inventoryExport.dart';
 import '../pages/import.dart';
 import '../pages/management.dart';
 import '../pages/settings.dart';
+import '../pages/InventoryHistory.dart';
 import '../pages/sync.dart';
 
 void main() {
@@ -50,7 +51,8 @@ class MenuPage extends StatelessWidget {
                 context,
                 icon: Icons.upload_outlined,
                 label: "Exportação de Dados",
-                page: const ExportPage(), // Página de Exportação de Dados
+                page: const InventoryHistory(),
+                //page: const ExportPage(), // Página de Exportação de Dados
               ),
               _menuItem(
                 context,
