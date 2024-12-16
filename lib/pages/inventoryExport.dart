@@ -7,9 +7,7 @@ import 'package:path_provider/path_provider.dart';
 import 'package:sqflite/sqflite.dart';
 
 void main() {
-  runApp(MaterialApp(
-    debugShowCheckedModeBanner: false,
-  ));
+  runApp(MaterialApp(debugShowCheckedModeBanner: false,));
 }
 
 class InventoryExportPage extends StatefulWidget {
@@ -38,23 +36,27 @@ class _InventoryExportPage extends State<InventoryExportPage> {
   List<Map<String, dynamic>> _records = [];
   bool _isLoading = true;
 
-  @override
-  void initState() {
-    super.initState();
-    _dbInventory = DBInventory.instance;
+@override
+void initState() {
+  super.initState();
+  _dbInventory = DBInventory.instance;
 
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _fetchInventoryDetails(context);
-    });
+  WidgetsBinding.instance.addPostFrameCallback((_) {
 
-    _filePathController.text = r'\\srvapp02\Studio\Publico\arquivo_INV.xlsx';
-
-    for (var field in _fields) {
-      _selectedFields[field] = true;
+    if (mounted) {
+      _fetchInventoryDetails();
     }
-  }
+  });
 
-  Future<void> _fetchInventoryDetails(BuildContext context) async {
+  _filePathController.text = r'\\srvapp02\Studio\Publico\arquivo_INV.xlsx';
+
+  // Initialize selected fields to true
+  for (var field in _fields) {
+    _selectedFields[field] = true;
+  }
+}
+
+  Future<void> _fetchInventoryDetails() async {
     try {
       final inventoryResult = await _dbInventory.database.then((db) => db.query(
         DBInventory.tableInventory,
@@ -77,7 +79,7 @@ class _InventoryExportPage extends State<InventoryExportPage> {
       setState(() {
         _isLoading = false;
       });
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Erro ao carregar os dados: $e')));
+      //ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Erro ao carregar os dados: $e')));
     }
   }
 

@@ -198,7 +198,7 @@ Future<List<Map<String, dynamic>>> queryAllInventory() async {
     {
       int inventoryId = row[columnInventoryId];
 
-      List<Map<String, dynamic>> inventoryResults = await db.query( // pea o total já somado no Inventário
+      List<Map<String, dynamic>> inventoryResults = await db.query( // para o total já somado no Inventário
         tableInventory,
         columns: [columnTotal],
         where: '$columnId = ?',
