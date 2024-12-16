@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../pages/InventoryHistory.dart';
 import 'inventory.dart';
 
 void main() {
@@ -32,7 +33,7 @@ class InventoryManagementPage extends StatelessWidget {
           Column(
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              const SizedBox(height: 50),
+              const SizedBox(height: 60),
               // Logo
               Center(
                 child: Column(
@@ -44,7 +45,7 @@ class InventoryManagementPage extends StatelessWidget {
                   ],
                 ),
               ),
-              const SizedBox(height: 30),
+              const SizedBox(height: 50),
               // Título
               const Text(
                 'Selecione a ação desejada',
@@ -65,9 +66,9 @@ class InventoryManagementPage extends StatelessWidget {
                         );
                       },
                       style: ElevatedButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(vertical: 15),
+                        padding: const EdgeInsets.symmetric(vertical: 25),
                         minimumSize: const Size(double.infinity, 50),
-                        backgroundColor: Colors.grey[300],
+                        backgroundColor: Colors.white,
                         foregroundColor: Colors.black,
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(8),
@@ -76,8 +77,11 @@ class InventoryManagementPage extends StatelessWidget {
                       child: const Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          Text('Criar Inventário'),
-                          Icon(Icons.navigate_next_sharp),
+                          Padding(
+                            padding: EdgeInsets.only(left: 10), // Espaço de 5px antes do texto
+                            child: Text('Criar Inventário', style: TextStyle(fontSize: 16)),
+                          ),
+                          Icon(Icons.navigate_next_sharp, size: 30,),
                         ],
                       ),
                     ),
@@ -85,11 +89,15 @@ class InventoryManagementPage extends StatelessWidget {
                     ElevatedButton(
                       onPressed: () {
                         // Chamar Histórico Inventários
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (context) => InventoryHistory()),
+                        );
                       },
                       style: ElevatedButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(vertical: 15),
+                        padding: const EdgeInsets.symmetric(vertical: 25),
                         minimumSize: const Size(double.infinity, 50),
-                        backgroundColor: Colors.grey[300],
+                        backgroundColor: Colors.white,
                         foregroundColor: Colors.black,
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(8),
@@ -98,8 +106,11 @@ class InventoryManagementPage extends StatelessWidget {
                       child: const Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          Text('Histórico Inventários'),
-                          Icon(Icons.navigate_next_sharp),
+                          Padding(
+                            padding: EdgeInsets.only(left: 10), // Espaço de 5px antes do texto
+                            child: Text('Histórico de Inventários', style: TextStyle(fontSize: 16)),
+                          ),
+                          Icon(Icons.navigate_next_sharp, size: 30,),
                         ],
                       ),
                     ),

@@ -77,14 +77,22 @@ class _InventoryHistoryDetailState extends State<InventoryHistoryDetail> {
                   Card(
                     color: _inventory[DBInventory.columnStatus] == 'CONCLUÍDO'
                         ? Colors.green.shade100
-                        : Colors.orange.shade100,
+                        : _inventory[DBInventory.columnStatus] == 'EM ANDAMENTO'
+                            ? Colors.orange.shade100
+                            : _inventory[DBInventory.columnStatus] == 'NÃO INICIADO'
+                                ? Colors.blue.shade100
+                                : Colors.grey.shade100,  // Cor padrão caso o status seja desconhecido
                     child: ListTile(
                       title: Text(
                         _inventory[DBInventory.columnStatus] ?? 'Status não disponível',
                         style: TextStyle(
                           color: _inventory[DBInventory.columnStatus] == 'CONCLUÍDO'
                               ? Colors.green
-                              : Colors.orange,
+                              : _inventory[DBInventory.columnStatus] == 'EM ANDAMENTO'
+                                  ? Colors.orange
+                                  : _inventory[DBInventory.columnStatus] == 'NÃO INICIADO'
+                                      ? Colors.blue
+                                      : Colors.grey, // Cor para status desconhecido
                           fontWeight: FontWeight.bold,
                         ),
                       ),

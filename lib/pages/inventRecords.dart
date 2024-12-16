@@ -194,10 +194,16 @@ class InventoryPageState extends State<InventoryRecordsPage> {
     required String label,
     required bool visible,
     required bool enabled,
+    required bool required,
     required TextEditingController controller, // Torne o controlador obrigatório
     required Map<String, Map<String, dynamic>> settings,
     Icon? suffixIcon
-  }) {
+}) {
+  // Verifica se o campo é obrigatório e adiciona '*' no label
+  String labelWithAsterisk = label;
+  if (required) {
+    labelWithAsterisk = '$label *';  // Adiciona o "*" ao label
+  }
     return Visibility(
       visible: visible,
       child: Padding(
@@ -207,9 +213,9 @@ class InventoryPageState extends State<InventoryRecordsPage> {
           enabled: enabled,
           onChanged: (_) => _validateMandatoryFields(settings),
           decoration: InputDecoration(
-            labelText: label,
+            labelText: labelWithAsterisk,
             suffixIcon: suffixIcon,
-            border: const OutlineInputBorder()
+            border: const OutlineInputBorder(),
           ),
         ),
       ),
@@ -252,8 +258,9 @@ class InventoryPageState extends State<InventoryRecordsPage> {
                   ),
                   _buildTextField(
                     label: 'Unitizador',
-                    visible: settings['Unitizador']?['exibir'] == 1,
-                    enabled: settings['Unitizador']?['obrigatorio'] == 1,
+                    visible: true,
+                    enabled: settings['Unitizador']?['exibir'] == 1,
+                    required: settings['Unitizador']?['obrigatorio'] == 1,
                     controller: controllers[0],
                     settings: settings,
                     suffixIcon: const Icon(Icons.barcode_reader),
@@ -261,8 +268,9 @@ class InventoryPageState extends State<InventoryRecordsPage> {
                   const SizedBox(height: 8),
                   _buildTextField(
                     label: 'Posição',
-                    visible: settings['Posição']?['exibir'] == 1,
-                    enabled: settings['Posição']?['obrigatorio'] == 1,
+                    visible: true,
+                    enabled: settings['Posição']?['exibir'] == 1,
+                    required: settings['Posição']?['obrigatorio'] == 1,
                     controller: controllers[1],
                     settings: settings,
                     suffixIcon: const Icon(Icons.barcode_reader),
@@ -273,8 +281,9 @@ class InventoryPageState extends State<InventoryRecordsPage> {
                       Expanded(
                         child: _buildTextField(
                           label: 'Depósito',
-                          visible: settings['Depósito']?['exibir'] == 1,
-                          enabled: settings['Depósito']?['obrigatorio'] == 1,
+                          visible: true,
+                          enabled: settings['Depósito']?['exibir'] == 1,
+                          required: settings['Depósito']?['obrigatorio'] == 1,
                           controller: controllers[2],
                           settings: settings,
                         ),
@@ -283,8 +292,9 @@ class InventoryPageState extends State<InventoryRecordsPage> {
                       Expanded(
                         child: _buildTextField(
                           label: 'Bloco',
-                          visible: settings['Bloco']?['exibir'] == 1,
-                          enabled: settings['Bloco']?['obrigatorio'] == 1,
+                          visible: true,
+                          enabled: settings['Bloco']?['exibir'] == 1,
+                          required: settings['Bloco']?['obrigatorio'] == 1,
                           controller: controllers[3],
                           settings: settings,
                         ),
@@ -297,8 +307,9 @@ class InventoryPageState extends State<InventoryRecordsPage> {
                       Expanded(
                         child: _buildTextField(
                           label: 'Quadra',
-                          visible: settings['Quadra']?['exibir'] == 1,
-                          enabled: settings['Quadra']?['obrigatorio'] == 1,
+                          visible: true,
+                          enabled: settings['Quadra']?['exibir'] == 1,
+                          required: settings['Quadra']?['obrigatorio'] == 1,
                           controller: controllers[4],
                           settings: settings,
                         ),
@@ -307,8 +318,9 @@ class InventoryPageState extends State<InventoryRecordsPage> {
                       Expanded(
                         child: _buildTextField(
                           label: 'Lote',
-                          visible: settings['Lote']?['exibir'] == 1,
-                          enabled: settings['Lote']?['obrigatorio'] == 1,
+                          visible: true,
+                          enabled: settings['Lote']?['exibir'] == 1,
+                          required: settings['Lote']?['obrigatorio'] == 1,
                           controller: controllers[5],
                           settings: settings,
                         ),
@@ -318,16 +330,18 @@ class InventoryPageState extends State<InventoryRecordsPage> {
                   const SizedBox(height: 8),
                   _buildTextField(
                     label: 'Andar',
-                    visible: settings['Andar']?['exibir'] == 1,
-                    enabled: settings['Andar']?['obrigatorio'] == 1,
+                    visible: true,
+                    enabled: settings['Andar']?['exibir'] == 1,
+                    required: settings['Andar']?['obrigatorio'] == 1,
                     controller: controllers[6],
                     settings: settings,
                   ),
                   const SizedBox(height: 8),
                   _buildTextField(
                     label: 'Código de Barras',
-                    visible: settings['Código de Barras']?['exibir'] == 1,
-                    enabled: settings['Código de Barras']?['obrigatorio'] == 1,
+                    visible: true,
+                    enabled: settings['Código de Barras']?['exibir'] == 1,
+                    required: settings['Código de Barras']?['obrigatorio'] == 1,
                     controller: controllers[7],
                     settings: settings,
                     suffixIcon: const Icon(Icons.barcode_reader),
@@ -338,8 +352,9 @@ class InventoryPageState extends State<InventoryRecordsPage> {
                       Expanded(
                         child: _buildTextField(
                           label: 'Qtde Padrão da Pilha',
-                          visible: settings['Qtde Padrão da Pilha']?['exibir'] == 1,
-                          enabled: settings['Qtde Padrão da Pilha']?['obrigatorio'] == 1,
+                          visible: true,
+                          enabled: settings['Qtde Padrão da Pilha']?['exibir'] == 1,
+                          required: settings['Qtde Padrão da Pilha']?['obrigatorio'] == 1,
                           controller: controllers[8],
                           settings: settings,
                         ),
@@ -348,8 +363,9 @@ class InventoryPageState extends State<InventoryRecordsPage> {
                       Expanded(
                         child: _buildTextField(
                           label: 'Qtde de Pilhas Completas',
-                          visible: settings['Qtde de Pilhas Completas']?['exibir'] == 1,
-                          enabled: settings['Qtde de Pilhas Completas']?['obrigatorio'] == 1,
+                          visible: true,
+                          enabled: settings['Qtde de Pilhas Completas']?['exibir'] == 1,
+                          required: settings['Qtde de Pilhas Completas']?['obrigatorio'] == 1,
                           controller: controllers[9],
                           settings: settings,
                         ),
@@ -359,8 +375,9 @@ class InventoryPageState extends State<InventoryRecordsPage> {
                   const SizedBox(height: 8),
                   _buildTextField(
                     label: 'Qtde de Itens Avulsos',
-                    visible: settings['Qtde de Itens Avulsos']?['exibir'] == 1,
-                    enabled: settings['Qtde de Itens Avulsos']?['obrigatorio'] == 1,
+                    visible: true,
+                    enabled: settings['Qtde de Itens Avulsos']?['exibir'] == 1,
+                    required: settings['Qtde de Itens Avulsos']?['obrigatorio'] == 1,
                     controller: controllers[10],
                     settings: settings,
                   ),

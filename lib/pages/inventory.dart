@@ -16,6 +16,7 @@ class _InventoryPageState extends State<InventoryPage> {
   final TextEditingController _dateController   = TextEditingController(); 
   final TextEditingController _nameController   = TextEditingController();
   final TextEditingController _sectorController = TextEditingController(); 
+  int _statusController = 0;
   Map<String, dynamic>? inventory;
 
   @override
@@ -43,11 +44,36 @@ class _InventoryPageState extends State<InventoryPage> {
     setState(() {}); // Atualiza a interface quando o texto dos controladores mudar
   }
 
-  bool updateControlls() {
-    return _codeController.text.isNotEmpty &&
-          _dateController.text.isNotEmpty &&
-          _nameController.text.isNotEmpty &&
-          _sectorController.text.isNotEmpty;
+  bool updateControlls(int flag) {
+    switch (flag) {
+      case 0:
+        return _statusController == 1 &&
+              _codeController.text.isNotEmpty &&
+              _dateController.text.isNotEmpty &&
+              _nameController.text.isNotEmpty &&
+              _sectorController.text.isNotEmpty;
+      case 1:
+        return _statusController == 0 &&
+              _codeController.text.isNotEmpty &&
+              _dateController.text.isNotEmpty &&
+              _nameController.text.isNotEmpty &&
+              _sectorController.text.isNotEmpty;
+
+      case 2:
+        return _statusController > 0 &&
+              _codeController.text.isNotEmpty &&
+              _dateController.text.isNotEmpty &&
+              _nameController.text.isNotEmpty &&
+              _sectorController.text.isNotEmpty;
+      case 3:
+        return _statusController >= 0 &&
+              _codeController.text.isNotEmpty &&
+              _dateController.text.isNotEmpty &&
+              _nameController.text.isNotEmpty &&
+              _sectorController.text.isNotEmpty;
+      default:
+        return false;
+    }
   }
 
   Future<int> startInventory() async {
@@ -59,8 +85,10 @@ class _InventoryPageState extends State<InventoryPage> {
       inventoryContext["status"] = "EM ANDAMENTO";
       st = await updateInventoryStatus(inventoryContext);
       inventory = inventoryContext;
-      if(st==1) _updateButtonState();
-      
+      if(st==1) {
+        _updateButtonState();
+        _statusController = 1;
+      }
     }
     return st;
   }
@@ -108,7 +136,12 @@ class _InventoryPageState extends State<InventoryPage> {
     if (inventory == null) { 
       int st = await db.insertInventory(inventoryRow);
       inventory = await db.queryFirstInventoryByStatus();
+      _statusController = 0;
     }
+    else if(inventory?["status"]=="EM ANDAMENTO"){
+      _statusController = 1;
+    }
+    
     if (inventory != null) { 
       _codeController.text = inventory?["code"];
       _dateController.text = inventory?["date"];
@@ -128,6 +161,62 @@ class _InventoryPageState extends State<InventoryPage> {
     });
     return st;
     //loadData();  // Recarregar os dados após a atualização
+  }
+
+  // Confirmação para finalizar
+  void _showConfirFinish(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(8),
+          ),
+          content: const Text(
+            'Deseja realmente finalizar o inventário?\n'
+            'Esta ação bloqueará todas as alterações.',
+          ),
+          actions: [
+            Row(
+              children: [
+                Expanded(
+                  child: ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      padding: const EdgeInsets.all(16),
+                      backgroundColor: Colors.red,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                    ),
+                    onPressed: () {
+                      Navigator.of(context).pop(); // Fecha o popup
+                    },
+                    child: const Text('CANCELAR', style: TextStyle(color: Colors.white),),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      padding: const EdgeInsets.all(16),
+                      backgroundColor: Colors.blue,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                    ),
+                    onPressed: () {
+                      finishInventory();
+                      Navigator.of(context).pop(); // Fecha o popup
+                    },
+                    child: const Text('SIM', style: TextStyle(color: Colors.white),),
+                  ),
+                ),
+              ],
+            ),
+          ],
+          );
+      },
+    );
   }
 
   @override
@@ -231,22 +320,52 @@ class _InventoryPageState extends State<InventoryPage> {
               ),
             ),
             const Spacer(),
-            ElevatedButton(
-              onPressed: updateControlls()
-                  ? () async {
-                      int result = await startInventory();
-                      if (result == 1) {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => const InventoryRecordsPage(),
-                          ),
-                        );
-                      }
+            ElevatedButton.icon(
+              onPressed: updateControlls(0)
+                ? () async {
+                    int result = await startInventory();
+                    if (result == 1) {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const InventoryRecordsPage(),
+                        ),
+                      );
                     }
-                  : null,
+                  }
+                : null,
+              icon: const Icon(Icons.barcode_reader,color: Colors.white),
+              label: const Text(
+                'REGISTRAR ITENS',
+                style: TextStyle(fontSize: 16, color: Colors.white),
+              ),
               style: ElevatedButton.styleFrom(
-                backgroundColor: updateControlls() ? Colors.blue : Colors.grey,
+                backgroundColor: updateControlls(0) ? Colors.blue : Colors.grey,
+                padding: const EdgeInsets.symmetric(vertical: 15),
+                minimumSize: const Size(double.infinity, 50),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+              ),
+            ),
+            const Spacer(),
+            
+            ElevatedButton(
+              onPressed: updateControlls(1)
+                ? () async {
+                    int result = await startInventory();
+                    /*if (result == 1) {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const InventoryRecordsPage(),
+                        ),
+                      );
+                    }*/
+                  }
+                : null,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: updateControlls(1) ? Colors.blue : Colors.grey,
                 padding: const EdgeInsets.symmetric(vertical: 15),
                 minimumSize: const Size(double.infinity, 50),
                 shape: RoundedRectangleBorder(
@@ -258,13 +377,14 @@ class _InventoryPageState extends State<InventoryPage> {
                 style: TextStyle(fontSize: 16, color: Colors.white),
               ),
             ),
+
             const SizedBox(height: 10),
             ElevatedButton(
-              onPressed:updateControlls() ? () {
-                finishInventory();
+              onPressed:updateControlls(2) ? () {
+                _showConfirFinish(context);
               }: null,
               style: ElevatedButton.styleFrom(
-                backgroundColor: updateControlls() ? Colors.blue : Colors.grey,
+                backgroundColor: updateControlls(2) ? Colors.blue : Colors.grey,
                 padding: const EdgeInsets.symmetric(vertical: 15),
                 minimumSize: const Size(double.infinity, 50),
                 shape: RoundedRectangleBorder(
@@ -276,13 +396,14 @@ class _InventoryPageState extends State<InventoryPage> {
                 style: TextStyle(fontSize: 16, color: Colors.white),
               ),
             ),
+
             const SizedBox(height: 10),
             ElevatedButton(
-              onPressed:updateControlls() ? () {
+              onPressed:updateControlls(3) ? () {
                 //finishInventory();
               }:null,
               style: ElevatedButton.styleFrom(
-                backgroundColor: updateControlls() ? Colors.blue : Colors.grey,
+                backgroundColor: updateControlls(3) ? Colors.blue : Colors.grey,
                 padding: const EdgeInsets.symmetric(vertical: 15),
                 minimumSize: const Size(double.infinity, 50),
                 shape: RoundedRectangleBorder(

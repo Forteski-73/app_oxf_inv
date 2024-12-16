@@ -110,12 +110,28 @@ class DBInventory {
     ''');
   }
 
-  // Métodos CRUD para Inventory
   Future<int> insertInventory(Map<String, dynamic> row) async {
+    //Database db = await instance.database;
+    //return await db.insert(tableInventory, row);
     Database db = await instance.database;
-    return await db.insert(tableInventory, row);
-  }
+    String code = row[columnCode];
 
+    int id = await db.insert(tableInventory, row);
+
+    // Concatenar o "_id" ao "code" após a inserção
+    if (id > 0) {
+      // Atualiza o código concatenando o "_id"
+      String newCode = "$code-$id";
+      id = await db.update(
+        tableInventory,
+        {columnCode: newCode},
+        where: '$columnId = ?',
+        whereArgs: [id],
+      );
+    }
+    return id;
+  }
+  
   Future<int> updateInventory(Map<String, dynamic> row) async {
     Database db = await instance.database;
     int id = row[columnId];
