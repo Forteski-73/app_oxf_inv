@@ -24,8 +24,7 @@ class DBSettings {
   }
 
   Future<Database> _initDatabase() async {
-    // Obtendo o diretório para armazenar o banco de dados
-    var databasesPath = await getDatabasesPath();
+    var databasesPath = await getDatabasesPath(); // Diretório do banco de dados
     String path = join(databasesPath, _databaseName);
 
     // Abrindo ou criando o banco de dados

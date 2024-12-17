@@ -26,7 +26,7 @@ class _InventoryExportPage extends State<InventoryExportPage> {
     'Qtde de Itens Avulsos'
   ];
   final Map<String, bool> _selectedFields = {};
-  String _separator = '.';
+  String _separator = ';';
   final TextEditingController _emailController = TextEditingController();
   bool _exportToEmail = true;
   bool _exportToFilePath = false;
@@ -48,7 +48,7 @@ void initState() {
     }
   });
 
-  _filePathController.text = r'\\srvapp02\Studio\Publico\arquivo_INV.xlsx';
+  _filePathController.text = r'\\srvapp02\Studio\Publico\';
 
   // Initialize selected fields to true
   for (var field in _fields) {
@@ -93,43 +93,57 @@ void initState() {
       );
 
       var excel = Excel.createExcel();
+      excel.rename('Sheet1', 'Inventário');
       var sheet = excel['Inventário'];
+
       sheet.appendRow([
-        'ID', 'Unitizer', 'Position', 'Deposit', 'Block A', 'Block B',
-        'Lot', 'Floor', 'Barcode', 'Standard Stack Quantity',
-        'Complete Stacks', 'Loose Items', 'Subtotal'
+        TextCellValue('ID'),
+        TextCellValue('Unitizer'),
+        TextCellValue('Position'),
+        TextCellValue('Deposit'),
+        TextCellValue('Block A'),
+        TextCellValue('Block B'),
+        TextCellValue('Lot'),
+        TextCellValue('Floor'),
+        TextCellValue('Barcode'),
+        TextCellValue('Standard Stack Quantity'),
+        TextCellValue('Complete Stacks'),
+        TextCellValue('Loose Items'),
+        TextCellValue('Subtotal'),
       ]);
 
       for (var record in inventoryRecords) {
         sheet.appendRow([
-          record[DBInventory.columnId],
-          record[DBInventory.columnUnitizer],
-          record[DBInventory.columnPosition],
-          record[DBInventory.columnDeposit],
-          record[DBInventory.columnBlockA],
-          record[DBInventory.columnBlockB],
-          record[DBInventory.columnLot],
-          record[DBInventory.columnFloor],
-          record[DBInventory.columnBarcode],
-          record[DBInventory.columnStandardStackQtd],
-          record[DBInventory.columnNumberCompleteStacks],
-          record[DBInventory.columnNumberLooseItems],
-          record[DBInventory.columnSubTotal]
+          IntCellValue(record[DBInventory.columnId] as int),
+          TextCellValue(record[DBInventory.columnUnitizer] as String),
+          TextCellValue(record[DBInventory.columnPosition] as String),
+          TextCellValue(record[DBInventory.columnDeposit] as String),
+          TextCellValue(record[DBInventory.columnBlockA] as String),
+          TextCellValue(record[DBInventory.columnBlockB] as String),
+          TextCellValue(record[DBInventory.columnLot] as String),
+          IntCellValue(record[DBInventory.columnFloor] as int),
+          TextCellValue(record[DBInventory.columnBarcode] as String),
+          IntCellValue( record[DBInventory.columnStandardStackQtd] as int),
+          IntCellValue(record[DBInventory.columnNumberCompleteStacks] as int),
+          IntCellValue(record[DBInventory.columnNumberLooseItems] as int),
+          IntCellValue(record[DBInventory.columnSubTotal] as int)
         ]);
       }
 
       // Salvar o arquivo Excel
-      var directory = await getApplicationDocumentsDirectory();
+      //var directory = await getApplicationDocumentsDirectory();
+      final Directory directory = Directory(_filePathController.text);
       if (await directory.exists()) {
-        String filePath = join(directory.path, 'arquivo.xlsx');
+        String filePath = join(directory.path, 'Inventario_${widget.inventoryId}.xlsx');
         var file = File(filePath);
         List<int> bytes = excel.encode() ?? [];
         await file.writeAsBytes(bytes);
 
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Arquivo exportado para: $filePath')));
       } else {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Erro ao salvar o arquivo')));
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Erro ao salvar o arquivo')));
       }
+      
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Erro ao exportar: $e')));
     }
