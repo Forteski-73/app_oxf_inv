@@ -192,7 +192,7 @@ Future<List<Map<String, dynamic>>> queryAllInventory() async {
   Future<int> insertInventoryRecord(Map<String, dynamic> row) async {
     Database db = await instance.database;
     int st = 0;
-
+    
     int inventoryRecordId = await db.insert(tableInventoryRecord, row);
     if(inventoryRecordId > 0)
     {

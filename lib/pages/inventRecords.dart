@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:app_oxf_inv/operator/db_settings.dart';
 import 'package:app_oxf_inv/operator/db_inventory.dart';
+import 'searchProduct.dart';
 
 class InventoryRecordsPage extends StatefulWidget {
   const InventoryRecordsPage({super.key});
@@ -109,15 +110,20 @@ class InventoryPageState extends State<InventoryRecordsPage> {
     }
   }
 
+  int getValidInt(String? value) {
+    // Verifica se o valor é null ou vazio e retorna 0 pra não dar pau
+    return (value == null || value.isEmpty) ? 0 : int.parse(value);
+  }
+
   Future<int> saveData(BuildContext context) async {
     Map<String, dynamic>? inventory;
     DBInventory db = DBInventory.instance;
     int st = 0;
-    int subTotal = 0, total = 0;
+    int subTotal = 0;
 
     try {
 
-      subTotal = (int.parse(controllers[8].text)*int.parse(controllers[9].text))+int.parse(controllers[10].text);
+      subTotal = (getValidInt(controllers[8].text)*getValidInt(controllers[9].text))+getValidInt(controllers[10].text);
       inventory = await db.queryFirstInventoryByStatus();
       // Mapeamento dos dados
       inventoryRecordRow = {
@@ -170,7 +176,7 @@ class InventoryPageState extends State<InventoryRecordsPage> {
     } catch (e) {
       //print("Erro ao salvar os dados no banco..: $e");
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Erro ao salvar os dados.')),
+        SnackBar(content: Text('Erro ao salvar os dados: ${e}')),
       );
     }
 
@@ -190,28 +196,97 @@ class InventoryPageState extends State<InventoryRecordsPage> {
     });
   }
 
-  Widget _buildTextField({
+  void _validateFields(String value, int id) {
+    const sequence1 = '07891361'; // Primeira sequência válida
+    const sequence2 = '7891361';  // Segunda sequência válida
+    
+    if (value.isEmpty) {
+      return;
+    }
+
+    // Verifica a sequência "0789361"
+    if (id == 8 && !_isSequenceValid(value, sequence1) && !_isSequenceValid(value, sequence2)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Código inválido.',
+          style: TextStyle(color: Colors.white, fontSize: 18,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+          backgroundColor: Color.fromARGB(255, 247, 94, 83),
+        ),
+      );
+      _clearField(id);
+    }
+    return;
+  }
+
+  bool _isSequenceValid(String value, String sequence) {
+    for (int i = 0; i < sequence.length; i++) {
+      if(i < value.length) {
+        if (value[i] != sequence[i]) {
+          return false;
+        }
+      }
+    }
+    return true; // barcode válido
+  }
+
+  void _clearField(int id) {
+    if(id == 8) {
+      controllers[7].text = "";
+      //controllers[7].clear();
+    }
+  }
+
+  Widget _buildTextField({ 
+    required int id,
     required String label,
     required bool visible,
     required bool enabled,
     required bool required,
-    required TextEditingController controller, // Torne o controlador obrigatório
+    required TextEditingController controller,
     required Map<String, Map<String, dynamic>> settings,
-    Icon? suffixIcon
-}) {
-  // Verifica se o campo é obrigatório e adiciona '*' no label
-  String labelWithAsterisk = label;
-  if (required) {
-    labelWithAsterisk = '$label *';  // Adiciona o "*" ao label
-  }
+    Widget? suffixIcon, 
+    BuildContext? context,
+  }) {
+    String labelWithAsterisk = label;
+    if (required) {
+      labelWithAsterisk = '$label *'; // Adiciona o "*" ao label
+    }
+
+    suffixIcon = null;
+
+    if (id == 8) { // Quando for barcode
+      suffixIcon = IconButton(
+        icon: const Icon(Icons.search),
+        onPressed: () {
+          if (context != null) {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => SearchProduct(
+                  onProductSelected: (selectedProduct) {
+                    controller.text = selectedProduct; // Atualiza o campo com o produto selecionado
+                  },
+                ),
+              ),
+            );
+          }
+        },
+      );
+    }
+
     return Visibility(
       visible: visible,
       child: Padding(
         padding: const EdgeInsets.only(bottom: 8.0),
         child: TextField(
-          controller: controller, // Associa o controlador
+          controller: controller,
           enabled: enabled,
-          onChanged: (_) => _validateMandatoryFields(settings),
+          onChanged: (value) {
+            _validateMandatoryFields(settings);
+            _validateFields(value, id);
+          },
           decoration: InputDecoration(
             labelText: labelWithAsterisk,
             suffixIcon: suffixIcon,
@@ -257,6 +332,7 @@ class InventoryPageState extends State<InventoryRecordsPage> {
                     ),
                   ),
                   _buildTextField(
+                    id: 1,
                     label: 'Unitizador',
                     visible: true,
                     enabled: settings['Unitizador']?['exibir'] == 1,
@@ -267,6 +343,7 @@ class InventoryPageState extends State<InventoryRecordsPage> {
                   ),
                   const SizedBox(height: 8),
                   _buildTextField(
+                    id: 2,
                     label: 'Posição',
                     visible: true,
                     enabled: settings['Posição']?['exibir'] == 1,
@@ -280,6 +357,7 @@ class InventoryPageState extends State<InventoryRecordsPage> {
                     children: [
                       Expanded(
                         child: _buildTextField(
+                          id: 3,
                           label: 'Depósito',
                           visible: true,
                           enabled: settings['Depósito']?['exibir'] == 1,
@@ -291,6 +369,7 @@ class InventoryPageState extends State<InventoryRecordsPage> {
                       const SizedBox(width: 8),
                       Expanded(
                         child: _buildTextField(
+                          id: 4,
                           label: 'Bloco',
                           visible: true,
                           enabled: settings['Bloco']?['exibir'] == 1,
@@ -306,6 +385,7 @@ class InventoryPageState extends State<InventoryRecordsPage> {
                     children: [
                       Expanded(
                         child: _buildTextField(
+                          id: 5,
                           label: 'Quadra',
                           visible: true,
                           enabled: settings['Quadra']?['exibir'] == 1,
@@ -317,6 +397,7 @@ class InventoryPageState extends State<InventoryRecordsPage> {
                       const SizedBox(width: 8),
                       Expanded(
                         child: _buildTextField(
+                          id: 6,
                           label: 'Lote',
                           visible: true,
                           enabled: settings['Lote']?['exibir'] == 1,
@@ -329,6 +410,7 @@ class InventoryPageState extends State<InventoryRecordsPage> {
                   ),
                   const SizedBox(height: 8),
                   _buildTextField(
+                    id: 7,
                     label: 'Andar',
                     visible: true,
                     enabled: settings['Andar']?['exibir'] == 1,
@@ -338,6 +420,7 @@ class InventoryPageState extends State<InventoryRecordsPage> {
                   ),
                   const SizedBox(height: 8),
                   _buildTextField(
+                    id: 8,
                     label: 'Código de Barras',
                     visible: true,
                     enabled: settings['Código de Barras']?['exibir'] == 1,
@@ -345,12 +428,14 @@ class InventoryPageState extends State<InventoryRecordsPage> {
                     controller: controllers[7],
                     settings: settings,
                     suffixIcon: const Icon(Icons.barcode_reader),
+                    context: context,
                   ),
                   const SizedBox(height: 8),
                   Row(
                     children: [
                       Expanded(
                         child: _buildTextField(
+                          id: 9,
                           label: 'Qtde Padrão da Pilha',
                           visible: true,
                           enabled: settings['Qtde Padrão da Pilha']?['exibir'] == 1,
@@ -362,6 +447,7 @@ class InventoryPageState extends State<InventoryRecordsPage> {
                       const SizedBox(width: 8),
                       Expanded(
                         child: _buildTextField(
+                          id: 10,
                           label: 'Qtde de Pilhas Completas',
                           visible: true,
                           enabled: settings['Qtde de Pilhas Completas']?['exibir'] == 1,
@@ -374,6 +460,7 @@ class InventoryPageState extends State<InventoryRecordsPage> {
                   ),
                   const SizedBox(height: 8),
                   _buildTextField(
+                    id: 11,
                     label: 'Qtde de Itens Avulsos',
                     visible: true,
                     enabled: settings['Qtde de Itens Avulsos']?['exibir'] == 1,

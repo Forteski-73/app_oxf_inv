@@ -71,7 +71,7 @@ class _SyncPageState extends State<SyncPage> with SingleTickerProviderStateMixin
 
         for (var product in data) {
           Map<String, dynamic> productData = {
-            DBItems.columnItemId: product['ItemId'],
+            /*DBItems.columnItemId: product['ItemId'],
             DBItems.columnItemBarCode: product['ItemBarCode'],
             DBItems.columnMSBProdBrandDescriptionId: product['MSBProdBrandDescriptionId'],
             DBItems.columnMSBProdBrandId: product['MSBProdBrandId'],
@@ -89,7 +89,7 @@ class _SyncPageState extends State<SyncPage> with SingleTickerProviderStateMixin
             DBItems.columnGrossWidth: product['GrossWidth'],
             DBItems.columnGrossDepth: product['GrossDepth'],
             DBItems.columnNameAlias: product['NameAlias'],
-            DBItems.columnNetWeight: product['NetWeight'],
+            DBItems.columnNetWeight: product['NetWeight'],*/
           };
 
           await DBItems.instance.insertProduct(productData);

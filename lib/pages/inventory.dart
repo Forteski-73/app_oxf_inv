@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'inventRecords.dart';
 import 'package:app_oxf_inv/operator/db_inventory.dart';
 import 'package:intl/intl.dart';
+import '../pages/management.dart';
 
 class InventoryPage extends StatefulWidget {
   const InventoryPage({super.key});
@@ -144,7 +145,7 @@ class _InventoryPageState extends State<InventoryPage> {
     
     if (inventory != null) { 
       _codeController.text = inventory?["code"];
-      _dateController.text = inventory?["date"];
+      _dateController.text = '${inventory?["date"]} $hour';
       _nameController.text = inventory?["name"];
       _sectorController.text = inventory?["sector"];
     }
@@ -273,6 +274,7 @@ class _InventoryPageState extends State<InventoryPage> {
                             Flexible(
                               flex: 3, // 60% (3/5 da largura total)
                               child: TextField(
+                                readOnly: true,
                                 decoration: const InputDecoration(
                                   labelText: 'Código do Inventário',
                                   border: OutlineInputBorder(),
@@ -400,7 +402,10 @@ class _InventoryPageState extends State<InventoryPage> {
             const SizedBox(height: 10),
             ElevatedButton(
               onPressed:updateControlls(3) ? () {
-                //finishInventory();
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => const InventoryManagementPage()),
+                );
               }:null,
               style: ElevatedButton.styleFrom(
                 backgroundColor: updateControlls(3) ? Colors.blue : Colors.grey,
