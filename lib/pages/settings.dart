@@ -87,48 +87,46 @@ void _confirmRestoreDefault(BuildContext context) {
     context: context,
     builder: (BuildContext context) {
       return AlertDialog(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(8),
+        ),
         content: const Text("Deseja mesmo restaurar o padrão?", style: TextStyle(fontWeight: FontWeight.bold,),),
         actions: [
-          TextButton(
-            onPressed: () {
-              Navigator.of(context).pop();
-            },
-            style: TextButton.styleFrom(
-              foregroundColor: Colors.white,
-              backgroundColor: const Color.fromARGB(255, 150, 150, 150),
-              padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 25), // tamanho do botão
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8),
+          Row(
+            children: [
+              Expanded(
+                child: ElevatedButton(
+                  onPressed: () {
+                    Navigator.of(context).pop();
+                  },
+                  style: ElevatedButton.styleFrom(
+                    padding: const EdgeInsets.all(16),
+                    backgroundColor: Colors.red,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                  ),
+                  child: const Text('CANCELAR', style: TextStyle(color: Colors.white),),
+                ),
               ),
-            ),
-            child: const Text(
-              "Cancelar",
-              style: TextStyle(
-                color: Colors.white,
-                fontWeight: FontWeight.bold, // negrito
+              const SizedBox(width: 8),
+              Expanded(
+                child: ElevatedButton(
+                  onPressed: () {
+                    Navigator.of(context).pop();
+                    restoreDefault();
+                  },
+                  style: ElevatedButton.styleFrom(
+                    padding: const EdgeInsets.all(16),
+                    backgroundColor: Colors.blue,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                  ),
+                  child: const Text('SIM', style: TextStyle(color: Colors.white),),
+                ),
               ),
-            ),
-          ),
-          TextButton(
-            onPressed: () {
-              Navigator.of(context).pop();
-              restoreDefault();
-            },
-            style: TextButton.styleFrom(
-              foregroundColor: Colors.white,
-              backgroundColor: Colors.blue,
-              padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 25),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8),
-              ),
-            ),
-            child: const Text(
-              "Sim",
-              style: TextStyle(
-                color: Colors.white,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
+            ],
           ),
         ],
       );
@@ -233,17 +231,18 @@ Widget build(BuildContext context) {
                     _confirmRestoreDefault(context);
                   },
                   style: TextButton.styleFrom(
-                    foregroundColor: Colors.white, backgroundColor: Colors.black,
+                    foregroundColor: Colors.white, backgroundColor: Colors.blue,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(8),
                     ),
+                    minimumSize: Size(double.infinity, 50),
                   ),
                   child: const Row(
                     mainAxisSize: MainAxisSize.min, // Ajusta o tamanho para caber no conteúdo
                     children: [
-                      Icon(Icons.refresh, color: Colors.white),
+                      Icon(Icons.refresh, color: Colors.white, size: 30),
                       SizedBox(width: 8), // Espaçamento entre ícone e texto
-                      Text("Restaurar Padrão",style: TextStyle(color: Colors.white),),
+                      Text("Restaurar Padrão", style: TextStyle(color: Colors.white, fontSize: 16)),
                     ],
                   ),
                 ),

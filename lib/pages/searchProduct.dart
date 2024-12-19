@@ -17,6 +17,7 @@ class _SearchProductState extends State<SearchProduct> {
   List<Map<String, dynamic>> _allProducts       = [];
   List<Map<String, dynamic>> _filteredProducts  = [];
   final String _apiUrl  = "http://wsintegrador.oxfordporcelanas.com.br:90/api/produtoEstrutura/";
+  //final String _apiUrl  = "http://wsintegradordev.oxfordporcelanas.com.br:92/v1/produtos/GetAPIProdutos?familia=0002&marca=oxford&linha=FLAMINGO&decoracao=FLAMINGO&situacao=FORA&ordem=0&pagina=0&qtpagina=1";
   final String _token   = "4d24e4ff-85d62cca-d0cad84f-440e706e";
 
   @override
@@ -45,7 +46,7 @@ class _SearchProductState extends State<SearchProduct> {
         final regex = RegExp(query, caseSensitive: false);
 
         return regex.hasMatch(product['ItemBarCode'].toString()) ||
-              regex.hasMatch(product['ItemId'].toString()) ||
+              regex.hasMatch(product['ItemID'].toString()) ||
               regex.hasMatch(product['Name'].toString());
       }).toList();
     });
@@ -56,6 +57,8 @@ class _SearchProductState extends State<SearchProduct> {
       try {
         final response = await http.get(
           Uri.parse('$_apiUrl$productId'),
+          //Uri.parse(_apiUrl),
+
           headers: {
             'Authorization': 'Bearer $_token',
           },
@@ -65,19 +68,19 @@ class _SearchProductState extends State<SearchProduct> {
           final Map<String, dynamic> data = json.decode(response.body);
           
           final Map<String, dynamic> product = {
-            DBItems.columnItemBarCode:            data['ItemBarCode'],
-            DBItems.columnProdBrandId:            data['ProdBrandId'],
-            DBItems.columnProdBrandDescriptionId: data['ProdBrandDescriptionId'],
-            DBItems.columnProdLinesId:            data['ProdLinesId'],
-            DBItems.columnProdLinesDescriptionId: data['ProdLinesDescriptionId'],
-            DBItems.columnProdDecorationId:       data['ProdDecorationId'],
-            DBItems.columnProdDecorationDescriptionId: data['ProdDecorationDescriptionId'],
-            DBItems.columnItemId:                 data['ItemID'],
-            DBItems.columnName:                   data['Name'],
-            DBItems.columnUnitVolumeML:           data['UnitVolumeML'],
-            DBItems.columnItemNetWeight:          data['ItemNetWeight'],
-            DBItems.columnProdFamilyId:           data['ProdFamilyId'],
-            DBItems.columnProdFamilyDescription:  data['ProdFamilyDescription'],
+            DBItems.columnItemBarCode:                  data['ItemBarCode'],
+            DBItems.columnProdBrandId:                  data['ProdBrandId'],
+            DBItems.columnProdBrandDescriptionId:       data['ProdBrandDescriptionId'],
+            DBItems.columnProdLinesId:                  data['ProdLinesId'],
+            DBItems.columnProdLinesDescriptionId:       data['EditProdLinesDescription'],
+            DBItems.columnProdDecorationId:             data['ProdDecorationId'],
+            DBItems.columnProdDecorationDescriptionId:  data['EditProdDecorationDescription'],
+            DBItems.columnItemId:                       data['ItemID'],
+            DBItems.columnName:                         data['Name'],
+            DBItems.columnUnitVolumeML:                 data['UnitVolumeML'],
+            DBItems.columnItemNetWeight:                data['ItemNetWeight'],
+            DBItems.columnProdFamilyId:                 data['ProdFamilyId'],
+            DBItems.columnProdFamilyDescription:        data['ProdFamilyDescription'],
           };
 
           // Salvar o produto no banco
@@ -162,8 +165,9 @@ void _searchProduct(String productId) {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text('Código de Barras: ${product['ItemBarCode']}'),
-                        Text('Item: ${product['ItemID']}'),
-                        Text('Linha: ${product['ProdLinesId'] ?? ''} - ${product['ProdLinesDescriptionId'] ?? ''}'),
+                        Text('Item:                     ${product['ItemID']}'),
+                        Text('Linha:                    ${product['ProdLinesId'] ?? ''} - ${product['ProdLinesDescriptionId'] ?? ''}'),
+                        Text('Decoração:           ${product['ProdDecorationDescriptionId'] ?? ''}'),
                       ],
                     ),
                     onTap: () {

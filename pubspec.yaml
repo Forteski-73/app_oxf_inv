@@ -36,6 +36,8 @@ dependencies:
   path: ^1.8.3
   excel: ^4.0.6 #^2.1.0
   http: ^1.0.0 #^1.2.2
+  dio: ^5.0.0
+  #flutter_particles: ^1.0.0 #efeito da tela iniciar
 
   # The following adds the Cupertino Icons font to your application.
   # Use with the CupertinoIcons class for iOS style icons.

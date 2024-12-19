@@ -116,7 +116,8 @@ class _InventoryPageState extends State<InventoryPage> {
     String currentDate = DateFormat('yyyyMMdd').format(DateTime.now());
     String code = 'INV-$currentDate';
     String date = DateFormat('dd/MM/yyyy').format(DateTime.now());
-    String hour = DateTime.now().toIso8601String().split('T').last.split('.').first;
+    DateTime dt = DateTime.now();
+    String hour = dt.toIso8601String().split('T').last.split('.').first;
     String name = "";
     String sector = "";
 
@@ -124,7 +125,7 @@ class _InventoryPageState extends State<InventoryPage> {
 
     Map<String, dynamic> inventoryRow = {
       DBInventory.columnCode: code,
-      DBInventory.columnDate: date,
+      DBInventory.columnDate: '$date ${DateFormat('HH:mm').format(dt)}',
       DBInventory.columnHour: hour,
       DBInventory.columnName: name,
       DBInventory.columnSector: sector,

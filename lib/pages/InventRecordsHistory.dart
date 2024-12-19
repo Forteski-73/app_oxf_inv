@@ -141,12 +141,24 @@ class _InventoryHistoryDetailState extends State<InventoryHistoryDetail> {
             right: 10,
             child: SizedBox(
               width: double.infinity,
+
+            ),
+          ),
+        ],
+      ),
+      bottomNavigationBar: Column(
+        mainAxisSize: MainAxisSize.min, // Garante que a altura seja mínima necessária
+        children: [
+          // Primeiro "bottom bar"
+          Container(
+            child: SizedBox(
+              width: double.infinity,
               child: TextButton(
                 onPressed: () {
                   Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (context) => InventoryExportPage(
+                      builder: (context) => InventoryExportPage (
                         inventoryId: _inventory[DBInventory.columnId] as int,
                       ),
                     ),
@@ -154,34 +166,37 @@ class _InventoryHistoryDetailState extends State<InventoryHistoryDetail> {
                 },
                 style: TextButton.styleFrom(
                   foregroundColor: Colors.white,
-                  backgroundColor: Colors.black,
+                  backgroundColor: Colors.blue,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(8),
                   ),
+                  minimumSize: Size(double.infinity, 50),
                 ),
                 child: const Row(
                   mainAxisSize: MainAxisSize.min, // Ajusta o tamanho para caber no conteúdo
                   children: [
-                    Icon(Icons.open_in_browser, color: Colors.white),
+                    Icon(Icons.open_in_browser, color: Colors.white, size: 30),
                     SizedBox(width: 8), // Espaçamento entre ícone e texto
-                    Text("Exportar dados", style: TextStyle(color: Colors.white)),
+                    Text("Exportar dados", style: TextStyle(color: Colors.white, fontSize: 16)),
                   ],
                 ),
               ),
             ),
           ),
+          SizedBox(height: 4),
+          // Segundo "bottom bar"
+          Container(
+          color: Colors.grey[200],
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+              child: const Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text("Oxford Porcelanas", style: TextStyle(fontSize: 14)),
+                  Text("Versão: 1.0", style: TextStyle(fontSize: 14)),
+                ],
+              ),
+          ),
         ],
-      ),
-      bottomNavigationBar: Container(
-        color: Colors.grey[200],
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-        child: const Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Text("Oxford Porcelanas", style: TextStyle(fontSize: 14)),
-            Text("Versão: 1.0", style: TextStyle(fontSize: 14)),
-          ],
-        ),
       ),
     );
   }
