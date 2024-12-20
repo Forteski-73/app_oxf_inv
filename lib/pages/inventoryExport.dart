@@ -117,7 +117,7 @@ class _InventoryExportPage extends State<InventoryExportPage> {
       // Verifica o destino do arquivo
       if (_exportToEmail) {
         // Envia o arquivo por e-mail
-        await _sendEmailWithAttachment(excel.encode());
+        await _sendEmailWithAttachment(context, excel.encode());
       } else {
         // Salva o arquivo em pasta
         final Directory directory = Directory(_filePathController.text);
@@ -137,7 +137,7 @@ class _InventoryExportPage extends State<InventoryExportPage> {
     }
   }
 
-  Future<void> _sendEmailWithAttachment(List<int>? excelFile) async {
+  Future<void> _sendEmailWithAttachment(BuildContext context, List<int>? excelFile) async {
     if (excelFile == null) {
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Erro ao gerar o arquivo Excel')));
       return;
