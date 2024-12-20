@@ -38,19 +38,17 @@ class SplashScreen extends StatefulWidget {
 }
 
 class _SplashScreenState extends State<SplashScreen> {
-  // Variável para controlar a exibição da logo
-  bool _isWhiteLogo = false;
+  bool _isWhiteLogo = false; // controla a exibição da logo
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       body: Stack(
         children: [
-          // Imagem de fundo
           Container(
             decoration: const BoxDecoration(
               image: DecorationImage(
-                image: AssetImage('assets/images/oxf_background.png'), // Imagem de fundo
+                image: AssetImage('assets/images/oxf_background.png'),
                 fit: BoxFit.cover,
                 alignment: Alignment.topLeft,
               ),
@@ -59,15 +57,13 @@ class _SplashScreenState extends State<SplashScreen> {
           Center(
             child: GestureDetector(
               onTap: () {
-                setState(() { // Mudar a logo
+                setState(() {
                   _isWhiteLogo = true;
                 });
-                // Após meio segundo, volta para a logo original
                 Future.delayed(const Duration(milliseconds: 500), () {
                   setState(() {
                     _isWhiteLogo = false;
                   });
-                  // Navega para o menu
                   Navigator.push(
                     context,
                     MaterialPageRoute(
@@ -81,10 +77,10 @@ class _SplashScreenState extends State<SplashScreen> {
                 child: Image.asset(
                   _isWhiteLogo
                       ? 'assets/images/oxf_logo_branco.png'
-                      : 'assets/images/oxf_logo.png', // Alternar entre as logos
-                  key: ValueKey<bool>(_isWhiteLogo), // A chave única para atualizar a animação
-                  width: 150,
-                  height: 150,
+                      : 'assets/images/oxf_logo.png',
+                  key: ValueKey<bool>(_isWhiteLogo),
+                  width: 155,
+                  height: 155,
                 ),
               ),
             ),

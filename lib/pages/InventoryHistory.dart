@@ -93,12 +93,10 @@ class _InventoryHistoryState extends State<InventoryHistory> {
                               ),
                             ),
                           ),
-                          // Conteúdo do Card
                           SizedBox(
                             height: 95,
                             child: Row(
                               children: [
-                                // Espaço para indicar a linha lateral colorida
                                 Container(
                                   width: 12,
                                   height: double.infinity,

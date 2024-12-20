@@ -147,10 +147,11 @@ class _InventoryHistoryDetailState extends State<InventoryHistoryDetail> {
         ],
       ),
       bottomNavigationBar: Column(
-        mainAxisSize: MainAxisSize.min, // Garante que a altura seja mínima necessária
+        mainAxisSize: MainAxisSize.min, // Altura seja mínima necessária
         children: [
           // Primeiro "bottom bar"
           Container(
+            padding: const EdgeInsets.all(8.0), // Padding ao redor do botão
             child: SizedBox(
               width: double.infinity,
               child: TextButton(

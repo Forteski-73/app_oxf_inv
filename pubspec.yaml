@@ -30,14 +30,17 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
-  path_provider: ^2.0.11
   sqflite: ^2.4.1
   intl: ^0.18.0
   path: ^1.8.3
-  excel: ^4.0.6 #^2.1.0
-  http: ^1.0.0 #^1.2.2
+  path_provider: ^2.0.12
+  file_picker: ^5.0.1
+  excel: ^4.0.6
+  http: ^1.0.0
   dio: ^5.0.0
-  #flutter_particles: ^1.0.0 #efeito da tela iniciar
+  csv: ^5.0.0
+  flutter_email_sender: ^5.0.0
+
 
   # The following adds the Cupertino Icons font to your application.
   # Use with the CupertinoIcons class for iOS style icons.
@@ -47,8 +50,6 @@ dependencies:
 dev_dependencies:
   flutter_test:
     sdk: flutter
-  #sqflite_common_ffi: ^2.3.4+3
-  #sqflite: ^2.4.1
 
   # The "flutter_lints" package below contains a set of recommended lints to
   # encourage good coding practices. The lint set provided by the package is

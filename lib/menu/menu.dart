@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import '../pages/inventoryExport.dart';
-import '../pages/import.dart';
+import '../pages/importProduct.dart';
 import '../pages/management.dart';
 import '../pages/settings.dart';
 import '../pages/InventoryHistory.dart';
@@ -58,7 +58,7 @@ class MenuPage extends StatelessWidget {
                 context,
                 icon: Icons.download_outlined,
                 label: "Importação de Produtos",
-                page: const ImportPage(), // Página de Importação de Produtos
+                page: ImportProduct(), // Página de Importação de Produtos
               ),
               _menuItem(
                 context,

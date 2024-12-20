@@ -145,12 +145,12 @@ Widget build(BuildContext context) {
     body: Stack(
       children: [
         // Imagem de fundo
-        Positioned.fill(
+        /*Positioned.fill(
           child: Image.asset('assets/images/oxf_background.png',
             fit: BoxFit.cover,
             alignment: Alignment.topLeft,
           ),
-        ),
+        ),*/
         Padding(
           padding: const EdgeInsets.all(16.0),
           child: Column(

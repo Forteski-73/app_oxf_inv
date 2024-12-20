@@ -1,14 +1,11 @@
-import 'package:app_oxf_inv/operator/db_inventory.dart';
 import 'package:flutter/material.dart';
 import 'package:excel/excel.dart';
 import 'dart:io';
 import 'package:path/path.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:sqflite/sqflite.dart';
-
-void main() {
-  runApp(MaterialApp(debugShowCheckedModeBanner: false,));
-}
+import 'package:flutter_email_sender/flutter_email_sender.dart';
+import 'package:app_oxf_inv/operator/db_inventory.dart';
 
 class InventoryExportPage extends StatefulWidget {
   final int inventoryId;
@@ -21,9 +18,8 @@ class InventoryExportPage extends StatefulWidget {
 class _InventoryExportPage extends State<InventoryExportPage> {
   final TextEditingController _fileNameController = TextEditingController();
   final List<String> _fields = [
-    'Unitizador', 'Posição', 'Depósito', 'Bloco', 'Quadra', 'Lote',
-    'Andar', 'Código de Barras', 'Qtde Padrão da Pilha', 'Qtde de Pilhas Completas',
-    'Qtde de Itens Avulsos'
+    'Unitizador', 'Posição', 'Depósito', 'Bloco', 'Quadra', 'Lote', 'Andar', 'Código de Barras', 
+    'Qtde Padrão da Pilha', 'Qtde de Pilhas Completas', 'Qtde de Itens Avulsos'
   ];
   final Map<String, bool> _selectedFields = {};
   String _separator = ';';
@@ -36,25 +32,22 @@ class _InventoryExportPage extends State<InventoryExportPage> {
   List<Map<String, dynamic>> _records = [];
   bool _isLoading = true;
 
-@override
-void initState() {
-  super.initState();
-  _dbInventory = DBInventory.instance;
+  @override
+  void initState() {
+    super.initState();
+    _dbInventory = DBInventory.instance;
 
-  WidgetsBinding.instance.addPostFrameCallback((_) {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        _fetchInventoryDetails();
+      }
+    });
 
-    if (mounted) {
-      _fetchInventoryDetails();
+    // Inicializa os chk box
+    for (var field in _fields) {
+      _selectedFields[field] = true;
     }
-  });
-
-  _filePathController.text = r'\\srvapp02\Studio\Publico\';
-
-  // Initialize selected fields to true
-  for (var field in _fields) {
-    _selectedFields[field] = true;
   }
-}
 
   Future<void> _fetchInventoryDetails() async {
     try {
@@ -74,12 +67,17 @@ void initState() {
         _inventory = inventoryResult.isNotEmpty ? inventoryResult.first : {};
         _records = recordsResult;
         _isLoading = false;
+
+        // Atualiza o nome do arquivo após carregar os dados
+        if (_inventory.isNotEmpty) {
+          _fileNameController.text = '${_inventory[DBInventory.columnCode] ?? ''}.xlsx';
+        }
+        _filePathController.text = r'\\srvapp02\Studio\Publico\teste_inventario\';
       });
     } catch (e) {
       setState(() {
         _isLoading = false;
       });
-      //ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Erro ao carregar os dados: $e')));
     }
   }
 
@@ -96,56 +94,102 @@ void initState() {
       excel.rename('Sheet1', 'Inventário');
       var sheet = excel['Inventário'];
 
-      sheet.appendRow([
-        TextCellValue('ID'),
-        TextCellValue('Unitizer'),
-        TextCellValue('Position'),
-        TextCellValue('Deposit'),
-        TextCellValue('Block A'),
-        TextCellValue('Block B'),
-        TextCellValue('Lot'),
-        TextCellValue('Floor'),
-        TextCellValue('Barcode'),
-        TextCellValue('Standard Stack Quantity'),
-        TextCellValue('Complete Stacks'),
-        TextCellValue('Loose Items'),
-        TextCellValue('Subtotal'),
-      ]);
+      // Colunas do cabeçalho
+      List<String> selectedHeaders = _fields.where((field) => _selectedFields[field] == true).toList();
+      sheet.appendRow(selectedHeaders.map((field) => TextCellValue(field)).toList());
 
+      // Adiciona os registros
       for (var record in inventoryRecords) {
-        sheet.appendRow([
-          IntCellValue(record[DBInventory.columnId] as int),
-          TextCellValue(record[DBInventory.columnUnitizer] as String),
-          TextCellValue(record[DBInventory.columnPosition] as String),
-          TextCellValue(record[DBInventory.columnDeposit] as String),
-          TextCellValue(record[DBInventory.columnBlockA] as String),
-          TextCellValue(record[DBInventory.columnBlockB] as String),
-          TextCellValue(record[DBInventory.columnLot] as String),
-          IntCellValue(record[DBInventory.columnFloor] as int),
-          TextCellValue(record[DBInventory.columnBarcode] as String),
-          IntCellValue( record[DBInventory.columnStandardStackQtd] as int),
-          IntCellValue(record[DBInventory.columnNumberCompleteStacks] as int),
-          IntCellValue(record[DBInventory.columnNumberLooseItems] as int),
-          IntCellValue(record[DBInventory.columnSubTotal] as int)
-        ]);
+        List<CellValue?> row = [];
+        for (var field in selectedHeaders) {
+          var value = record[_mapFieldToColumnName(field)];
+          if (value is int) {
+            row.add(IntCellValue(value));
+          } else if (value != null) {
+            row.add(TextCellValue(value.toString()));
+          } else {
+            row.add(null); // Permite valores nulos
+          }
+        }
+        sheet.appendRow(row);
       }
 
-      // Salvar o arquivo Excel
-      //var directory = await getApplicationDocumentsDirectory();
-      final Directory directory = Directory(_filePathController.text);
-      if (await directory.exists()) {
-        String filePath = join(directory.path, 'Inventario_${widget.inventoryId}.xlsx');
-        var file = File(filePath);
-        List<int> bytes = excel.encode() ?? [];
-        await file.writeAsBytes(bytes);
-
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Arquivo exportado para: $filePath')));
+      // Verifica o destino do arquivo
+      if (_exportToEmail) {
+        // Envia o arquivo por e-mail
+        await _sendEmailWithAttachment(excel.encode());
       } else {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Erro ao salvar o arquivo')));
+        // Salva o arquivo em pasta
+        final Directory directory = Directory(_filePathController.text);
+        if (await directory.exists()) {
+          String filePath = join(directory.path, _fileNameController.text);
+          var file = File(filePath);
+          List<int> bytes = excel.encode() ?? [];
+          await file.writeAsBytes(bytes);
+
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Arquivo exportado para: $filePath')));
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Erro ao salvar o arquivo')));
+        }
       }
-      
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Erro ao exportar: $e')));
+    }
+  }
+
+  Future<void> _sendEmailWithAttachment(List<int>? excelFile) async {
+    if (excelFile == null) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Erro ao gerar o arquivo Excel')));
+      return;
+    }
+
+    final directory = await getTemporaryDirectory();
+    final filePath = '${directory.path}/${_fileNameController.text}';
+    final file = File(filePath);
+    await file.writeAsBytes(excelFile);
+
+    final Email email = Email(
+      body: 'Segue o arquivo Excel com os dados do inventário.',
+      subject: 'Exportação de Inventário',
+      recipients: [_emailController.text],
+      attachmentPaths: [filePath],
+      isHTML: false,
+    );
+
+    try {
+      await FlutterEmailSender.send(email);
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('E-mail enviado com sucesso!')));
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Erro ao enviar e-mail: $e')));
+    }
+  }
+
+  String _mapFieldToColumnName(String field) {
+    switch (field) {
+      case 'Unitizador':
+        return DBInventory.columnUnitizer;
+      case 'Posição':
+        return DBInventory.columnPosition;
+      case 'Depósito':
+        return DBInventory.columnDeposit;
+      case 'Bloco':
+        return DBInventory.columnBlockA;
+      case 'Quadra':
+        return DBInventory.columnBlockB;
+      case 'Lote':
+        return DBInventory.columnLot;
+      case 'Andar':
+        return DBInventory.columnFloor;
+      case 'Código de Barras':
+        return DBInventory.columnBarcode;
+      case 'Qtde Padrão da Pilha':
+        return DBInventory.columnStandardStackQtd;
+      case 'Qtde de Pilhas Completas':
+        return DBInventory.columnNumberCompleteStacks;
+      case 'Qtde de Itens Avulsos':
+        return DBInventory.columnNumberLooseItems;
+      default:
+        return '';
     }
   }
 
@@ -153,10 +197,7 @@ void initState() {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(
-          "Exportação de Dados: ${_inventory[DBInventory.columnId] ?? ''}",
-          style: const TextStyle(color: Colors.white),
-        ),
+        title: Text("Exportação de Dados: ${_inventory[DBInventory.columnId] ?? ''}", style: const TextStyle(color: Colors.white)),
         backgroundColor: Colors.black,
         iconTheme: const IconThemeData(color: Colors.white),
       ),
@@ -166,55 +207,20 @@ void initState() {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Nome do arquivo
               Card(
                 elevation: 4,
                 margin: const EdgeInsets.all(8),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                color: Colors.white,
-                child: Padding(
-                  padding: const EdgeInsets.all(16.0),
-                  child: TextField(
-                    controller: _fileNameController,
-                    decoration: const InputDecoration(
-                      labelText: 'Defina o nome do arquivo',
-                      border: OutlineInputBorder(
-                        borderSide: BorderSide(color: Colors.black),
-                      ),
-                      filled: true,
-                      fillColor: Colors.white,
-                    ),
-                    style: const TextStyle(color: Colors.black),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 16),
-              
-              // Campos para exportar
-              Card(
-                elevation: 4,
-                margin: const EdgeInsets.all(8),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
-                ),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                 color: Colors.white,
                 child: Padding(
                   padding: const EdgeInsets.all(16.0),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text(
-                        'Definição de campos para exportar',
-                        style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                      ),
+                      const Text('Definição de campos para exportar', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
                       ..._fields.map((field) {
                         return CheckboxListTile(
-                          title: Text(
-                            field,
-                            style: const TextStyle(color: Colors.black),
-                          ),
+                          title: Text(field),
                           value: _selectedFields[field],
                           onChanged: (bool? value) {
                             setState(() {
@@ -230,32 +236,22 @@ void initState() {
                   ),
                 ),
               ),
-              const SizedBox(height: 16),
-
-              // Destino do arquivo
+              const SizedBox(height: 8),
               Card(
                 elevation: 4,
-                color: Colors.white,
                 margin: const EdgeInsets.all(8),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
-                ),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                color: Colors.white,
                 child: Padding(
                   padding: const EdgeInsets.all(16.0),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text(
-                        'Destino do arquivo',
-                        style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                      ),
+                      const Text('Destino do Arquivo', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
                       RadioListTile<bool>(
                         title: TextField(
                           controller: _emailController,
-                          decoration: const InputDecoration(
-                            labelText: 'E-mail',
-                            border: OutlineInputBorder(),
-                          ),
+                          decoration: const InputDecoration(labelText: 'E-mail', border: OutlineInputBorder()),
                           enabled: _exportToEmail,
                         ),
                         activeColor: Colors.black,
@@ -272,10 +268,7 @@ void initState() {
                       RadioListTile<bool>(
                         title: TextField(
                           controller: _filePathController,
-                          decoration: const InputDecoration(
-                            labelText: 'Salvar em Pasta na Rede',
-                            border: OutlineInputBorder(),
-                          ),
+                          decoration: const InputDecoration(labelText: 'Salvar em Pasta na Rede', border: OutlineInputBorder()),
                           enabled: _exportToFilePath,
                         ),
                         activeColor: Colors.black,
@@ -293,39 +286,30 @@ void initState() {
                   ),
                 ),
               ),
-              const SizedBox(height: 16),
-              Center(
-                child: ElevatedButton(
-                  onPressed: () {
-                    exportToExcel(context);
-                  },
-                  child: const Text(
-                    'Exportar Agora',
-                    style: TextStyle(color: Colors.white),
-                  ),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.blue,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    minimumSize: Size(double.infinity, 50),
-                    padding: const EdgeInsets.all(10),
-                  ),
-                ),
-              )
             ],
           ),
         ),
       ),
-      bottomNavigationBar: Container(
-        color: Colors.grey[200],
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-        child: const Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Text("Oxford Porcelanas", style: TextStyle(fontSize: 14)),
-            Text("Versão: 1.0", style: TextStyle(fontSize: 14)),
-          ],
+      bottomNavigationBar: Padding(
+        padding: const EdgeInsets.fromLTRB(8.0, 0.0, 8.0, 15.0),
+        child: ElevatedButton(
+          onPressed: () {
+            exportToExcel(context);
+          },
+          style: ElevatedButton.styleFrom(
+            backgroundColor: Colors.blue,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+            minimumSize: const Size(double.infinity, 50),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(Icons.open_in_browser, color: Colors.white, size: 24),
+              SizedBox(width: 8),
+              Text('Exportar Agora', style: TextStyle(color: Colors.white, fontSize: 16)),
+            ],
+          ),
         ),
       ),
     );
