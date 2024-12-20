@@ -114,9 +114,7 @@ class _InventoryExportPage extends State<InventoryExportPage> {
         sheet.appendRow(row);
       }
 
-      // Verifica o destino do arquivo
       if (_exportToEmail) {
-        // Envia o arquivo por e-mail
         await _sendEmailWithAttachment(context, excel.encode());
       } else {
         // Salva o arquivo em pasta
@@ -157,7 +155,7 @@ class _InventoryExportPage extends State<InventoryExportPage> {
     );
 
     try {
-      await FlutterEmailSender.send(email);
+      await FlutterEmailSender.send(email); //diones.forteski@oxfordporcelanas.com.br
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('E-mail enviado com sucesso!')));
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Erro ao enviar e-mail: $e')));

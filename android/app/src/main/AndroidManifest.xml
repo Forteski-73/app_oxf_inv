@@ -1,4 +1,9 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+        
+    <!-- Permissões de internet e enviar email -->
+    <uses-permission android:name="android.permission.INTERNET"/>
+    <uses-permission android:name="android.permission.SEND_EMAIL"/>
+
     <application
         android:label="app_oxf_inv"
         android:name="${applicationName}"
