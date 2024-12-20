@@ -4,7 +4,7 @@ import 'dart:io';
 import 'package:path/path.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:sqflite/sqflite.dart';
-import 'package:flutter_email_sender/flutter_email_sender.dart';
+//import 'package:flutter_email_sender/flutter_email_sender.dart';
 import 'package:app_oxf_inv/operator/db_inventory.dart';
 
 class InventoryExportPage extends StatefulWidget {
@@ -146,7 +146,7 @@ class _InventoryExportPage extends State<InventoryExportPage> {
     final file = File(filePath);
     await file.writeAsBytes(excelFile);
 
-    final Email email = Email(
+    /*final Email email = Email(
       body: 'Segue o arquivo Excel com os dados do inventário.',
       subject: 'Exportação de Inventário',
       recipients: [_emailController.text],
@@ -159,7 +159,7 @@ class _InventoryExportPage extends State<InventoryExportPage> {
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('E-mail enviado com sucesso!')));
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Erro ao enviar e-mail: $e')));
-    }
+    }*/
   }
 
   String _mapFieldToColumnName(String field) {

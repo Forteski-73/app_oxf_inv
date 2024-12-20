@@ -30,6 +30,8 @@ android {
         versionName = flutter.versionName
     }
 
+    //namespace 'com.example.app_oxf_inv'
+
     buildTypes {
         release {
             // TODO: Add your own signing config for the release build.
