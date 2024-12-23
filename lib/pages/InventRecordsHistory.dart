@@ -150,6 +150,7 @@ class _InventoryHistoryDetailState extends State<InventoryHistoryDetail> {
         mainAxisSize: MainAxisSize.min, // Altura seja mínima necessária
         children: [
           // Primeiro "bottom bar"
+          if (_inventory[DBInventory.columnStatus] == 'CONCLUÍDO')
           Container(
             padding: const EdgeInsets.all(8.0), // Padding ao redor do botão
             child: SizedBox(

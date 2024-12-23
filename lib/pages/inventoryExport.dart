@@ -6,6 +6,7 @@ import 'package:path_provider/path_provider.dart';
 import 'package:sqflite/sqflite.dart';
 //import 'package:flutter_email_sender/flutter_email_sender.dart';
 import 'package:app_oxf_inv/operator/db_inventory.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class InventoryExportPage extends StatefulWidget {
   final int inventoryId;
@@ -135,6 +136,7 @@ class _InventoryExportPage extends State<InventoryExportPage> {
     }
   }
 
+  /*
   Future<void> _sendEmailWithAttachment(BuildContext context, List<int>? excelFile) async {
     if (excelFile == null) {
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Erro ao gerar o arquivo Excel')));
@@ -146,7 +148,7 @@ class _InventoryExportPage extends State<InventoryExportPage> {
     final file = File(filePath);
     await file.writeAsBytes(excelFile);
 
-    /*final Email email = Email(
+    final Email email = Email(
       body: 'Segue o arquivo Excel com os dados do inventário.',
       subject: 'Exportação de Inventário',
       recipients: [_emailController.text],
@@ -159,8 +161,56 @@ class _InventoryExportPage extends State<InventoryExportPage> {
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('E-mail enviado com sucesso!')));
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Erro ao enviar e-mail: $e')));
-    }*/
+    }
+  }*/
+
+  Future<void> _sendEmailWithAttachment(BuildContext context, List<int>? excelFile) async {
+    if (excelFile == null) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Erro ao gerar o arquivo Excel')));
+      return;
+    }
+
+    final directory = await getTemporaryDirectory();
+    final filePath = '${directory.path}/${_fileNameController.text}';
+    final file = File(filePath);
+    await file.writeAsBytes(excelFile);
+
+    // Use the sendEmail method to send the email
+    await sendEmail(
+      _emailController.text, // Email recipient
+      'Exportação de Inventário', // Subject
+      'Segue o arquivo Excel com os dados do inventário.', // Body
+    );
   }
+
+
+  // *****************************************TESTE DE ENVIO USANDO LOUCHER ********************************************
+  
+  Future<void> sendEmail(String recipient, String subject, String body) async {
+    final Uri emailUri = Uri(
+      scheme: 'mailto',
+      path: recipient,
+      query: 'subject=$subject&body=$body',
+    );
+
+    // Passando o Uri diretamente em vez de String
+    if (await canLaunchUrl(emailUri)) {
+      await launchUrl(emailUri);
+    } else {
+      throw 'Não foi possível abrir o cliente de e-mail.';
+    }
+  }
+
+  void main() async {
+    await sendEmail(
+      'diones.forteski@oxfordporcelanas.com.br',
+      'Exportação de Inventário',
+      'Segue o arquivo Excel com os dados do inventário.',
+    );
+  }
+
+  // *****************************************TESTE DE ENVIO USANDO LOUCHER ********************************************
+
 
   String _mapFieldToColumnName(String field) {
     switch (field) {

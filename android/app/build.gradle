@@ -30,7 +30,7 @@ android {
         versionName = flutter.versionName
     }
 
-    //namespace 'com.example.app_oxf_inv'
+    namespace "com.example.app_oxf_inv"
 
     buildTypes {
         release {
