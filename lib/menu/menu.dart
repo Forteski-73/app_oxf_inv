@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../pages/inventoryExport.dart';
 import '../pages/importProduct.dart';
 import '../pages/management.dart';
+import '../pages/inventorySearch.dart';
 import '../pages/settings.dart';
 import '../pages/InventoryHistory.dart';
 import '../pages/sync.dart';
@@ -65,6 +66,12 @@ class MenuPage extends StatelessWidget {
                 icon: Icons.sync_outlined,
                 label: "Sincronização",
                 page: const SyncPage(), // Página de Sincronização
+              ),
+              _menuItem(
+                context,
+                icon: Icons.search,
+                label: "Pesquisar Produtos",
+                page: const InventorySearchPage(), // Página de Configurações
               ),
               _menuItem(
                 context,

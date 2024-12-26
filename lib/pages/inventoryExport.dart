@@ -4,9 +4,9 @@ import 'dart:io';
 import 'package:path/path.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:sqflite/sqflite.dart';
-//import 'package:flutter_email_sender/flutter_email_sender.dart';
+import 'package:mailer/mailer.dart';
+import 'package:mailer/smtp_server.dart';
 import 'package:app_oxf_inv/operator/db_inventory.dart';
-import 'package:url_launcher/url_launcher.dart';
 
 class InventoryExportPage extends StatefulWidget {
   final int inventoryId;
@@ -136,81 +136,45 @@ class _InventoryExportPage extends State<InventoryExportPage> {
     }
   }
 
-  /*
-  Future<void> _sendEmailWithAttachment(BuildContext context, List<int>? excelFile) async {
-    if (excelFile == null) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Erro ao gerar o arquivo Excel')));
-      return;
-    }
-
-    final directory = await getTemporaryDirectory();
-    final filePath = '${directory.path}/${_fileNameController.text}';
-    final file = File(filePath);
-    await file.writeAsBytes(excelFile);
-
-    final Email email = Email(
-      body: 'Segue o arquivo Excel com os dados do inventário.',
-      subject: 'Exportação de Inventário',
-      recipients: [_emailController.text],
-      attachmentPaths: [filePath],
-      isHTML: false,
-    );
-
-    try {
-      await FlutterEmailSender.send(email); //diones.forteski@oxfordporcelanas.com.br
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('E-mail enviado com sucesso!')));
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Erro ao enviar e-mail: $e')));
-    }
-  }*/
-
-  Future<void> _sendEmailWithAttachment(BuildContext context, List<int>? excelFile) async {
-    if (excelFile == null) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Erro ao gerar o arquivo Excel')));
-      return;
-    }
-
-    final directory = await getTemporaryDirectory();
-    final filePath = '${directory.path}/${_fileNameController.text}';
-    final file = File(filePath);
-    await file.writeAsBytes(excelFile);
-
-    // Use the sendEmail method to send the email
-    await sendEmail(
-      _emailController.text, // Email recipient
-      'Exportação de Inventário', // Subject
-      'Segue o arquivo Excel com os dados do inventário.', // Body
-    );
+Future<void> _sendEmailWithAttachment(BuildContext context, List<int>? excelFile) async {
+  if (excelFile == null) {
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Erro ao gerar o arquivo Excel')));
+    return;
   }
 
+  final directory = await getTemporaryDirectory();
+  final filePath = '${directory.path}/${_fileNameController.text}';
+  final file = File(filePath);
+  await file.writeAsBytes(excelFile);
 
-  // *****************************************TESTE DE ENVIO USANDO LOUCHER ********************************************
-  
-  Future<void> sendEmail(String recipient, String subject, String body) async {
-    final Uri emailUri = Uri(
-      scheme: 'mailto',
-      path: recipient,
-      query: 'subject=$subject&body=$body',
-    );
+  // Configuração do servidor SMTP
+  String username = 'ax@oxfordporcelanas.com.br';
+  String password = 'S3rvic0s.publ1c@c@0';
 
-    // Passando o Uri diretamente em vez de String
-    if (await canLaunchUrl(emailUri)) {
-      await launchUrl(emailUri);
-    } else {
-      throw 'Não foi possível abrir o cliente de e-mail.';
-    }
+  final smtpServer = SmtpServer(
+    'smtp.oxford.ind.br', // Servidor SMTP
+    username: username,
+    password: password,
+    port: 225,
+    ssl: false, // 'false' se não usar TLS/SSL, ou 'true' se sim
+    ignoreBadCertificate: true, // Ignora a validação do certificado
+  );
+
+  final message = Message()
+    ..from = Address(username, 'Diones Forteski')
+    ..recipients.add(_emailController.text) // estinatário
+    ..subject = 'Exportação de Inventário'
+    ..text = 'Segue o arquivo Excel com os dados do inventário.'
+    ..attachments.add(FileAttachment(file));
+
+  try {
+    final sendStatus = await send(message, smtpServer);
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('E-mail enviado com sucesso!')));
+  } catch (e) {
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Erro ao enviar e-mail: $e')));
+    print('Erro ao enviar e-mail: $e');
   }
-
-  void main() async {
-    await sendEmail(
-      'diones.forteski@oxfordporcelanas.com.br',
-      'Exportação de Inventário',
-      'Segue o arquivo Excel com os dados do inventário.',
-    );
-  }
-
-  // *****************************************TESTE DE ENVIO USANDO LOUCHER ********************************************
-
+}
 
   String _mapFieldToColumnName(String field) {
     switch (field) {
@@ -245,7 +209,10 @@ class _InventoryExportPage extends State<InventoryExportPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text("Exportação de Dados: ${_inventory[DBInventory.columnId] ?? ''}", style: const TextStyle(color: Colors.white)),
+        title: Text(
+          "Exportação de Dados: ${_inventory[DBInventory.columnId] ?? ''}",
+          style: const TextStyle(color: Colors.white),
+        ),
         backgroundColor: Colors.black,
         iconTheme: const IconThemeData(color: Colors.white),
       ),
@@ -258,14 +225,19 @@ class _InventoryExportPage extends State<InventoryExportPage> {
               Card(
                 elevation: 4,
                 margin: const EdgeInsets.all(8),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
                 color: Colors.white,
                 child: Padding(
                   padding: const EdgeInsets.all(16.0),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text('Definição de campos para exportar', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                      const Text(
+                        'Definição de campos para exportar',
+                        style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                      ),
                       ..._fields.map((field) {
                         return CheckboxListTile(
                           title: Text(field),
@@ -288,18 +260,50 @@ class _InventoryExportPage extends State<InventoryExportPage> {
               Card(
                 elevation: 4,
                 margin: const EdgeInsets.all(8),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                color: Colors.white,
+                child: Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: TextField(
+                    controller: _fileNameController,
+                    decoration: const InputDecoration(
+                      labelText: 'Defina o nome do arquivo',
+                      border: OutlineInputBorder(
+                        borderSide: BorderSide(color: Colors.black),
+                      ),
+                      filled: true,
+                      fillColor: Colors.white,
+                    ),
+                    style: const TextStyle(color: Colors.black),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 8),
+              Card(
+                elevation: 4,
+                margin: const EdgeInsets.all(8),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
                 color: Colors.white,
                 child: Padding(
                   padding: const EdgeInsets.all(16.0),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text('Destino do Arquivo', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                      const Text(
+                        'Destino do Arquivo',
+                        style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                      ),
                       RadioListTile<bool>(
                         title: TextField(
                           controller: _emailController,
-                          decoration: const InputDecoration(labelText: 'E-mail', border: OutlineInputBorder()),
+                          decoration: const InputDecoration(
+                            labelText: 'E-mail',
+                            border: OutlineInputBorder(),
+                          ),
                           enabled: _exportToEmail,
                         ),
                         activeColor: Colors.black,
@@ -316,7 +320,10 @@ class _InventoryExportPage extends State<InventoryExportPage> {
                       RadioListTile<bool>(
                         title: TextField(
                           controller: _filePathController,
-                          decoration: const InputDecoration(labelText: 'Salvar em Pasta na Rede', border: OutlineInputBorder()),
+                          decoration: const InputDecoration(
+                            labelText: 'Salvar em Pasta na Rede',
+                            border: OutlineInputBorder(),
+                          ),
                           enabled: _exportToFilePath,
                         ),
                         activeColor: Colors.black,
@@ -349,15 +356,9 @@ class _InventoryExportPage extends State<InventoryExportPage> {
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
             minimumSize: const Size(double.infinity, 50),
           ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(Icons.open_in_browser, color: Colors.white, size: 24),
-              SizedBox(width: 8),
-              Text('Exportar Agora', style: TextStyle(color: Colors.white, fontSize: 16)),
-            ],
-          ),
+          child: _isLoading
+              ? const CircularProgressIndicator(color: Colors.white)
+              : const Text('Exportar', style: TextStyle(color: Colors.white)),
         ),
       ),
     );
