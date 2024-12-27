@@ -225,7 +225,7 @@ class _InventoryHistoryDetailState extends State<InventoryHistoryDetail> {
                       int st = await _delInvent(recordId);
                       if (st == 1) {
                         // Substitui a página atual pela InventoryRecordsPage
-                        Navigator.pushReplacement(
+                        Navigator.push(
                           context,
                           MaterialPageRoute(
                             builder: (context) => const InventoryHistory(), // Navega para a página de inventário
