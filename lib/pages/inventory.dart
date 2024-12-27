@@ -216,11 +216,11 @@ class _InventoryPageState extends State<InventoryPage> {
               ],
             ),
           ],
-          );
+        );
       },
     );
   }
-
+  
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -229,92 +229,103 @@ class _InventoryPageState extends State<InventoryPage> {
         backgroundColor: Colors.black,
         iconTheme: const IconThemeData(color: Colors.white),
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          children: [
-            // Card com informações
-            Card(
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8),
-              ),
-              elevation: 4,
+      resizeToAvoidBottomInset: false, // evita o ajuste automático do layout quando o teclado aparece
+      body: Column(
+        children: [
+          // Parte Rolável
+          Expanded(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.all(16.0),
               child: Column(
                 children: [
-                  Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                      color: inventory?['status'] == 'EM ANDAMENTO'
-                          ? Colors.orange
-                          : inventory?['status'] == 'CONCLUÍDO'
-                              ? Colors.green
-                              : Colors.blue,
-                      borderRadius: const BorderRadius.only(
-                        topLeft: Radius.circular(8),
-                        topRight: Radius.circular(8),
-                      ),
+                  Card(
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
                     ),
-                    child: Text(
-                      inventory?['status'] ?? 'NÃO INICIADO', // Atualiza com o valor do status
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 16,
-                      ),
-                    ),
-                  ),
-                  // Detalhes do inventário
-                  Padding(
-                    padding: const EdgeInsets.all(16.0),
+                    elevation: 4,
                     child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Row(
-                          children: [
-                            Flexible(
-                              flex: 3, // 60% (3/5 da largura total)
-                              child: TextField(
-                                readOnly: true,
+                        Container(
+                          width: double.infinity,
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: inventory?['status'] == 'EM ANDAMENTO'
+                                ? Colors.orange
+                                : inventory?['status'] == 'CONCLUÍDO'
+                                    ? Colors.green
+                                    : Colors.blue,
+                            borderRadius: const BorderRadius.only(
+                              topLeft: Radius.circular(8),
+                              topRight: Radius.circular(8),
+                            ),
+                          ),
+                          child: Text(
+                            inventory?['status'] ?? 'NÃO INICIADO',
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 16,
+                            ),
+                          ),
+                        ),
+                        // Detalhes do inventário
+                        Padding(
+                          padding: const EdgeInsets.all(16.0),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                children: [
+                                  Flexible(
+                                    flex: 3,
+                                    child: TextField(
+                                      readOnly: true,
+                                      decoration: const InputDecoration(
+                                        labelText: 'Código do Inventário',
+                                        border: OutlineInputBorder(),
+                                      ),
+                                      style: const TextStyle(fontSize: 18),
+                                      controller: _codeController,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 5),
+                                  Flexible(
+                                    flex: 2,
+                                    child: TextField(
+                                      readOnly: true,
+                                      decoration: const InputDecoration(
+                                        labelText: 'Data de Criação',
+                                        border: OutlineInputBorder(),
+                                      ),
+                                      style: const TextStyle(fontSize: 18),
+                                      controller: _dateController,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 12),
+                              const Divider(thickness: 1, color: Colors.grey),
+                              const SizedBox(height: 12),
+                              TextField(
                                 decoration: const InputDecoration(
-                                  labelText: 'Código do Inventário',
+                                  labelText: 'Nome do Inventário',
                                   border: OutlineInputBorder(),
                                 ),
-                                controller: _codeController,
+                                style: const TextStyle(fontSize: 18),
+                                controller: _nameController,
                               ),
-                            ),
-                            const SizedBox(width: 5), // Espaço entre os campos
-                            Flexible(
-                              flex: 2, // 40% (2/5 da largura total)
-                              child: TextField(
+                              const SizedBox(height: 16),
+                              TextField(
+                                keyboardType: TextInputType.number,
                                 decoration: const InputDecoration(
-                                  labelText: 'Data de Criação',
+                                  labelText: 'Setor',
                                   border: OutlineInputBorder(),
                                 ),
-                                style: const TextStyle(fontSize: 15),
-                                readOnly: true,
-                                controller: _dateController,
+                                style: const TextStyle(fontSize: 18),
+                                controller: _sectorController,
                               ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 12),
-                        const Divider(thickness: 1, color: Colors.grey), // divider
-                        const SizedBox(height: 12),
-                        TextField(
-                          decoration: const InputDecoration(
-                            labelText: 'Nome do Inventário',
-                            border: OutlineInputBorder(),
+                            ],
                           ),
-                          controller:_nameController,
-                        ),
-                        const SizedBox(height: 16),
-                        TextField(
-                          decoration: const InputDecoration(
-                            labelText: 'Setor',
-                            border: OutlineInputBorder(),
-                          ),
-                          controller:_sectorController,
                         ),
                       ],
                     ),
@@ -322,134 +333,129 @@ class _InventoryPageState extends State<InventoryPage> {
                 ],
               ),
             ),
-            const Spacer(),
-            ElevatedButton.icon(
-              onPressed: updateControlls(0)
-                ? () async {
-                    int result = await startInventory();
-                    if (result == 1) {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => const InventoryRecordsPage(),
-                        ),
-                      );
-                    }
-                  }
-                : null,
-              icon: const Icon(Icons.barcode_reader,color: Colors.white),
-              label: const Text(
-                'REGISTRAR ITENS',
-                style: TextStyle(fontSize: 16, color: Colors.white),
-              ),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: updateControlls(0) ? Colors.blue : Colors.grey,
-                padding: const EdgeInsets.symmetric(vertical: 15),
-                minimumSize: const Size(double.infinity, 50),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
+          ),
+          // Botões Fixos
+          Container(
+            color: Colors.grey[200],
+            padding: const EdgeInsets.all(16.0),
+            child: Column(
+              children: [
+                ElevatedButton.icon(
+                  onPressed: updateControlls(0)
+                      ? () async {
+                          int result = await startInventory();
+                          if (result == 1) {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => const InventoryRecordsPage(),
+                              ),
+                            );
+                          }
+                        }
+                      : null,
+                  icon: const Icon(Icons.barcode_reader, color: Colors.white),
+                  label: const Text(
+                    'REGISTRAR ITENS',
+                    style: TextStyle(fontSize: 16, color: Colors.white),
+                  ),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: updateControlls(0) ? Colors.blue : Colors.grey,
+                    padding: const EdgeInsets.symmetric(vertical: 15),
+                    minimumSize: const Size(double.infinity, 50),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                  ),
                 ),
-              ),
-            ),
-            const Spacer(),
-            
-            ElevatedButton(
-              onPressed: updateControlls(1)
-                ? () async {
-                    int result = await startInventory();
-                    /*if (result == 1) {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => const InventoryRecordsPage(),
-                        ),
-                      );
-                    }*/
-                  }
-                : null,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: updateControlls(1) ? Colors.blue : Colors.grey,
-                padding: const EdgeInsets.symmetric(vertical: 15),
-                minimumSize: const Size(double.infinity, 50),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
+                const SizedBox(height: 10),
+                ElevatedButton(
+                  onPressed: updateControlls(1)
+                      ? () async {
+                          int result = await startInventory();
+                        }
+                      : null,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: updateControlls(1) ? Colors.blue : Colors.grey,
+                    padding: const EdgeInsets.symmetric(vertical: 15),
+                    minimumSize: const Size(double.infinity, 50),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                  ),
+                  child: const Text(
+                    'INICIAR',
+                    style: TextStyle(fontSize: 16, color: Colors.white),
+                  ),
                 ),
-              ),
-              child: const Text(
-                'INICIAR',
-                style: TextStyle(fontSize: 16, color: Colors.white),
-              ),
-            ),
-
-            const SizedBox(height: 10),
-            ElevatedButton(
-              onPressed:updateControlls(2) ? () {
-                _showConfirFinish(context);
-              }: null,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: updateControlls(2) ? Colors.blue : Colors.grey,
-                padding: const EdgeInsets.symmetric(vertical: 15),
-                minimumSize: const Size(double.infinity, 50),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
+                const SizedBox(height: 10),
+                ElevatedButton(
+                  onPressed: updateControlls(2)
+                      ? () {
+                          _showConfirFinish(context);
+                        }
+                      : null,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: updateControlls(2) ? Colors.blue : Colors.grey,
+                    padding: const EdgeInsets.symmetric(vertical: 15),
+                    minimumSize: const Size(double.infinity, 50),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                  ),
+                  child: const Text(
+                    'FINALIZAR',
+                    style: TextStyle(fontSize: 16, color: Colors.white),
+                  ),
                 ),
-              ),
-              child: const Text(
-                'FINALIZAR',
-                style: TextStyle(fontSize: 16, color: Colors.white),
-              ),
-            ),
-
-            const SizedBox(height: 10),
-            ElevatedButton(
-              onPressed:updateControlls(3) ? () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => const InventoryManagementPage()),
-                );
-              }:null,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: updateControlls(3) ? Colors.blue : Colors.grey,
-                padding: const EdgeInsets.symmetric(vertical: 15),
-                minimumSize: const Size(double.infinity, 50),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
+                const SizedBox(height: 10),
+                ElevatedButton(
+                  onPressed: updateControlls(3)
+                      ? () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                                builder: (context) => const InventoryManagementPage()),
+                          );
+                        }
+                      : null,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: updateControlls(3) ? Colors.blue : Colors.grey,
+                    padding: const EdgeInsets.symmetric(vertical: 15),
+                    minimumSize: const Size(double.infinity, 50),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                  ),
+                  child: const Text(
+                    'CANCELAR',
+                    style: TextStyle(fontSize: 16, color: Colors.white),
+                  ),
                 ),
-              ),
-              child: const Text(
-                'CANCELAR',
-                style: TextStyle(fontSize: 16, color: Colors.white),
-              ),
+              ],
             ),
-          ],
-        ),
-      ),
-      // Rodapé
-      bottomNavigationBar: Container(
-        color: Colors.grey[200],
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-        child: const Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Text(
-              "Oxford Porcelanas",
-              style: TextStyle(fontSize: 14),
+          ),
+          // Rodapé
+          Container(
+            color: Colors.grey[200],
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+            child: const Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  "Oxford Porcelanas",
+                  style: TextStyle(fontSize: 14),
+                ),
+                Text(
+                  "Versão: 1.0",
+                  style: TextStyle(fontSize: 14),
+                ),
+              ],
             ),
-            Text(
-              "Versão: 1.0",
-              style: TextStyle(fontSize: 14),
-            ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
 
-  void main() {
-    runApp(MaterialApp(
-      debugShowCheckedModeBanner: false,
-      theme: ThemeData.dark(), 
-      home: const InventoryPage(),
-    ));
-  }
 }

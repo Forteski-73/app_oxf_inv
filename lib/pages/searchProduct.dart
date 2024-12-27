@@ -104,17 +104,38 @@ class _SearchProductState extends State<SearchProduct> {
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
   }
 
-void _searchProduct(String productId) {
-  String searchText = _searchController.text.trim();
-  if (searchText.isNotEmpty) {
-    _filterProducts(searchText);
-    if(_filteredProducts.isEmpty)
-    {
-      _searchAndSaveProduct(productId);
+  void _searchProduct(String productId) {
+    String searchText = _searchController.text.trim();
+    if (searchText.isNotEmpty) {
       _filterProducts(searchText);
+      if(_filteredProducts.isEmpty)
+      {
+        _searchAndSaveProduct(productId);
+        _filterProducts(searchText);
+      }
     }
   }
-}
+
+  Widget _alignRow(String label, String value) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 0.0),
+      child: Row(
+        children: [
+          Expanded(
+            flex: 2, // Quanto de espaço por rótulo
+            child: Text(
+              label,
+              style: const TextStyle(fontWeight: FontWeight.bold),
+            ),
+          ),
+          Expanded(
+            flex: 3, // Oupa o restante do espaço
+            child: Text(value),
+          ),
+        ],
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -157,17 +178,20 @@ void _searchProduct(String productId) {
                   ),
                   elevation: 4,  // Sombra para o card
                   child: ListTile(
-                    title: Text(
-                      product['Name'],
-                      style: TextStyle(fontWeight: FontWeight.bold), // Texto em negrito
+                    title: SingleChildScrollView(
+                      scrollDirection: Axis.horizontal,
+                      child: Text(
+                        product['Name'],
+                        style: const TextStyle(fontWeight: FontWeight.bold),
+                      ),
                     ),
                     subtitle: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text('Código de Barras: ${product['ItemBarCode']}'),
-                        Text('Item:                     ${product['ItemID']}'),
-                        Text('Linha:                    ${product['ProdLinesId'] ?? ''} - ${product['ProdLinesDescriptionId'] ?? ''}'),
-                        Text('Decoração:           ${product['ProdDecorationDescriptionId'] ?? ''}'),
+                        _alignRow('Código de Barras:',  product['ItemBarCode']),
+                        _alignRow('Item:',              product['ItemID']),
+                        _alignRow('Linha:',             '${product['ProdLinesId'] ?? ''} - ${product['ProdLinesDescriptionId'] ?? ''}'),
+                        _alignRow('Decoração:',         product['ProdDecorationDescriptionId'] ?? ''),
                       ],
                     ),
                     onTap: () {

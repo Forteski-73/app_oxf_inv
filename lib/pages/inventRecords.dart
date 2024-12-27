@@ -253,28 +253,37 @@ class InventoryPageState extends State<InventoryRecordsPage> {
     if (required) {
       labelWithAsterisk = '$label *'; // Adiciona o "*" ao label
     }
-
-    suffixIcon = null;
-
-    if (id == 8) { // Quando for barcode
-      suffixIcon = IconButton(
-        icon: const Icon(Icons.search),
-        onPressed: () {
-          if (context != null) {
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (context) => SearchProduct(
-                  onProductSelected: (selectedProduct) {
-                    controller.text = selectedProduct; // Atualiza o campo com o produto selecionado
-                  },
+    
+  if (id == 8) { // Quando for barcode
+    suffixIcon = Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        IconButton(
+          icon: const Icon(Icons.barcode_reader),
+          onPressed: () {
+            // Ação para o ícone barcode_reader
+          },
+        ),
+        IconButton(
+          icon: const Icon(Icons.search),
+          onPressed: () {
+            if (context != null) {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => SearchProduct(
+                    onProductSelected: (selectedProduct) {
+                      controller.text = selectedProduct;
+                    },
+                  ),
                 ),
-              ),
-            );
-          }
-        },
-      );
-    }
+              );
+            }
+          },
+        ),
+      ],
+    );
+  }
 
     return Visibility(
       visible: visible,
@@ -282,15 +291,19 @@ class InventoryPageState extends State<InventoryRecordsPage> {
         padding: const EdgeInsets.only(bottom: 8.0),
         child: TextField(
           controller: controller,
+          style: const TextStyle(fontSize: 18),
           enabled: enabled,
           onChanged: (value) {
             _validateMandatoryFields(settings);
             _validateFields(value, id);
           },
+          //keyboardType: (id == 1 || id == 2) ? TextInputType.number : TextInputType.text,
+          keyboardType: TextInputType.number,
           decoration: InputDecoration(
             labelText: labelWithAsterisk,
             suffixIcon: suffixIcon,
             border: const OutlineInputBorder(),
+            contentPadding: const EdgeInsets.symmetric(vertical: 14.0, horizontal: 12.0), // Ajuste a altura
           ),
         ),
       ),
@@ -307,7 +320,7 @@ class InventoryPageState extends State<InventoryRecordsPage> {
       ),
       body: SingleChildScrollView( // SingleChildScrollView para rolar o conteúdo
         child: Padding(
-          padding: const EdgeInsets.all(16.0),
+          padding: const EdgeInsets.all(1.0),
           child: FutureBuilder<Map<String, Map<String, dynamic>>>( 
             future: _settingsFuture,
             builder: (context, snapshot) {
@@ -322,12 +335,22 @@ class InventoryPageState extends State<InventoryRecordsPage> {
               return Column(
                 children: [
                   Align(
-                    alignment: Alignment.centerLeft, 
+                    alignment: Alignment.centerLeft,
                     child: Padding(
                       padding: const EdgeInsets.symmetric(vertical: 8.0),
-                      child: Text(
-                        'Total de Registros: ${_totalController.text}',
-                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          const Text(
+                            'Total de Registros: ',
+                            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+                          ),
+                          Text(
+                            _totalController.text,
+                            style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold,), // Fonte para o valor
+                          ),
+                          const Padding( padding: EdgeInsets.only(right: 1)),
+                        ],
                       ),
                     ),
                   ),
@@ -468,7 +491,7 @@ class InventoryPageState extends State<InventoryRecordsPage> {
                     controller: controllers[10],
                     settings: settings,
                   ),
-                  const SizedBox(height: 6),
+                  //const SizedBox(height: 6),
                   Align(
                     alignment: Alignment.bottomCenter,
                     child: Padding(
@@ -486,10 +509,11 @@ class InventoryPageState extends State<InventoryRecordsPage> {
                               ),
                             ),
                             onPressed: () {
+                              FocusScope.of(context).unfocus();
                               clearFields();
                             },
                             icon: const Icon(Icons.close, color: Colors.white),
-                            label: const Text('LIMPAR', style: TextStyle(color: Colors.white),),
+                            label: const Text('LIMPAR', style: TextStyle(color: Colors.white, fontSize: 16,),),
                           ),
                           const SizedBox(width: 16),
                           ElevatedButton.icon(
@@ -502,6 +526,7 @@ class InventoryPageState extends State<InventoryRecordsPage> {
                             ),
                             onPressed: _isSaveButtonEnabled
                               ? () async {
+                                  FocusScope.of(context).unfocus();
                                   if (_validateMandatoryFields(settings)) {
                                     int result = await saveData(context);
                                     if(result>0)
@@ -518,7 +543,7 @@ class InventoryPageState extends State<InventoryRecordsPage> {
                                 }
                               : null,
                             icon: const Icon(Icons.save, color: Colors.white),
-                            label: const Text('GRAVAR', style: TextStyle(color: Colors.white),),
+                            label: const Text('GRAVAR', style: TextStyle(color: Colors.white, fontSize: 16,),),
                           ),
                         ],
                       ),
@@ -530,7 +555,7 @@ class InventoryPageState extends State<InventoryRecordsPage> {
           ),
         ),
       ),
-      bottomNavigationBar: Container(
+      /*bottomNavigationBar: Container(
         color: Colors.grey[200],
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
         child: const Row(
@@ -540,7 +565,7 @@ class InventoryPageState extends State<InventoryRecordsPage> {
             Text("Versão: 1.0", style: TextStyle(fontSize: 14)),
           ],
         ),
-      ),
+      ),*/
     );
   }
 }

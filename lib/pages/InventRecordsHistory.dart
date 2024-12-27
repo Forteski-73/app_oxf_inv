@@ -55,8 +55,161 @@ class _InventoryHistoryDetailState extends State<InventoryHistoryDetail> {
     }
   }
 
+  Widget _alignRow(String label, String value) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 0.0),
+      child: Row(
+        children: [
+          Expanded(
+            flex: 2, // Quanto de espaço por rótulo
+            child: Text(
+              label,
+              style: const TextStyle(fontWeight: FontWeight.bold),
+            ),
+          ),
+          Expanded(
+            flex: 3, // Ocupa o restante do espaço
+            child: Text(value),
+          ),
+        ],
+      ),
+    );
+  }
+
+    Widget _alignTitle(String label, String value) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 0.0),
+      child: Row(
+        children: [
+          Expanded(
+            flex: 2,
+            child: Text(
+              label,
+              style: const TextStyle(fontWeight: FontWeight.bold),
+            ),
+          ),
+          Expanded(
+            flex: 3,
+            child: Text(value, style: const TextStyle(fontWeight: FontWeight.bold),),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /*Future<void> _deleteRecord(int recordId) async {
+    await DBInventory.instance.deleteInventoryRecord(recordId);
+    // Recarrega os dados do inventário e dos registros
+    final inventory = await DBInventory.instance.queryFirstInventoryByStatus();
+    final records = await DBInventory.instance.queryAllInventoryRecords();
+    
+    setState(() { // Atualiza o estado para refletir as alterações
+      _inventory = inventory ?? {};
+      _records = records;
+    });
+  }*/
+
+  Future<void> _deleteRecord(int recordId) async {
+    int st = 0;
+    try {
+      st = await DBInventory.instance.deleteInventoryRecord(recordId);
+      if(st > 0) {
+        // Recarrega os dados do inventário atual e seus registros
+        final inventoryResult = await _dbInventory.database.then((db) => db.query(
+              DBInventory.tableInventory,
+              where: '${DBInventory.columnId} = ?',
+              whereArgs: [widget.inventoryId],
+            ));
+
+        final inventoryRecordsResult = await _dbInventory.database.then((db) => db.query(
+              DBInventory.tableInventoryRecord,
+              where: '${DBInventory.columnInventoryId} = ?',
+              whereArgs: [widget.inventoryId],
+            ));
+
+        setState(() { // Atualiza o estado com os dados mais recentes
+          _inventory = inventoryResult.isNotEmpty ? inventoryResult.first : {};
+          _records = inventoryRecordsResult;
+        });
+
+        ScaffoldMessenger.of(context).showSnackBar( // mostra mensagem de sucesso
+          const SnackBar(content: Text('Contagem excluída com sucesso!')),
+        );
+      }
+      else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Erro ao atualizar os dados.')),
+        );
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Erro ao atualizar os dados: $e')),
+      );
+    }
+  }
+
+  Future<void> _showDeleteConfirmationDialog(BuildContext context, int recordId) async {
+    return showDialog<void>(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(8),
+          ),
+          content: const Text(
+            'Deseja realmente excluir este registro?',
+          ),
+          actions: [
+            Row(
+              children: [
+                Expanded(
+                  child: ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      padding: const EdgeInsets.all(16),
+                      backgroundColor: Colors.red,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                    ),
+                    onPressed: () {
+                      Navigator.of(context).pop(); // Fecha o popup
+                    },
+                    child: const Text(
+                      'CANCELAR',
+                      style: TextStyle(color: Colors.white),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      padding: const EdgeInsets.all(16),
+                      backgroundColor: Colors.blue,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                    ),
+                    onPressed: () async {
+                      Navigator.of(context).pop(); // Fecha o popup
+                      await _deleteRecord(recordId); // Chama o método de exclusão
+                    },
+                    child: const Text(
+                      'SIM',
+                      style: TextStyle(color: Colors.white),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   @override
-    Widget build(BuildContext context) {
+  Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         title: Text(
@@ -96,12 +249,15 @@ class _InventoryHistoryDetailState extends State<InventoryHistoryDetail> {
                           fontWeight: FontWeight.bold,
                         ),
                       ),
-                      subtitle: Text(
-                        'Código do Inventário: ${_inventory[DBInventory.columnCode] ?? ''}\n'
-                        'Data de criação: ${_inventory[DBInventory.columnDate] ?? ''}\n'
-                        'Nome do Inventário: ${_inventory[DBInventory.columnName] ?? ''}\n'
-                        'Setor: ${_inventory[DBInventory.columnSector] ?? ''}\n'
-                        'Total: ${_inventory[DBInventory.columnTotal] ?? ''}',
+                      subtitle: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          _alignRow('Código do Inventário:',  '${_inventory[DBInventory.columnCode]}'),
+                          _alignRow('Data de criação:',       '${_inventory[DBInventory.columnDate]}'),
+                          _alignRow('Nome do Inventário:',    '${_inventory[DBInventory.columnName]}'),
+                          _alignRow('Setor:',                 '${_inventory[DBInventory.columnSector]}'),
+                          _alignRow('Total:',                 '${_inventory[DBInventory.columnTotal]}'),
+                        ],
                       ),
                     ),
                   ),
@@ -117,15 +273,21 @@ class _InventoryHistoryDetailState extends State<InventoryHistoryDetail> {
                     ..._records.map((record) {
                       return Card(
                         child: ListTile(
-                          title: Text(
-                            'Sequência: ${record[DBInventory.columnId] ?? ''}',
-                            style: TextStyle(fontWeight: FontWeight.bold),
+                          title: _alignRow('Sequência:', '${record[DBInventory.columnId] ?? ''}'),
+                          subtitle: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              _alignRow('Unitizador:', '${record[DBInventory.columnUnitizer] ?? ''}'),
+                              _alignRow('Depósito:', '${record[DBInventory.columnDeposit] ?? ''}'),
+                              _alignRow('Código de Barras:', '${record[DBInventory.columnBarcode] ?? ''}'),
+                              _alignRow('Total:', '${record[DBInventory.columnTotal] ?? ''}'),
+                            ],
                           ),
-                          subtitle: Text(
-                            'Unitizador: ${record[DBInventory.columnUnitizer] ?? ''}\n'
-                            'Depósito: ${record[DBInventory.columnDeposit] ?? ''}\n'
-                            'Código de Barras: ${record[DBInventory.columnBarcode] ?? ''}\n'
-                            'Total: ${record[DBInventory.columnTotal] ?? ''}',
+                          trailing: IconButton(
+                            icon: Icon(Icons.delete, color: Colors.red),
+                            onPressed: () async {
+                              await _showDeleteConfirmationDialog(context, record[DBInventory.columnId] as int);
+                            },
                           ),
                         ),
                       );

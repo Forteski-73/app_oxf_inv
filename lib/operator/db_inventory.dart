@@ -234,8 +234,51 @@ Future<List<Map<String, dynamic>>> queryAllInventory() async {
     return await db.query(tableInventoryRecord);
   }
 
-  Future<int> deleteInventoryRecord(int id) async {
+  /*Future<int> deleteInventoryRecord(int id) async {
     Database db = await instance.database;
     return await db.delete(tableInventoryRecord, where: '$columnId = ?', whereArgs: [id]);
+  }*/
+  // deleta a contagem e subtrai do Total
+  Future<int> deleteInventoryRecord(int id) async {
+    Database db = await instance.database;
+    int st = 0;
+    // Busca o registro a ser deletado
+    List<Map<String, dynamic>> recordResults = await db.query(
+      tableInventoryRecord,
+      columns: [columnInventoryId, columnSubTotal],
+      where: '$columnId = ?',
+      whereArgs: [id],
+    );
+
+    if (recordResults.isNotEmpty) {
+      // Pega o sub-total
+      int inventoryId = recordResults.first[columnInventoryId];
+      int recordTotal = recordResults.first[columnSubTotal] ?? 0;
+
+      // Busca o registro pai na Inventory
+      List<Map<String, dynamic>> inventoryResults = await db.query(
+        tableInventory,
+        columns: [columnTotal],
+        where: '$columnId = ?',
+        whereArgs: [inventoryId],
+      );
+
+      if (inventoryResults.isNotEmpty) {
+        // subtrai o valor do total na Inventory
+        int inventoryTotal = inventoryResults.first[columnTotal] ?? 0;
+        int newTotal = inventoryTotal - recordTotal;
+
+        await db.update(
+          tableInventory,
+          {columnTotal: newTotal},
+          where: '$columnId = ?',
+          whereArgs: [inventoryId],
+        );
+      }
+      // Deleta o registro na tabela inventory_record
+      st = await db.delete(tableInventoryRecord, where: '$columnId = ?', whereArgs: [id]);
+    }
+    return st;
   }
+
 }
