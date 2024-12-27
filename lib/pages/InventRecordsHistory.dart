@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:app_oxf_inv/operator/db_inventory.dart';
 import 'inventoryExport.dart';
+import 'InventoryHistory.dart';
 
 class InventoryHistoryDetail extends StatefulWidget {
   final int inventoryId;
@@ -109,7 +110,34 @@ class _InventoryHistoryDetailState extends State<InventoryHistoryDetail> {
     });
   }*/
 
-  Future<void> _deleteRecord(int recordId) async {
+  Future<int> _delInvent(int inventoryId) async {
+    int st = 0;
+    try {
+      st = await DBInventory.instance.deleteInventoryAndRecords(inventoryId);
+
+      if(st > 0) {
+        // Exibição de feedback ao usuário
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Registro excluído com sucesso!')),
+        );
+      }
+      else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Erro ao excluir o registro.')),
+        );
+      }
+
+    } catch (e) {
+      // Em caso de erro, exibir uma mensagem
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Erro ao excluir registro: $e')),
+      );
+    }
+
+    return st;
+  }
+
+  Future<void> _delInventRecord(int recordId) async {
     int st = 0;
     try {
       st = await DBInventory.instance.deleteInventoryRecord(recordId);
@@ -138,7 +166,7 @@ class _InventoryHistoryDetailState extends State<InventoryHistoryDetail> {
       }
       else {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Erro ao atualizar os dados.')),
+          const SnackBar(content: Text('Erro ao excluir o registro.')),
         );
       }
     } catch (e) {
@@ -148,65 +176,80 @@ class _InventoryHistoryDetailState extends State<InventoryHistoryDetail> {
     }
   }
 
-  Future<void> _showDeleteConfirmationDialog(BuildContext context, int recordId) async {
-    return showDialog<void>(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(8),
-          ),
-          content: const Text(
-            'Deseja realmente excluir este registro?',
-          ),
-          actions: [
-            Row(
-              children: [
-                Expanded(
-                  child: ElevatedButton(
-                    style: ElevatedButton.styleFrom(
-                      padding: const EdgeInsets.all(16),
-                      backgroundColor: Colors.red,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                    ),
-                    onPressed: () {
-                      Navigator.of(context).pop(); // Fecha o popup
-                    },
-                    child: const Text(
-                      'CANCELAR',
-                      style: TextStyle(color: Colors.white),
+  Future<void> _showDeleteConfirmationDialog(BuildContext context, int recordId, int flag) async {
+  return showDialog<void>(
+    context: context,
+    builder: (BuildContext context) {
+      return AlertDialog(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(8),
+        ),
+        content: const Text(
+          'Deseja realmente excluir este registro?',
+        ),
+        actions: [
+          Row(
+            children: [
+              Expanded(
+                child: ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    padding: const EdgeInsets.all(16),
+                    backgroundColor: Colors.red,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
                     ),
                   ),
-                ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: ElevatedButton(
-                    style: ElevatedButton.styleFrom(
-                      padding: const EdgeInsets.all(16),
-                      backgroundColor: Colors.blue,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                    ),
-                    onPressed: () async {
-                      Navigator.of(context).pop(); // Fecha o popup
-                      await _deleteRecord(recordId); // Chama o método de exclusão
-                    },
-                    child: const Text(
-                      'SIM',
-                      style: TextStyle(color: Colors.white),
-                    ),
+                  onPressed: () {
+                    Navigator.of(context).pop(); // Fecha o popup
+                  },
+                  child: const Text(
+                    'CANCELAR',
+                    style: TextStyle(color: Colors.white),
                   ),
                 ),
-              ],
-            ),
-          ],
-        );
-      },
-    );
-  }
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    padding: const EdgeInsets.all(16),
+                    backgroundColor: Colors.blue,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                  ),
+                  onPressed: () async {
+                    Navigator.of(context).pop(); // Fecha o popup
+
+                    if (flag == 0) { 
+                      int st = await _delInvent(recordId);
+                      if (st == 1) {
+                        // Substitui a página atual pela InventoryRecordsPage
+                        Navigator.pushReplacement(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => const InventoryHistory(), // Navega para a página de inventário
+                          ),
+                        );
+                      }
+                    } else {
+                      await _delInventRecord(recordId);
+                    }
+                  },
+                  child: const Text(
+                    'SIM',
+                    style: TextStyle(color: Colors.white),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ],
+      );
+    },
+  );
+}
+
 
   @override
   Widget build(BuildContext context) {
@@ -227,71 +270,82 @@ class _InventoryHistoryDetailState extends State<InventoryHistoryDetail> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Card(
-                    color: _inventory[DBInventory.columnStatus] == 'CONCLUÍDO'
-                        ? Colors.green.shade100
-                        : _inventory[DBInventory.columnStatus] == 'EM ANDAMENTO'
-                            ? Colors.orange.shade100
-                            : _inventory[DBInventory.columnStatus] == 'NÃO INICIADO'
-                                ? Colors.blue.shade100
-                                : Colors.grey.shade100,  // Cor padrão caso o status seja desconhecido
-                    child: ListTile(
-                      title: Text(
-                        _inventory[DBInventory.columnStatus] ?? 'Status não disponível',
-                        style: TextStyle(
-                          color: _inventory[DBInventory.columnStatus] == 'CONCLUÍDO'
-                              ? Colors.green
-                              : _inventory[DBInventory.columnStatus] == 'EM ANDAMENTO'
-                                  ? Colors.orange
-                                  : _inventory[DBInventory.columnStatus] == 'NÃO INICIADO'
-                                      ? Colors.blue
-                                      : Colors.grey, // Cor para status desconhecido
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      subtitle: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          _alignRow('Código do Inventário:',  '${_inventory[DBInventory.columnCode]}'),
-                          _alignRow('Data de criação:',       '${_inventory[DBInventory.columnDate]}'),
-                          _alignRow('Nome do Inventário:',    '${_inventory[DBInventory.columnName]}'),
-                          _alignRow('Setor:',                 '${_inventory[DBInventory.columnSector]}'),
-                          _alignRow('Total:',                 '${_inventory[DBInventory.columnTotal]}'),
-                        ],
+                Card(
+                  color: _inventory[DBInventory.columnStatus] == 'CONCLUÍDO'
+                      ? Colors.green.shade100
+                      : _inventory[DBInventory.columnStatus] == 'EM ANDAMENTO'
+                          ? Colors.orange.shade100
+                          : _inventory[DBInventory.columnStatus] == 'NÃO INICIADO'
+                              ? Colors.blue.shade100
+                              : Colors.grey.shade100, // Cor padrão caso o status seja desconhecido
+                  child: ListTile(
+                    title: Text(
+                      _inventory[DBInventory.columnStatus] ?? 'Status não disponível',
+                      style: TextStyle(
+                        color: _inventory[DBInventory.columnStatus] == 'CONCLUÍDO'
+                            ? Colors.green
+                            : _inventory[DBInventory.columnStatus] == 'EM ANDAMENTO'
+                                ? Colors.orange
+                                : _inventory[DBInventory.columnStatus] == 'NÃO INICIADO'
+                                    ? Colors.blue
+                                    : Colors.grey, // Cor para status desconhecido
+                        fontWeight: FontWeight.bold,
                       ),
                     ),
-                  ),
-                  SizedBox(height: 16),
-                  const Text(
-                    'Itens do Inventário',
-                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                  ),
-                  SizedBox(height: 8),
-                  if (_records.isEmpty)
-                    Text('Nenhum item encontrado.')
-                  else
-                    ..._records.map((record) {
-                      return Card(
-                        child: ListTile(
-                          title: _alignRow('Sequência:', '${record[DBInventory.columnId] ?? ''}'),
-                          subtitle: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              _alignRow('Unitizador:', '${record[DBInventory.columnUnitizer] ?? ''}'),
-                              _alignRow('Depósito:', '${record[DBInventory.columnDeposit] ?? ''}'),
-                              _alignRow('Código de Barras:', '${record[DBInventory.columnBarcode] ?? ''}'),
-                              _alignRow('Total:', '${record[DBInventory.columnTotal] ?? ''}'),
-                            ],
-                          ),
-                          trailing: IconButton(
-                            icon: Icon(Icons.delete, color: Colors.red),
-                            onPressed: () async {
-                              await _showDeleteConfirmationDialog(context, record[DBInventory.columnId] as int);
-                            },
-                          ),
+                    subtitle: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        _alignRow('Código do Inventário:', '${_inventory[DBInventory.columnCode]}'),
+                        _alignRow('Data de criação:', '${_inventory[DBInventory.columnDate]}'),
+                        _alignRow('Nome do Inventário:', '${_inventory[DBInventory.columnName]}'),
+                        _alignRow('Setor:', '${_inventory[DBInventory.columnSector]}'),
+                        _alignRow('Total:', '${_inventory[DBInventory.columnTotal]}'),
+                      ],
+                    ),
+                    trailing: Row(
+                      mainAxisSize: MainAxisSize.min, // Limita o tamanho da linha
+                      children: [
+                        IconButton(
+                          icon: Icon(Icons.delete, color: Colors.red),
+                          onPressed: () async {
+                            await _showDeleteConfirmationDialog(context, _inventory[DBInventory.columnId] as int, 0);
+                          },
                         ),
-                      );
-                    }).toList(),
+                      ],
+                    ),
+                  ),
+                ),
+                SizedBox(height: 16),
+                const Text(
+                  'Itens do Inventário',
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                ),
+                SizedBox(height: 8),
+                if (_records.isEmpty)
+                  Text('Nenhum item encontrado.')
+                else
+                  ..._records.map((record) {
+                    return Card(
+                      child: ListTile(
+                        title: _alignRow('Sequência:', '${record[DBInventory.columnId] ?? ''}'),
+                        subtitle: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            _alignRow('Unitizador:', '${record[DBInventory.columnUnitizer] ?? ''}'),
+                            _alignRow('Depósito:', '${record[DBInventory.columnDeposit] ?? ''}'),
+                            _alignRow('Código de Barras:', '${record[DBInventory.columnBarcode] ?? ''}'),
+                            _alignRow('Total:', '${record[DBInventory.columnTotal] ?? ''}'),
+                          ],
+                        ),
+                        trailing: IconButton(
+                          icon: Icon(Icons.delete, color: Colors.red),
+                          onPressed: () async {
+                            await _showDeleteConfirmationDialog(context, record[DBInventory.columnId] as int, 1);
+                          },
+                        ),
+                      ),
+                    );
+                  }).toList(),
                 ],
               ),
             ),

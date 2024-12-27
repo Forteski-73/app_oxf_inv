@@ -281,4 +281,28 @@ Future<List<Map<String, dynamic>>> queryAllInventory() async {
     return st;
   }
 
+  Future<int> deleteInventoryAndRecords(int inventoryId) async {
+    Database db = await instance.database;
+    int result = 0;
+
+    // Iniciar uma transação para garantir consistência
+    await db.transaction((txn) async {
+      // Excluir registros filhos da tabela inventory_record
+      await txn.delete(
+        tableInventoryRecord,
+        where: '$columnInventoryId = ?',
+        whereArgs: [inventoryId],
+      );
+
+      // Excluir o registro da tabela inventory
+      result = await txn.delete(
+        tableInventory,
+        where: '$columnId = ?',
+        whereArgs: [inventoryId],
+      );
+    });
+
+    return result;
+  }
+
 }
