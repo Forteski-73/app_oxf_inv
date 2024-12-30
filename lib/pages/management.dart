@@ -3,23 +3,26 @@ import '../pages/InventoryHistory.dart';
 import 'inventory.dart';
 
 void main() {
-  runApp(MaterialApp(
-    debugShowCheckedModeBanner: false,
-    theme: ThemeData.dark(), 
-    home: const InventoryManagementPage(),
-  ));
+  runApp(const InventoryManagementPage());
 }
 
 class InventoryManagementPage extends StatelessWidget {
   const InventoryManagementPage({super.key});
 
- @override
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Gerenciamento de Inventário', style: TextStyle(color: Colors.white)),
         backgroundColor: Colors.black,
         iconTheme: const IconThemeData(color: Colors.white),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () {
+            // Volta para a rota inicial (menu)
+            Navigator.popUntil(context, ModalRoute.withName('/menu'));  // Aqui / é a rota do menu principal
+          },
+        ),
       ),
       body: Stack(
         children: [
@@ -60,10 +63,7 @@ class InventoryManagementPage extends StatelessWidget {
                     ElevatedButton(
                       onPressed: () {
                         // Chamar criar Inventário
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(builder: (context) => InventoryPage()),
-                        );
+                        Navigator.pushNamed(context, '/inventory');
                       },
                       style: ElevatedButton.styleFrom(
                         padding: const EdgeInsets.symmetric(vertical: 25),
@@ -88,11 +88,8 @@ class InventoryManagementPage extends StatelessWidget {
                     const SizedBox(height: 20),
                     ElevatedButton(
                       onPressed: () {
-                        // Chamar Histórico Inventários
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(builder: (context) => InventoryHistory()),
-                        );
+
+                        Navigator.pushNamed(context, '/inventoryHistory');
                       },
                       style: ElevatedButton.styleFrom(
                         padding: const EdgeInsets.symmetric(vertical: 25),
@@ -142,4 +139,3 @@ class InventoryManagementPage extends StatelessWidget {
     );
   }
 }
-

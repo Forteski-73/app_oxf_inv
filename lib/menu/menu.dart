@@ -1,36 +1,17 @@
 import 'package:flutter/material.dart';
-import '../pages/inventoryExport.dart';
-import '../pages/importProduct.dart';
-import '../pages/management.dart';
-import '../pages/inventorySearch.dart';
-import '../pages/settings.dart';
-import '../pages/InventoryHistory.dart';
+/*import '../pages/InventoryHistory.dart'; // Adicionando a importação das páginas
+import '../pages/ImportProduct.dart';
+import '../pages/InventorySearch.dart';
+import '../pages/Settings.dart';
 import '../pages/sync.dart';
+import '../pages/management.dart';*/
 
-void main() {
-  runApp(MaterialApp(
-    theme: ThemeData.dark(),
-    home: const MyApp(),
-  ));
-}
-
-class MyApp extends StatelessWidget {
-  const MyApp({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return const MaterialApp(
-      debugShowCheckedModeBanner: false,
-      home: MenuPage(),
-    );
-  }
-}
 
 class MenuPage extends StatelessWidget {
   const MenuPage({super.key});
 
   @override
-  Widget build(BuildContext context) { 
+  Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Menu', style: TextStyle(color: Colors.white)),
@@ -46,38 +27,37 @@ class MenuPage extends StatelessWidget {
                 context,
                 icon: Icons.inventory_2_outlined,
                 label: "Gerenciamento de Inventário",
-                page: const InventoryManagementPage(), // Página de Gerenciamento de Inventário
+                routeName: '/management', // Rota para Gerenciamento de Inventário
               ),
               _menuItem(
                 context,
                 icon: Icons.upload_outlined,
                 label: "Exportação de Dados",
-                page: const InventoryHistory(),
-                //page: const ExportPage(), // Página de Exportação de Dados
+                routeName: '/inventoryExport', // Rota para Exportação de Dados
               ),
               _menuItem(
                 context,
                 icon: Icons.download_outlined,
                 label: "Importação de Produtos",
-                page: ImportProduct(), // Página de Importação de Produtos
+                routeName: '/importProduct', // Rota para Importação de Produtos
               ),
               _menuItem(
                 context,
                 icon: Icons.sync_outlined,
                 label: "Sincronização",
-                page: const SyncPage(), // Página de Sincronização
+                routeName: '/sync', // Rota para Sincronização
               ),
               _menuItem(
                 context,
                 icon: Icons.search,
                 label: "Pesquisar Produtos",
-                page: const InventorySearchPage(), // Página de Configurações
+                routeName: '/inventorySearch', // Rota para Pesquisar Produtos
               ),
               _menuItem(
                 context,
                 icon: Icons.settings_outlined,
                 label: "Configurações",
-                page: const SettingsPage(), // Página de Configurações
+                routeName: '/settings', // Rota para Configurações
               ),
             ],
           ),
@@ -108,18 +88,15 @@ class MenuPage extends StatelessWidget {
   Widget _menuItem(BuildContext context, {
     required IconData icon,
     required String label,
-    required Widget page,
+    required String routeName, // Alterado para receber a rota como string
   }) {
     return ListTile(
       leading: Icon(icon, color: Colors.black),
       title: Text(label, style: const TextStyle(color: Colors.black)),
       onTap: () {
-        Navigator.push(
-          context,
-          MaterialPageRoute(builder: (context) => page),
-        );
+        // Usando Navigator.pushNamed para navegar para as rotas definidas
+        Navigator.pushNamed(context, routeName); 
       },
     );
   }
-
 }

@@ -125,7 +125,7 @@ class _InventoryPageState extends State<InventoryPage> {
 
     Map<String, dynamic> inventoryRow = {
       DBInventory.columnCode: code,
-      DBInventory.columnDate: '$date ${DateFormat('HH:mm').format(dt)}',
+      DBInventory.columnDate: date, //${DateFormat('HH:mm').format(dt)},
       DBInventory.columnHour: hour,
       DBInventory.columnName: name,
       DBInventory.columnSector: sector,
@@ -340,17 +340,39 @@ class _InventoryPageState extends State<InventoryPage> {
             padding: const EdgeInsets.all(16.0),
             child: Column(
               children: [
+                ElevatedButton(
+                  onPressed: updateControlls(1)
+                      ? () async {
+                          FocusScope.of(context).unfocus();
+                          int result = await startInventory();
+                        }
+                      : null,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: updateControlls(1) ? Colors.blue : Colors.grey,
+                    padding: const EdgeInsets.symmetric(vertical: 15),
+                    minimumSize: const Size(double.infinity, 50),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                  ),
+                  child: const Text(
+                    'INICIAR',
+                    style: TextStyle(fontSize: 16, color: Colors.white),
+                  ),
+                ),
+                const SizedBox(height: 10),
                 ElevatedButton.icon(
                   onPressed: updateControlls(0)
                       ? () async {
                           int result = await startInventory();
                           if (result == 1) {
-                            Navigator.push(
+                            Navigator.pushNamed(context, '/inventoryRecord');
+                            /*Navigator.push(
                               context,
                               MaterialPageRoute(
                                 builder: (context) => const InventoryRecordsPage(),
                               ),
-                            );
+                            );*/
                           }
                         }
                       : null,
@@ -366,26 +388,6 @@ class _InventoryPageState extends State<InventoryPage> {
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(8),
                     ),
-                  ),
-                ),
-                const SizedBox(height: 10),
-                ElevatedButton(
-                  onPressed: updateControlls(1)
-                      ? () async {
-                          int result = await startInventory();
-                        }
-                      : null,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: updateControlls(1) ? Colors.blue : Colors.grey,
-                    padding: const EdgeInsets.symmetric(vertical: 15),
-                    minimumSize: const Size(double.infinity, 50),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                  ),
-                  child: const Text(
-                    'INICIAR',
-                    style: TextStyle(fontSize: 16, color: Colors.white),
                   ),
                 ),
                 const SizedBox(height: 10),
@@ -412,11 +414,7 @@ class _InventoryPageState extends State<InventoryPage> {
                 ElevatedButton(
                   onPressed: updateControlls(3)
                       ? () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                                builder: (context) => const InventoryManagementPage()),
-                          );
+                          Navigator.pushReplacementNamed(context, '/management',);
                         }
                       : null,
                   style: ElevatedButton.styleFrom(

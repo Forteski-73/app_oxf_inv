@@ -2,15 +2,17 @@ import 'package:flutter/material.dart';
 import 'package:app_oxf_inv/operator/db_inventory.dart';
 import 'InventRecordsHistory.dart';
 
+final RouteObserver<PageRoute> routeObserver = RouteObserver<PageRoute>();
+
 void main() {
   runApp(MaterialApp(
     debugShowCheckedModeBanner: false,
     theme: ThemeData.dark(),
     home: const InventoryHistory(),
+    navigatorObservers: [routeObserver], // Adiciona o observador de rotas
   ));
 }
 
-// Tela de Histórico de Inventário
 class InventoryHistory extends StatefulWidget {
   const InventoryHistory({super.key});
 
@@ -18,7 +20,7 @@ class InventoryHistory extends StatefulWidget {
   State<InventoryHistory> createState() => _InventoryHistoryState();
 }
 
-class _InventoryHistoryState extends State<InventoryHistory> {
+class _InventoryHistoryState extends State<InventoryHistory> with RouteAware {
   List<Map<String, dynamic>> inventoryData = [];
   bool isLoading = true;
 
@@ -29,19 +31,42 @@ class _InventoryHistoryState extends State<InventoryHistory> {
   }
 
   Future<void> _fetchInventoryData() async {
-    // Obtém os dados do banco de dados
+    setState(() {
+      isLoading = true;
+    });
+
     try {
       List<Map<String, dynamic>> data = await DBInventory.instance.queryAllInventory();
-      setState(() {
-        inventoryData = data;
-        isLoading = false;
-      });
+      if (mounted) {
+        setState(() {
+          inventoryData = data;
+          isLoading = false;
+        });
+      }
     } catch (e) {
-      setState(() {
-        isLoading = false;
-      });
+      if (mounted) {
+        setState(() {
+          isLoading = false;
+        });
+      }
       print('Erro ao buscar dados do banco: $e');
     }
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final route = ModalRoute.of(context);
+    if (route is PageRoute<dynamic>) {
+      routeObserver.subscribe(this, route); // Inscreve o observador de rotas
+    }
+  }
+
+  @override
+  void didPopNext() {
+    super.didPopNext();
+    // Quando a página anterior for reaparecer (isto é, quando o usuário voltar para InventoryHistory)
+    _fetchInventoryData(); // Atualiza os dados
   }
 
   @override
@@ -85,7 +110,7 @@ class _InventoryHistoryState extends State<InventoryHistory> {
                               ),
                             ),
                             child: Text(
-                              inventory[DBInventory.columnStatus] ?? 'NÃO INICIADO', // Atualiza com o valor do status
+                              inventory[DBInventory.columnStatus] ?? 'NÃO INICIADO',
                               style: const TextStyle(
                                 color: Colors.white,
                                 fontWeight: FontWeight.bold,
@@ -100,22 +125,19 @@ class _InventoryHistoryState extends State<InventoryHistory> {
                                 Container(
                                   width: 12,
                                   height: double.infinity,
-                                  /*color: inventory[DBInventory.columnStatus] == 'CONCLUÍDO'
-                                      ? Colors.green
-                                      : Colors.orange,*/
                                 ),
                                 // Conteúdo do ListTile
                                 Expanded(
                                   child: GestureDetector(
-                                    onTap: () {
-                                      Navigator.push(
+                                    onTap: () async {
+                                      final result = await Navigator.pushNamed(
                                         context,
-                                        MaterialPageRoute(
-                                          builder: (context) => InventoryHistoryDetail(
-                                            inventoryId: inventory[DBInventory.columnId] as int,
-                                          ),
-                                        ),
+                                        '/inventoryHistoryDetail',
+                                        arguments: inventory[DBInventory.columnId] as int,
                                       );
+                                      if (result == true) {
+                                        _fetchInventoryData(); // Atualiza os dados caso o resultado seja 'true'
+                                      }
                                     },
                                     child: ListTile(
                                       title: Text(inventory[DBInventory.columnName] as String),
@@ -124,7 +146,7 @@ class _InventoryHistoryState extends State<InventoryHistory> {
                                         children: [
                                           Text(inventory[DBInventory.columnCode] as String),
                                           Text('${inventory[DBInventory.columnDate]} - ${inventory[DBInventory.columnStatus]}'),
-                                          Text('Total de itens: ${inventory[DBInventory.columnTotal].toString()}'),
+                                          Text('Total de itens: ${inventory[DBInventory.columnTotal] ?? '0'}'),
                                         ],
                                       ),
                                     ),
@@ -145,19 +167,17 @@ class _InventoryHistoryState extends State<InventoryHistory> {
                     );
                   },
                 ),
-                bottomNavigationBar: Container(
-                  color: Colors.grey[200],
-                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-                  child: const Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text("Oxford Porcelanas", style: TextStyle(fontSize: 14),),
-                      Text( "Versão: 1.0", style: TextStyle(fontSize: 14),),
-                    ],
-                  ),
-              ),
+      bottomNavigationBar: Container(
+        color: Colors.grey[200],
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+        child: const Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text("Oxford Porcelanas", style: TextStyle(fontSize: 14)),
+            Text("Versão: 1.0", style: TextStyle(fontSize: 14)),
+          ],
+        ),
+      ),
     );
   }
-
 }
-
