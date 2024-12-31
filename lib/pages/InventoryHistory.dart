@@ -156,7 +156,7 @@ class _InventoryHistoryState extends State<InventoryHistory> with RouteAware {
                                   alignment: Alignment.center,
                                   child: Padding(
                                     padding: EdgeInsets.only(right: 16.0),
-                                    child: Icon(Icons.navigate_next_sharp),
+                                    child: Icon(Icons.navigate_next_sharp, size: 30, color: Colors.black,),
                                   ),
                                 ),
                               ],

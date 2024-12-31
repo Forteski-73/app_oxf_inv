@@ -81,7 +81,7 @@ class InventoryManagementPage extends StatelessWidget {
                             padding: EdgeInsets.only(left: 10), // Espaço de 5px antes do texto
                             child: Text('Criar Inventário', style: TextStyle(fontSize: 16)),
                           ),
-                          Icon(Icons.navigate_next_sharp, size: 30,),
+                          Icon(Icons.navigate_next_sharp, size: 30, color: Colors.black,),
                         ],
                       ),
                     ),
@@ -107,7 +107,7 @@ class InventoryManagementPage extends StatelessWidget {
                             padding: EdgeInsets.only(left: 10), // Espaço de 5px antes do texto
                             child: Text('Histórico de Inventários', style: TextStyle(fontSize: 16)),
                           ),
-                          Icon(Icons.navigate_next_sharp, size: 30,),
+                          Icon(Icons.navigate_next_sharp, size: 30, color: Colors.black,),
                         ],
                       ),
                     ),

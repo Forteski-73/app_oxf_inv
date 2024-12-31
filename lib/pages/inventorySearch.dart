@@ -1,4 +1,113 @@
 import 'package:flutter/material.dart';
+import 'package:mailer/mailer.dart';
+import 'package:mailer/smtp_server.dart';
+
+void main() {
+  runApp(InventorySearchPage());
+}
+class InventorySearchPage extends StatefulWidget {
+  const InventorySearchPage({super.key});
+
+  @override
+  _InventorySearchPage createState() => _InventorySearchPage();
+}
+
+class _InventorySearchPage extends State<InventorySearchPage> {
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      title: 'Enviar E-mail',
+      theme: ThemeData(
+        primarySwatch: Colors.blue,
+      ),
+      home: EmailPage(),
+    );
+  }
+}
+
+class EmailPage extends StatefulWidget {
+  @override
+  _EmailPageState createState() => _EmailPageState();
+}
+
+class _EmailPageState extends State<EmailPage> {
+  final TextEditingController _subjectController = TextEditingController();
+  final TextEditingController _bodyController = TextEditingController();
+  String _statusMessage = '';
+
+  Future<void> sendEmail() async {
+    // Configuração do servidor SMTP (exemplo para Gmail)
+    final smtpServer = gmail('dionesforteski@gmail.com', '123>'); // Substitua com suas credenciais
+
+    // Criação da mensagem de e-mail
+    final message = Message()
+      ..from = Address('dionesforteski@gmail.com', 'Diones') // Substitua com seu e-mail
+      ..recipients.add('destinatario@email.com') // Substitua com o destinatário
+      ..subject = _subjectController.text
+      ..text = _bodyController.text;
+
+    try {
+      // Enviando o e-mail
+      final sendReport = await send(message, smtpServer);
+      setState(() {
+        _statusMessage = 'E-mail enviado com sucesso! ID: ${sendReport.mail.toString()}';
+      });
+    } catch (e) {
+      setState(() {
+        _statusMessage = 'Erro ao enviar e-mail: $e';
+      });
+    }
+    print(_statusMessage);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text('Enviar E-mail'),
+      ),
+      body: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            TextField(
+              controller: _subjectController,
+              decoration: const InputDecoration(
+                labelText: 'Assunto',
+                border: OutlineInputBorder(),
+              ),
+            ),
+            const SizedBox(height: 10),
+            TextField(
+              controller: _bodyController,
+              maxLines: 5,
+              decoration: const InputDecoration(
+                labelText: 'Corpo do E-mail',
+                border: OutlineInputBorder(),
+              ),
+            ),
+            const SizedBox(height: 20),
+            ElevatedButton(
+              onPressed: sendEmail,
+              child: Text('Enviar E-mail'),
+            ),
+            const SizedBox(height: 20),
+            Text(
+              _statusMessage,
+              style: TextStyle(
+                color: _statusMessage.startsWith('E-mail enviado') ? Colors.green : Colors.red,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+
+/*import 'package:flutter/material.dart';
 import 'package:ftpconnect/ftpconnect.dart'; // Usando ftpconnect
 import 'package:excel/excel.dart';
 import 'dart:io';
@@ -110,4 +219,4 @@ class _InventorySearchPage extends State<InventorySearchPage> {
       ),
     );
   }
-}
+}*/
