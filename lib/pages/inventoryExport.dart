@@ -7,6 +7,7 @@ import 'package:sqflite/sqflite.dart';
 import 'package:mailer/mailer.dart';
 import 'package:mailer/smtp_server.dart';
 import 'package:app_oxf_inv/operator/db_inventory.dart';
+import 'package:app_oxf_inv/operator/db_inventoryExport.dart';
 
 class InventoryExportPage extends StatefulWidget {
   final int inventoryId;
@@ -29,11 +30,12 @@ class _InventoryExportPage extends State<InventoryExportPage> {
   bool _exportToFilePath = false;
   TextEditingController _filePathController = TextEditingController();
   late DBInventory _dbInventory;
+  late DBInventoryExport _dbInventoryExport;
   Map<String, dynamic> _inventory = {};
   List<Map<String, dynamic>> _records = [];
   bool _isLoading = true;
 
-  @override
+  /*@override
   void initState() {
     super.initState();
     _dbInventory = DBInventory.instance;
@@ -47,6 +49,41 @@ class _InventoryExportPage extends State<InventoryExportPage> {
     // Inicializa os chk box
     for (var field in _fields) {
       _selectedFields[field] = true;
+    }
+  }*/
+
+  @override
+  void initState() {
+    super.initState();
+    _dbInventory = DBInventory.instance;
+    final inventoryExportManager = InventoryExportManager(_dbInventory);
+
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      if (mounted) {
+        await _fetchInventoryDetails();
+        await _loadExportSettings();
+      }
+    });
+
+    // Inicializa os checkboxes
+    for (var field in _fields) {
+      _selectedFields[field] = true;
+    }
+  }
+
+  Future<void> _loadExportSettings() async {
+    final inventoryExportManager = InventoryExportManager(_dbInventory);
+    final settings = await inventoryExportManager.loadExportSettings(widget.inventoryId);
+
+    if (settings.isNotEmpty) {
+      setState(() {
+        _fileNameController.text = settings['fileName'] ?? '';
+        _selectedFields.addAll(settings['selectedFields'] ?? {});
+        _exportToEmail = settings['exportToEmail'] ?? true;
+        _exportToFilePath = settings['exportToFilePath'] ?? false;
+        _filePathController.text = settings['filePath'] ?? '';
+        _emailController.text = settings['email'] ?? '';
+      });
     }
   }
 
@@ -83,7 +120,21 @@ class _InventoryExportPage extends State<InventoryExportPage> {
   }
 
   Future<void> exportToExcel(BuildContext context) async {
+    
     try {
+
+      final inventoryExportManager = InventoryExportManager(_dbInventory);
+      
+      await inventoryExportManager.saveExportSettings( // Salva as configurações de exportação
+        widget.inventoryId,
+        _fileNameController.text,
+        _selectedFields,
+        _exportToEmail,
+        _exportToFilePath,
+        _filePathController.text,
+        _emailController.text,
+      );
+
       Database db = await DBInventory.instance.database;
       List<Map<String, dynamic>> inventoryRecords = await db.query(
         DBInventory.tableInventoryRecord,
@@ -258,85 +309,104 @@ Future<void> _sendEmailWithAttachment(BuildContext context, List<int>? excelFile
               ),
               const SizedBox(height: 8),
               Card(
+                margin: const EdgeInsets.all(16.0),
                 elevation: 4,
-                margin: const EdgeInsets.all(8),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                color: Colors.white,
-                child: Padding(
-                  padding: const EdgeInsets.all(16.0),
-                  child: TextField(
-                    controller: _fileNameController,
-                    decoration: const InputDecoration(
-                      labelText: 'Defina o nome do arquivo',
-                      border: OutlineInputBorder(
-                        borderSide: BorderSide(color: Colors.black),
-                      ),
-                      filled: true,
-                      fillColor: Colors.white,
-                    ),
-                    style: const TextStyle(color: Colors.black),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 8),
-              Card(
-                elevation: 4,
-                margin: const EdgeInsets.all(8),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
-                ),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8.0)),
                 color: Colors.white,
                 child: Padding(
                   padding: const EdgeInsets.all(16.0),
                   child: Column(
+                    mainAxisSize: MainAxisSize.min,
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       const Text(
-                        'Destino do Arquivo',
-                        style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                        "Destino do Arquivo",
+                        style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                       ),
-                      RadioListTile<bool>(
-                        title: TextField(
+                      const SizedBox(height: 16),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: TextField(
+                              controller: _fileNameController,
+                              decoration: const InputDecoration(
+                                labelText: 'Nome do Arquivo',
+                                border: OutlineInputBorder(
+                                  borderSide: BorderSide(color: Colors.black),
+                                ),
+                                filled: true,
+                                fillColor: Colors.white,
+                              ),
+                              style: const TextStyle(color: Colors.black),
+                            ),
+                          ),
+                        ],
+                      ),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: RadioListTile<String>(
+                              title: const Text("E-Mail"),
+                              value: "E-Mail",
+                              groupValue: _exportToEmail ? "E-Mail" : "Rede",
+                              onChanged: (value) {
+                                setState(() {
+                                  _exportToEmail = true;
+                                  _exportToFilePath = false;
+                                });
+                              },
+                            ),
+                          ),
+                          Expanded(
+                            child: RadioListTile<String>(
+                              title: const Text("Rede"),
+                              value: "Rede",
+                              groupValue: _exportToEmail ? "E-Mail" : "Rede",
+                              onChanged: (value) {
+                                setState(() {
+                                  _exportToFilePath = true;
+                                  _exportToEmail = false;
+                                });
+                              },
+                            ),
+                          ),
+                        ],
+                      ),
+                      if (_exportToEmail) ...[
+                        const SizedBox(height: 16),
+                        TextField(
                           controller: _emailController,
                           decoration: const InputDecoration(
-                            labelText: 'E-mail',
+                            labelText: "E-Mail",
                             border: OutlineInputBorder(),
                           ),
-                          enabled: _exportToEmail,
                         ),
-                        activeColor: Colors.black,
-                        tileColor: Colors.white,
-                        value: true,
-                        groupValue: _exportToEmail,
-                        onChanged: (value) {
-                          setState(() {
-                            _exportToEmail = true;
-                            _exportToFilePath = false;
-                          });
-                        },
-                      ),
-                      RadioListTile<bool>(
-                        title: TextField(
+                      ],
+                      if (_exportToFilePath) ...[
+                        const SizedBox(height: 16),
+                        TextField(
                           controller: _filePathController,
                           decoration: const InputDecoration(
-                            labelText: 'Salvar em Pasta na Rede',
+                            labelText: "Pasta na Rede",
                             border: OutlineInputBorder(),
                           ),
-                          enabled: _exportToFilePath,
                         ),
-                        activeColor: Colors.black,
-                        tileColor: Colors.white,
-                        value: true,
-                        groupValue: _exportToFilePath,
-                        onChanged: (value) {
-                          setState(() {
-                            _exportToFilePath = true;
-                            _exportToEmail = false;
-                          });
-                        },
-                      ),
+                        const SizedBox(height: 8),
+                        const TextField(
+                          decoration: InputDecoration(
+                            labelText: "Usuário",
+                            border: OutlineInputBorder(),
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        const TextField(
+                          obscureText: true,
+                          decoration: InputDecoration(
+                            labelText: "Senha",
+                            border: OutlineInputBorder(),
+                          ),
+                        ),
+                      ],
                     ],
                   ),
                 ),

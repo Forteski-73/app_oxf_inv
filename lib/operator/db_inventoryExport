@@ -1,0 +1,130 @@
+import 'dart:async'; 
+import 'package:sqflite/sqflite.dart';
+import 'package:path/path.dart';
+
+class DBInventoryExport {
+  static const _databaseName = "product.db";
+  static const _databaseVersion = 1;
+  static const table = 'export_settings';
+
+  // Definindo as colunas da tabela 'export_settings'
+  static const columnId                = 'id';
+  static const columnInventoryId       = 'inventoryId';
+  static const columnFileName          = 'fileName';
+  static const columnSelectedFields    = 'selectedFields';
+  static const columnExportToEmail     = 'exportToEmail';
+  static const columnExportToFilePath  = 'exportToFilePath';
+  static const columnFilePath          = 'filePath';
+  static const columnEmail             = 'email';
+
+  // Instanciando o construtor DB
+  DBInventory._privateConstructor();
+  static final DBInventory instance = DBInventory._privateConstructor();
+
+  static Database? _database;
+
+  Future<Database> get database async {
+    if (_database != null) return _database!;
+    _database = await _initDatabase();
+    return _database!;
+  }
+
+  Future<Database> _initDatabase() async {
+    var databasesPath = await getDatabasesPath(); // Diretório do banco de dados
+    String path = join(databasesPath, _databaseName);
+
+    return await openDatabase(
+      path,
+      version: _databaseVersion,
+      onCreate: _onCreate,
+    ); // Abrindo/criando a tabela
+  }
+
+  Future _onCreate(Database db, int version) async {
+    await db.execute(''' 
+      CREATE TABLE IF NOT EXISTS $table (
+        $columnId INTEGER PRIMARY KEY AUTOINCREMENT,
+        $columnInventoryId INTEGER,
+        $columnFileName TEXT,
+        $columnSelectedFields TEXT,
+        $columnExportToEmail INTEGER,
+        $columnExportToFilePath INTEGER,
+        $columnFilePath TEXT,
+        $columnEmail TEXT
+      );
+    ''');
+  }
+
+  // Inserir configurações de exportação
+  Future<void> saveExportSettings(
+    int inventoryId,
+    String fileName,
+    Map<String, bool> selectedFields,
+    bool exportToEmail,
+    bool exportToFilePath,
+    String filePath,
+    String email
+  ) async {
+    try {
+      final db = await database;
+
+      // Atualiza ou insere as configurações de exportação
+      await db.insert(
+        table,
+        {
+          columnInventoryId: inventoryId,
+          columnFileName: fileName,
+          columnSelectedFields: selectedFields.keys.where((field) => selectedFields[field]!).join(','),
+          columnExportToEmail: exportToEmail ? 1 : 0,
+          columnExportToFilePath: exportToFilePath ? 1 : 0,
+          columnFilePath: filePath,
+          columnEmail: email,
+        },
+        conflictAlgorithm: ConflictAlgorithm.replace, // Substitui os dados caso já existam
+      );
+    } catch (e) {
+      print('Erro ao salvar configurações de exportação: $e');
+    }
+  }
+
+  // Carregar configurações de exportação
+  Future<Map<String, dynamic>> loadExportSettings(int inventoryId) async {
+    try {
+      final db = await database;
+      final result = await db.query(
+        table,
+        where: '$columnInventoryId = ?',
+        whereArgs: [inventoryId],
+      );
+
+      if (result.isNotEmpty) {
+        final data = result.first;
+        return {
+          'fileName': data[columnFileName],
+          'selectedFields': _deserializeFields(data[columnSelectedFields]),
+          'exportToEmail': data[columnExportToEmail] == 1,
+          'exportToFilePath': data[columnExportToFilePath] == 1,
+          'filePath': data[columnFilePath],
+          'email': data[columnEmail],
+        };
+      } else {
+        return {};
+      }
+    } catch (e) {
+      print('Erro ao carregar configurações de exportação: $e');
+      return {};
+    }
+  }
+
+  // Deserializar os campos selecionados
+  Map<String, bool> _deserializeFields(String fieldsString) {
+    Map<String, bool> selectedFields = {};
+    final fields = fieldsString.split(',');
+
+    for (var field in fields) {
+      selectedFields[field] = true; // Por padrão, todos os campos serão selecionados
+    }
+
+    return selectedFields;
+  }
+}

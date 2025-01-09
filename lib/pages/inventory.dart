@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
-import 'inventRecords.dart';
 import 'package:app_oxf_inv/operator/db_inventory.dart';
 import 'package:intl/intl.dart';
-import '../pages/management.dart';
 
 class InventoryPage extends StatefulWidget {
   const InventoryPage({super.key});
@@ -220,6 +218,7 @@ class _InventoryPageState extends State<InventoryPage> {
       },
     );
   }
+  
   
   @override
   Widget build(BuildContext context) {

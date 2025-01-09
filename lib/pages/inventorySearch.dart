@@ -1,4 +1,98 @@
 import 'package:flutter/material.dart';
+import 'package:network_info_plus/network_info_plus.dart';
+import 'package:device_info_plus/device_info_plus.dart';
+import 'package:permission_handler/permission_handler.dart';
+import 'dart:io';
+
+void main() {
+  runApp(InventorySearchPage());
+}
+class InventorySearchPage extends StatefulWidget {
+  const InventorySearchPage({super.key});
+
+  @override
+  _InventorySearchPage createState() => _InventorySearchPage();
+}
+
+class _InventorySearchPage extends State<InventorySearchPage> {
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      title: 'Enviar E-mail',
+      theme: ThemeData(
+        primarySwatch: Colors.blue,
+      ),
+      home: EmailPage(),
+    );
+  }
+}
+
+class EmailPage extends StatefulWidget {
+  @override
+  _EmailPageState createState() => _EmailPageState();
+}
+
+class _EmailPageState extends State<EmailPage> {
+  String? _macAddress;
+
+  @override
+  void initState() {
+    super.initState();
+    _getMacAddress();
+    getDeviceSerialNumber();
+  }
+
+Future<String> getDeviceSerialNumber() async {
+  DeviceInfoPlugin deviceInfo = DeviceInfoPlugin();
+  String serialNumber = '';
+
+  if (Platform.isAndroid) {
+    AndroidDeviceInfo androidInfo = await deviceInfo.androidInfo;
+    serialNumber = androidInfo.serialNumber ?? 'Desconhecido';  // Usa 'serial' ao invés de 'androidId'
+    //serialNumber  = androidInfo.device;
+  } else {
+    serialNumber = 'Não disponível para este sistema';
+  }
+    setState(() {
+      _macAddress = serialNumber;
+    });
+    print("NÚMERO DE SÉRIE.............: $serialNumber");
+  return serialNumber;
+}
+
+  Future<void> _getMacAddress() async {
+    final info = NetworkInfo();
+    String? macAddress;
+
+    try {
+      macAddress = await info.getWifiBSSID(); // MAC Address do Wi-Fi
+    } catch (e) {
+      macAddress = "Erro ao obter MAC Address: $e";
+    }
+    print("MAC ADDRESSS.............: $macAddress");
+    setState(() {
+      _macAddress = macAddress;
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text('MAC Address / Serial'),
+      ),
+      body: Center(
+        child: Text(
+          _macAddress ?? 'Carregando...',
+          style: TextStyle(fontSize: 18),
+        ),
+      ),
+    );
+  }
+}
+
+
+/*import 'package:flutter/material.dart';
 import 'package:mailer/mailer.dart';
 import 'package:mailer/smtp_server.dart';
 
@@ -105,7 +199,7 @@ class _EmailPageState extends State<EmailPage> {
     );
   }
 }
-
+*/
 
 /*import 'package:flutter/material.dart';
 import 'package:ftpconnect/ftpconnect.dart'; // Usando ftpconnect

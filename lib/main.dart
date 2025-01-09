@@ -35,18 +35,17 @@ class MyApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       initialRoute: '/',  // Página inicial (HomePage)
       routes: {
-        '/': (context) => const HomePage(),  // Página inicial (HomePage)
-        '/menu': (context) => const MenuPage(),  // Página inicial (Menu)
-        '/management': (context) => const InventoryManagementPage(), // Rota para Gerenciamento de Inventário
-        '/inventoryExport': (context) => const InventoryHistory(), // Rota para Exportação de Dados
-        '/importProduct': (context) => ImportProduct(), // Rota para Importação de Produtos
-        '/sync': (context) => const SyncPage(), // Rota para Sincronização
+        '/': (context) => const HomePage(),                           // Página inicial (HomePage)
+        '/menu': (context) => const MenuPage(),                       // Página inicial (Menu)
+        '/management': (context) => const InventoryManagementPage(),  // Rota para Gerenciamento de Inventário
+        '/inventoryExport': (context) => const InventoryHistory(),    // Rota para Exportação de Dados
+        '/importProduct': (context) => ImportProduct(),               // Rota para Importação de Produtos
+        '/sync': (context) => const SyncPage(),                       // Rota para Sincronização
         '/inventorySearch': (context) => const InventorySearchPage(), // Rota para Pesquisar Produtos
-        '/settings': (context) => const SettingsPage(), // Rota para Configurações
-
-        '/inventory': (context) => const InventoryPage(),
-        '/inventoryHistory': (context) => const InventoryHistory(),
-        '/inventoryHistoryDetail': (context) {
+        '/settings': (context) => const SettingsPage(),               // Rota para Configurações
+        '/inventory': (context) => const InventoryPage(),             // Rota para Consultar Inventários
+        '/inventoryHistory': (context) => const InventoryHistory(),   // Rota para Consultar Histórico
+        '/inventoryHistoryDetail': (context) {                        // Rota para Consultar Detalhes do Inventário
           final int inventoryId = ModalRoute.of(context)?.settings.arguments as int;  // Recuperar o argumento passado na navegação
           return InventoryHistoryDetail(inventoryId: inventoryId); // Passar o argumento para o construtor da página
         },
