@@ -9,6 +9,7 @@ import 'package:mailer/smtp_server.dart';
 import 'package:app_oxf_inv/operator/db_inventory.dart';
 import 'package:app_oxf_inv/operator/db_inventoryExport.dart';
 
+
 class InventoryExportPage extends StatefulWidget {
   final int inventoryId;
   const InventoryExportPage({Key? key, required this.inventoryId}) : super(key: key);
@@ -23,40 +24,30 @@ class _InventoryExportPage extends State<InventoryExportPage> {
     'Unitizador', 'Posição', 'Depósito', 'Bloco', 'Quadra', 'Lote', 'Andar', 'Código de Barras', 
     'Qtde Padrão da Pilha', 'Qtde de Pilhas Completas', 'Qtde de Itens Avulsos'
   ];
-  final Map<String, bool> _selectedFields = {};
+  Map<String, bool> _selectedFields = {};
   String _separator = ';';
+  TextEditingController _filePathController = TextEditingController();
   final TextEditingController _emailController = TextEditingController();
+  final TextEditingController _userController = TextEditingController();
+  final TextEditingController _passwordController = TextEditingController();
   bool _exportToEmail = true;
   bool _exportToFilePath = false;
-  TextEditingController _filePathController = TextEditingController();
   late DBInventory _dbInventory;
   late DBInventoryExport _dbInventoryExport;
   Map<String, dynamic> _inventory = {};
   List<Map<String, dynamic>> _records = [];
   bool _isLoading = true;
 
-  /*@override
-  void initState() {
-    super.initState();
-    _dbInventory = DBInventory.instance;
-
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) {
-        _fetchInventoryDetails();
-      }
-    });
-
-    // Inicializa os chk box
-    for (var field in _fields) {
-      _selectedFields[field] = true;
-    }
-  }*/
-
   @override
   void initState() {
     super.initState();
     _dbInventory = DBInventory.instance;
-    final inventoryExportManager = InventoryExportManager(_dbInventory);
+    _dbInventoryExport = DBInventoryExport.instance;
+
+
+    for (var field in _fields) {
+      _selectedFields[field] = true;
+    }
 
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       if (mounted) {
@@ -64,16 +55,10 @@ class _InventoryExportPage extends State<InventoryExportPage> {
         await _loadExportSettings();
       }
     });
-
-    // Inicializa os checkboxes
-    for (var field in _fields) {
-      _selectedFields[field] = true;
-    }
   }
 
   Future<void> _loadExportSettings() async {
-    final inventoryExportManager = InventoryExportManager(_dbInventory);
-    final settings = await inventoryExportManager.loadExportSettings(widget.inventoryId);
+    final settings = await _dbInventoryExport.loadExportSettings();
 
     if (settings.isNotEmpty) {
       setState(() {
@@ -83,6 +68,28 @@ class _InventoryExportPage extends State<InventoryExportPage> {
         _exportToFilePath = settings['exportToFilePath'] ?? false;
         _filePathController.text = settings['filePath'] ?? '';
         _emailController.text = settings['email'] ?? '';
+        _userController.text = settings['user'] ?? '';
+        _passwordController.text = settings['password'] ?? '';
+
+        // Inicializa os checkboxes
+          _selectedFields = {
+          "Unitizador":               settings['unitizador']            == 1,
+          "Posição":                  settings['posicao']               == 1,
+          "Depósito":                 settings['deposito']              == 1,
+          "Bloco":                    settings['bloco']                 == 1,
+          "Quadra":                   settings['quadra']                == 1,
+          "Lote":                     settings['lote']                  == 1,
+          "Andar":                    settings['andar']                 == 1,
+          "Código de Barras":         settings['codigoDeBarras']        == 1,
+          "Qtde Padrão da Pilha":     settings['qtdePadraoDaPilha']     == 1,
+          "Qtde de Pilhas Completas": settings['qtdeDePilhasCompletas'] == 1,
+          "Qtde de Itens Avulsos":    settings['qtdeDeItensAvulsos']    == 1,
+          "exportToFilePath":         settings['exportToFilePath']      == 1,
+          "exportToEmail":            settings['exportToEmail']         == 1,
+          "email":                    settings['email'],
+          "user":                     settings['user'],
+          "password":                 settings['password']
+        };
       });
     }
   }
@@ -120,22 +127,30 @@ class _InventoryExportPage extends State<InventoryExportPage> {
   }
 
   Future<void> exportToExcel(BuildContext context) async {
-    
     try {
-
-      final inventoryExportManager = InventoryExportManager(_dbInventory);
-      
-      await inventoryExportManager.saveExportSettings( // Salva as configurações de exportação
-        widget.inventoryId,
+      await _dbInventoryExport.saveExportSettings( // Salva as configurações de exportação
+        _selectedFields              ['Unitizador'] ?? false,
+        _selectedFields                 ['Posição'] ?? false,
+        _selectedFields                ['Depósito'] ?? false,
+        _selectedFields                   ['Bloco'] ?? false,
+        _selectedFields                  ['Quadra'] ?? false,
+        _selectedFields                    ['Lote'] ?? false,
+        _selectedFields                   ['Andar'] ?? false,
+        _selectedFields        ['Código de Barras'] ?? false,
+        _selectedFields    ['Qtde Padrão da Pilha'] ?? false,
+        _selectedFields['Qtde de Pilhas Completas'] ?? false,
+        _selectedFields   ['Qtde de Itens Avulsos'] ?? false,
         _fileNameController.text,
-        _selectedFields,
         _exportToEmail,
         _exportToFilePath,
         _filePathController.text,
         _emailController.text,
+        _userController.text,
+        _passwordController.text
       );
 
       Database db = await DBInventory.instance.database;
+
       List<Map<String, dynamic>> inventoryRecords = await db.query(
         DBInventory.tableInventoryRecord,
         where: '${DBInventory.columnInventoryId} = ?',
@@ -187,70 +202,71 @@ class _InventoryExportPage extends State<InventoryExportPage> {
     }
   }
 
-Future<void> _sendEmailWithAttachment(BuildContext context, List<int>? excelFile) async {
-  if (excelFile == null) {
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Erro ao gerar o arquivo Excel')));
-    return;
+
+  Future<void> _sendEmailWithAttachment(BuildContext context, List<int>? excelFile) async {
+    if (excelFile == null) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Erro ao gerar o arquivo Excel')));
+      return;
+    }
+
+    final directory = await getTemporaryDirectory();
+    final filePath = '${directory.path}/${_fileNameController.text}';
+    final file = File(filePath);
+    await file.writeAsBytes(excelFile);
+
+    // Configuração do servidor SMTP
+    String username = 'ax@oxfordporcelanas.com.br';
+    String password = 'S3rvic0s.publ1c@c@0';
+
+    final smtpServer = SmtpServer(
+      'smtp.oxford.ind.br', // Servidor SMTP
+      username: username,
+      password: password,
+      port: 225,
+      ssl: false, // 'false' se não usar TLS/SSL, ou 'true' se sim
+      ignoreBadCertificate: true, // Ignora a validação do certificado
+    );
+
+    final message = Message()
+      ..from = Address(username, 'Diones Forteski')
+      ..recipients.add(_emailController.text) // estinatário
+      ..subject = 'Exportação de Inventário'
+      ..text = 'Segue o arquivo Excel com os dados do inventário.'
+      ..attachments.add(FileAttachment(file));
+
+    try {
+      final sendStatus = await send(message, smtpServer);
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('E-mail enviado com sucesso!')));
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Erro ao enviar e-mail: $e')));
+      print('Erro ao enviar e-mail: $e');
+    }
   }
-
-  final directory = await getTemporaryDirectory();
-  final filePath = '${directory.path}/${_fileNameController.text}';
-  final file = File(filePath);
-  await file.writeAsBytes(excelFile);
-
-  // Configuração do servidor SMTP
-  String username = 'ax@oxfordporcelanas.com.br';
-  String password = 'S3rvic0s.publ1c@c@0';
-
-  final smtpServer = SmtpServer(
-    'smtp.oxford.ind.br', // Servidor SMTP
-    username: username,
-    password: password,
-    port: 225,
-    ssl: false, // 'false' se não usar TLS/SSL, ou 'true' se sim
-    ignoreBadCertificate: true, // Ignora a validação do certificado
-  );
-
-  final message = Message()
-    ..from = Address(username, 'Diones Forteski')
-    ..recipients.add(_emailController.text) // estinatário
-    ..subject = 'Exportação de Inventário'
-    ..text = 'Segue o arquivo Excel com os dados do inventário.'
-    ..attachments.add(FileAttachment(file));
-
-  try {
-    final sendStatus = await send(message, smtpServer);
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('E-mail enviado com sucesso!')));
-  } catch (e) {
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Erro ao enviar e-mail: $e')));
-    print('Erro ao enviar e-mail: $e');
-  }
-}
 
   String _mapFieldToColumnName(String field) {
     switch (field) {
       case 'Unitizador':
-        return DBInventory.columnUnitizer;
+        return DBInventoryExport.columnUnitizador;
       case 'Posição':
-        return DBInventory.columnPosition;
+        return DBInventoryExport.columnPosicao;
       case 'Depósito':
-        return DBInventory.columnDeposit;
+        return DBInventoryExport.columnDeposito;
       case 'Bloco':
-        return DBInventory.columnBlockA;
+        return DBInventoryExport.columnBloco;
       case 'Quadra':
-        return DBInventory.columnBlockB;
+        return DBInventoryExport.columnQuadra;
       case 'Lote':
-        return DBInventory.columnLot;
+        return DBInventoryExport.columnLote;
       case 'Andar':
-        return DBInventory.columnFloor;
+        return DBInventoryExport.columnAndar;
       case 'Código de Barras':
-        return DBInventory.columnBarcode;
+        return DBInventoryExport.columnCodigoDeBarras;
       case 'Qtde Padrão da Pilha':
-        return DBInventory.columnStandardStackQtd;
+        return DBInventoryExport.columnQtdePadraoDaPilha;
       case 'Qtde de Pilhas Completas':
-        return DBInventory.columnNumberCompleteStacks;
+        return DBInventoryExport.columnQtdeDePilhasCompletas;
       case 'Qtde de Itens Avulsos':
-        return DBInventory.columnNumberLooseItems;
+        return DBInventoryExport.columnQtdeDeItensAvulsos;
       default:
         return '';
     }
@@ -392,16 +408,18 @@ Future<void> _sendEmailWithAttachment(BuildContext context, List<int>? excelFile
                           ),
                         ),
                         const SizedBox(height: 8),
-                        const TextField(
-                          decoration: InputDecoration(
+                        TextField(
+                          controller: _userController,
+                          decoration: const InputDecoration(
                             labelText: "Usuário",
                             border: OutlineInputBorder(),
                           ),
                         ),
                         const SizedBox(height: 8),
-                        const TextField(
+                        TextField(
                           obscureText: true,
-                          decoration: InputDecoration(
+                          controller: _passwordController,
+                          decoration: const InputDecoration(
                             labelText: "Senha",
                             border: OutlineInputBorder(),
                           ),
