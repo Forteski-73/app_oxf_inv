@@ -152,7 +152,7 @@ class InventoryPageState extends State<InventoryRecordsPage> {
         _totalController.text = inventory?["total"]?.toString() ?? "0";
 
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Dados salvos com sucesso!')),
+          const SnackBar(content: Text('Dados salvos com sucesso!', style: TextStyle(fontSize: 18))),
         );
 
         // Limpar os campos após salvar
@@ -169,14 +169,14 @@ class InventoryPageState extends State<InventoryRecordsPage> {
       else
       {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Erro ao salvar os dados.')),
+          SnackBar(content: Text('Erro ao salvar os dados.', style: TextStyle(fontSize: 18))),
         );
       }
       setState(() {});
     } catch (e) {
       //print("Erro ao salvar os dados no banco..: $e");
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Erro ao salvar os dados: ${e}')),
+        SnackBar(content: Text('Erro ao salvar os dados: ${e}', style: TextStyle(fontSize: 18))),
       );
     }
 

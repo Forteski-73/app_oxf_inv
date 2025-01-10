@@ -32,8 +32,7 @@ class _ImportProductPage extends State<ImportProduct> {
 
   Future<void> _importCsvTxt() async {
     if (filePath == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Nenhum arquivo selecionado")),
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Nenhum arquivo selecionado", style: TextStyle(fontSize: 18))),
       );
       return;
     }
@@ -70,52 +69,55 @@ class _ImportProductPage extends State<ImportProduct> {
       });
     }
 
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text("Arquivo ${fileController.text} importado com sucesso!")),
-        );
-      } else if (filePath!.endsWith('.txt')) { // Arquivo .txt com separação por ";"
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text("Arquivo ${fileController.text} importado com sucesso!", style: TextStyle(fontSize: 18))),
+    );
+  } 
+  else if (filePath!.endsWith('.txt')) { // Arquivo .txt com separação por ";"
 
-        final contents = await input.transform(utf8.decoder).join();
+    final contents = await input.transform(utf8.decoder).join();
 
-        final db = DBItems.instance;
+    final db = DBItems.instance;
 
-        final lines = contents.split('\n'); // Divide o conteúdo em linhas
-        
-        // Percorre as linhas
-        for (var line in lines) {
-          if (line.trim().isEmpty) continue; // Ignora linhas vazias
+    final lines = contents.split('\n'); // Divide o conteúdo em linhas
+    
+    // Percorre as linhas
+    for (var line in lines) {
+      if (line.trim().isEmpty) continue; // Ignora linhas vazias
 
-          final row = line.split(';');
+      final row = line.split(';');
 
-          if (row.length >= 13) {
-            await db.insertProduct({
-              DBItems.columnItemBarCode:                  row[0].trim(),
-              DBItems.columnItemId:                       row[1].trim(),
-              DBItems.columnName:                         row[2].trim(),
-              DBItems.columnProdBrandId:                  row[3].trim(),
-              DBItems.columnProdBrandDescriptionId:       row[4].trim(),
-              DBItems.columnProdLinesId:                  row[5].trim(),
-              DBItems.columnProdLinesDescriptionId:       row[6].trim(),
-              DBItems.columnProdDecorationId:             row[7].trim(),
-              DBItems.columnProdDecorationDescriptionId:  row[8].trim(),
-              DBItems.columnProdFamilyId:                 row[9].trim(),
-              DBItems.columnProdFamilyDescription:        row[10].trim(),
-              DBItems.columnUnitVolumeML:                 double.tryParse(row[11].trim()) ?? 0.0,
-              DBItems.columnItemNetWeight:                double.tryParse(row[12].trim()) ?? 0.0,
-            });
-          } else {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text('Linha com formato inválido: $line')),
-            );
-          }
-        }
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text("Arquivo ${fileController.text} importado com sucesso!")),
+      if (row.length >= 13) {
+        await db.insertProduct({
+          DBItems.columnItemBarCode:                  row[0].trim(),
+          DBItems.columnItemId:                       row[1].trim(),
+          DBItems.columnName:                         row[2].trim(),
+          DBItems.columnProdBrandId:                  row[3].trim(),
+          DBItems.columnProdBrandDescriptionId:       row[4].trim(),
+          DBItems.columnProdLinesId:                  row[5].trim(),
+          DBItems.columnProdLinesDescriptionId:       row[6].trim(),
+          DBItems.columnProdDecorationId:             row[7].trim(),
+          DBItems.columnProdDecorationDescriptionId:  row[8].trim(),
+          DBItems.columnProdFamilyId:                 row[9].trim(),
+          DBItems.columnProdFamilyDescription:        row[10].trim(),
+          DBItems.columnUnitVolumeML:                 double.tryParse(row[11].trim()) ?? 0.0,
+          DBItems.columnItemNetWeight:                double.tryParse(row[12].trim()) ?? 0.0,
+        });
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Linha com formato inválido: $line', style: TextStyle(fontSize: 18))),
         );
       }
+    }
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text("Arquivo ${fileController.text} importado com sucesso!", style: TextStyle(fontSize: 18))),
+    );
+  }
+  else{
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text("O tipo do arquivo é inválido. Use *.csv ou *.txt", style: TextStyle(fontSize: 18))),);
+  }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Erro ao importar o arquivo: $e")),
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Erro ao importar o arquivo: $e", style: TextStyle(fontSize: 18))),
       );
     }
   }

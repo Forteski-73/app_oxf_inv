@@ -84,14 +84,14 @@ class _SyncPageState extends State<SyncPage> with SingleTickerProviderStateMixin
       }
 
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Dados sincronizados com sucesso!')),
+        const SnackBar(content: Text('Dados sincronizados com sucesso!', style: TextStyle(fontSize: 18))),
       );
     } else {
       throw Exception('Falha ao sincronizar os dados. Código: ${response.statusCode} - ${response.statusMessage}');
     }
   } catch (e) {
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Erro: $e')),
+      SnackBar(content: Text('Erro: $e', style: const TextStyle(fontSize: 18))),
     );
   } finally {
     setState(() {

@@ -190,7 +190,7 @@ class DBInventoryExport {
       if (result.isNotEmpty) {
         final data = result.first;
         settings = {
-          'fileName':               data[columnFileName],
+          'fileName':               data[columnFileName].toString(),
           'unitizador':             data[columnUnitizador]            == 1,
           'posicao':                data[columnPosicao]               == 1,
           'deposito':               data[columnDeposito]              == 1,
@@ -204,10 +204,10 @@ class DBInventoryExport {
           'qtdeDeItensAvulsos':     data[columnQtdeDeItensAvulsos]    == 1,
           'exportToEmail':          data[columnExportToEmail]         == 1,
           'exportToFilePath':       data[columnExportToFilePath]      == 1,
-          'filePath':               data[columnFilePath],
-          'email':                  data[columnEmail],
-          'user':                   data[columnUser],
-          'password':               data[columnPassword],
+          'filePath':               data[columnFilePath].toString(),
+          'email':                  data[columnEmail].toString(),
+          'user':                   data[columnUser].toString(),
+          'password':               data[columnPassword].toString(),
         };
         return settings;
       } else {

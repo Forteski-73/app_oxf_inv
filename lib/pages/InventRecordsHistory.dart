@@ -51,7 +51,7 @@ class _InventoryHistoryDetailState extends State<InventoryHistoryDetail> {
         _isLoading = false; // Em caso de erro, parar de carregar
       });
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Erro ao carregar os dados: $e')),
+        SnackBar(content: Text('Erro ao carregar os dados: $e', style: TextStyle(fontSize: 18))),
       );
     }
   }
@@ -118,19 +118,19 @@ class _InventoryHistoryDetailState extends State<InventoryHistoryDetail> {
       if(st > 0) {
         // Exibição de feedback ao usuário
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Registro excluído com sucesso!')),
+          const SnackBar(content: Text('Registro excluído com sucesso!', style: TextStyle(fontSize: 18))),
         );
       }
       else {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Erro ao excluir o registro.')),
+          const SnackBar(content: Text('Erro ao excluir o registro.', style: TextStyle(fontSize: 18))),
         );
       }
 
     } catch (e) {
       // Em caso de erro, exibir uma mensagem
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Erro ao excluir registro: $e')),
+        SnackBar(content: Text('Erro ao excluir registro: $e', style: TextStyle(fontSize: 18))),
       );
     }
 
@@ -161,17 +161,17 @@ class _InventoryHistoryDetailState extends State<InventoryHistoryDetail> {
         });
 
         ScaffoldMessenger.of(context).showSnackBar( // mostra mensagem de sucesso
-          const SnackBar(content: Text('Contagem excluída com sucesso!')),
+          const SnackBar(content: Text('Contagem excluída com sucesso!', style: TextStyle(fontSize: 18))),
         );
       }
       else {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Erro ao excluir o registro.')),
+          const SnackBar(content: Text('Erro ao excluir o registro.', style: TextStyle(fontSize: 18))),
         );
       }
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Erro ao atualizar os dados: $e')),
+        SnackBar(content: Text('Erro ao atualizar os dados: $e', style: TextStyle(fontSize: 18))),
       );
     }
   }

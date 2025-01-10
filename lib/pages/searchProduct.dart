@@ -101,7 +101,7 @@ class _SearchProductState extends State<SearchProduct> {
   }
 
   void _showError(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message, style: const TextStyle(fontSize: 18))));
   }
 
   void _searchProduct(String productId) {

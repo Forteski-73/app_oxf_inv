@@ -71,24 +71,21 @@ class _InventoryExportPage extends State<InventoryExportPage> {
         _userController.text = settings['user'] ?? '';
         _passwordController.text = settings['password'] ?? '';
 
-        // Inicializa os checkboxes
+        // Inicializa os checkboxs
           _selectedFields = {
-          "Unitizador":               settings['unitizador']            == 1,
-          "Posição":                  settings['posicao']               == 1,
-          "Depósito":                 settings['deposito']              == 1,
-          "Bloco":                    settings['bloco']                 == 1,
-          "Quadra":                   settings['quadra']                == 1,
-          "Lote":                     settings['lote']                  == 1,
-          "Andar":                    settings['andar']                 == 1,
-          "Código de Barras":         settings['codigoDeBarras']        == 1,
-          "Qtde Padrão da Pilha":     settings['qtdePadraoDaPilha']     == 1,
-          "Qtde de Pilhas Completas": settings['qtdeDePilhasCompletas'] == 1,
-          "Qtde de Itens Avulsos":    settings['qtdeDeItensAvulsos']    == 1,
-          "exportToFilePath":         settings['exportToFilePath']      == 1,
-          "exportToEmail":            settings['exportToEmail']         == 1,
-          "email":                    settings['email'],
-          "user":                     settings['user'],
-          "password":                 settings['password']
+          "Unitizador":               settings['unitizador'],
+          "Posição":                  settings['posicao'],
+          "Depósito":                 settings['deposito'],
+          "Bloco":                    settings['bloco'],
+          "Quadra":                   settings['quadra'],
+          "Lote":                     settings['lote'],
+          "Andar":                    settings['andar'],
+          "Código de Barras":         settings['codigoDeBarras'],
+          "Qtde Padrão da Pilha":     settings['qtdePadraoDaPilha'],
+          "Qtde de Pilhas Completas": settings['qtdeDePilhasCompletas'],
+          "Qtde de Itens Avulsos":    settings['qtdeDeItensAvulsos'],
+          "exportToFilePath":         settings['exportToFilePath'],
+          "exportToEmail":            settings['exportToEmail'],
         };
       });
     }
@@ -192,20 +189,20 @@ class _InventoryExportPage extends State<InventoryExportPage> {
           List<int> bytes = excel.encode() ?? [];
           await file.writeAsBytes(bytes);
 
-          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Arquivo exportado para: $filePath')));
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Arquivo exportado para: $filePath', style: TextStyle(fontSize: 18))));
         } else {
-          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Erro ao salvar o arquivo')));
+          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Erro ao salvar o arquivo', style: TextStyle(fontSize: 18))));
         }
       }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Erro ao exportar: $e')));
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Erro ao exportar: $e', style: TextStyle(fontSize: 18))));
     }
   }
 
 
   Future<void> _sendEmailWithAttachment(BuildContext context, List<int>? excelFile) async {
     if (excelFile == null) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Erro ao gerar o arquivo Excel')));
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Erro ao gerar o arquivo Excel', style: TextStyle(fontSize: 18))));
       return;
     }
 
@@ -236,9 +233,9 @@ class _InventoryExportPage extends State<InventoryExportPage> {
 
     try {
       final sendStatus = await send(message, smtpServer);
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('E-mail enviado com sucesso!')));
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('E-mail enviado com sucesso!', style: TextStyle(fontSize: 18))));
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Erro ao enviar e-mail: $e')));
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Erro ao enviar e-mail: $e', style: TextStyle(fontSize: 18))));
       print('Erro ao enviar e-mail: $e');
     }
   }
