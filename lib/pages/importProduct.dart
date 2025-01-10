@@ -1,6 +1,5 @@
 import 'dart:convert';
 import 'dart:io';
-
 import 'package:flutter/material.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:app_oxf_inv/operator/db_product.dart';
@@ -18,7 +17,7 @@ class _ImportProductPage extends State<ImportProduct> {
   Future<void> _pickFile() async {
     FilePickerResult? result = await FilePicker.platform.pickFiles(
       type: FileType.custom,
-      allowedExtensions: ['csv', 'txt'], // Extensões permitidas
+      allowedExtensions: ['csv', 'txt'],
     );
 
     if (result != null) {
@@ -32,7 +31,8 @@ class _ImportProductPage extends State<ImportProduct> {
 
   Future<void> _importCsvTxt() async {
     if (filePath == null) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Nenhum arquivo selecionado", style: TextStyle(fontSize: 18))),
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Nenhum arquivo selecionado", style: TextStyle(fontSize: 18))),
       );
       return;
     }
@@ -45,7 +45,7 @@ class _ImportProductPage extends State<ImportProduct> {
   if (filePath!.endsWith('.csv')) {
     final fields = await input
         .transform(utf8.decoder)
-        .transform(CsvToListConverter(eol: '\n', fieldDelimiter: ';')) // Definindo o separador como ";"
+        .transform(CsvToListConverter(eol: '\n', fieldDelimiter: ';')) // Separador como ";"
         .toList();
 
     final db = DBItems.instance;
@@ -104,7 +104,8 @@ class _ImportProductPage extends State<ImportProduct> {
           DBItems.columnItemNetWeight:                double.tryParse(row[12].trim()) ?? 0.0,
         });
       } else {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Linha com formato inválido: $line', style: TextStyle(fontSize: 18))),
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Linha com formato inválido: $line', style: TextStyle(fontSize: 18))),
         );
       }
     }
@@ -117,7 +118,8 @@ class _ImportProductPage extends State<ImportProduct> {
       const SnackBar(content: Text("O tipo do arquivo é inválido. Use *.csv ou *.txt", style: TextStyle(fontSize: 18))),);
   }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Erro ao importar o arquivo: $e", style: TextStyle(fontSize: 18))),
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Erro ao importar o arquivo: $e", style: TextStyle(fontSize: 18))),
       );
     }
   }

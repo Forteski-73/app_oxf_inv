@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:app_oxf_inv/operator/db_inventory.dart';
 import 'inventoryExport.dart';
-import 'InventoryHistory.dart';
 
 class InventoryHistoryDetail extends StatefulWidget {
   final int inventoryId;
@@ -44,11 +43,11 @@ class _InventoryHistoryDetailState extends State<InventoryHistoryDetail> {
       setState(() {
         _inventory = inventoryResult.isNotEmpty ? inventoryResult.first : {};
         _records = recordsResult;
-        _isLoading = false; // Dados carregados, atualizar estado
+        _isLoading = false; // Dados carregados, atualiza estado
       });
     } catch (e) {
       setState(() {
-        _isLoading = false; // Em caso de erro, parar de carregar
+        _isLoading = false; // Em caso de erro, para de carregar
       });
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Erro ao carregar os dados: $e', style: TextStyle(fontSize: 18))),
@@ -62,7 +61,7 @@ class _InventoryHistoryDetailState extends State<InventoryHistoryDetail> {
       child: Row(
         children: [
           Expanded(
-            flex: 2, // Quanto de espaço por rótulo
+            flex: 2, // Espaço por rótulo
             child: Text(
               label,
               style: const TextStyle(fontWeight: FontWeight.bold),
@@ -76,39 +75,6 @@ class _InventoryHistoryDetailState extends State<InventoryHistoryDetail> {
       ),
     );
   }
-/*
-  Widget _alignTitle(String label, String value) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 0.0),
-      child: Row(
-        children: [
-          Expanded(
-            flex: 2,
-            child: Text(
-              label,
-              style: const TextStyle(fontWeight: FontWeight.bold),
-            ),
-          ),
-          Expanded(
-            flex: 3,
-            child: Text(value, style: const TextStyle(fontWeight: FontWeight.bold),),
-          ),
-        ],
-      ),
-    );
-  }*/
-
-  /*Future<void> _deleteRecord(int recordId) async {
-    await DBInventory.instance.deleteInventoryRecord(recordId);
-    // Recarrega os dados do inventário e dos registros
-    final inventory = await DBInventory.instance.queryFirstInventoryByStatus();
-    final records = await DBInventory.instance.queryAllInventoryRecords();
-    
-    setState(() { // Atualiza o estado para refletir as alterações
-      _inventory = inventory ?? {};
-      _records = records;
-    });
-  }*/
 
   Future<int> _delInvent(int inventoryId) async {
     int st = 0;
@@ -116,7 +82,6 @@ class _InventoryHistoryDetailState extends State<InventoryHistoryDetail> {
       st = await DBInventory.instance.deleteInventoryAndRecords(inventoryId);
 
       if(st > 0) {
-        // Exibição de feedback ao usuário
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Registro excluído com sucesso!', style: TextStyle(fontSize: 18))),
         );
@@ -128,7 +93,6 @@ class _InventoryHistoryDetailState extends State<InventoryHistoryDetail> {
       }
 
     } catch (e) {
-      // Em caso de erro, exibir uma mensagem
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Erro ao excluir registro: $e', style: TextStyle(fontSize: 18))),
       );
@@ -160,7 +124,7 @@ class _InventoryHistoryDetailState extends State<InventoryHistoryDetail> {
           _records = inventoryRecordsResult;
         });
 
-        ScaffoldMessenger.of(context).showSnackBar( // mostra mensagem de sucesso
+        ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Contagem excluída com sucesso!', style: TextStyle(fontSize: 18))),
         );
       }
@@ -171,7 +135,7 @@ class _InventoryHistoryDetailState extends State<InventoryHistoryDetail> {
       }
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Erro ao atualizar os dados: $e', style: TextStyle(fontSize: 18))),
+        SnackBar(content: Text('Erro ao atualizar os dados: $e', style: const TextStyle(fontSize: 18))),
       );
     }
   }
@@ -185,9 +149,7 @@ class _InventoryHistoryDetailState extends State<InventoryHistoryDetail> {
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(8),
           ),
-          content: const Text(
-            'Deseja realmente excluir este registro?',
-          ),
+          content: const Text('Deseja realmente excluir este registro?',),
           actions: [
             Row(
               children: [
@@ -225,18 +187,12 @@ class _InventoryHistoryDetailState extends State<InventoryHistoryDetail> {
                         int st = await _delInvent(recordId);
                         if (st == 1) {
                           Navigator.pop(context, true);
-                          /*setState(() {
-                            _inventory = {}; // Limpa os dados do inventário
-                            _records = []; // Limpa os registros associados
-                          });
-                          */
                         }
                       } else {
                         await _delInventRecord(recordId);
                       }
                     },
-                    child: const Text(
-                      'SIM',
+                    child: const Text('SIM',
                       style: TextStyle(color: Colors.white),
                     ),
                   ),
@@ -255,13 +211,13 @@ class _InventoryHistoryDetailState extends State<InventoryHistoryDetail> {
       appBar: AppBar(
         title: Text(
           _inventory['code'] ?? 'Detalhes do Inventário',
-          style: TextStyle(color: Colors.white),
+          style: const TextStyle(color: Colors.white),
         ),
         backgroundColor: Colors.black,
         iconTheme: const IconThemeData(color: Colors.white),
       ),
-      body: _isLoading // Exibir carregando até que os dados estejam prontos
-          ? const Center(child: CircularProgressIndicator()) // Indicador de progresso
+      body: _isLoading // Exibir carregando.. até que os dados estejam prontos
+          ? const Center(child: CircularProgressIndicator(color: Colors.white))
           : _inventory.isEmpty // Se o inventário estiver vazio após carregar
               ? const Center(child: Text('Inventário não encontrado.')) // Mensagem caso não encontre dados
               : Stack(
@@ -279,7 +235,7 @@ class _InventoryHistoryDetailState extends State<InventoryHistoryDetail> {
                                       ? Colors.orange.shade100
                                       : _inventory[DBInventory.columnStatus] == 'NÃO INICIADO'
                                           ? Colors.blue.shade100
-                                          : Colors.grey.shade100, // Cor padrão caso o status seja desconhecido
+                                          : Colors.grey.shade100,
                               child: ListTile(
                                 title: Text(
                                   _inventory[DBInventory.columnStatus] ?? 'Status não disponível',
@@ -290,12 +246,12 @@ class _InventoryHistoryDetailState extends State<InventoryHistoryDetail> {
                                             ? Colors.orange
                                             : _inventory[DBInventory.columnStatus] == 'NÃO INICIADO'
                                                 ? Colors.blue
-                                                : Colors.grey, // Cor para status desconhecido
+                                                : Colors.grey,
                                     fontWeight: FontWeight.bold,
                                   ),
                                 ),
                                 subtitle: _inventory.isEmpty
-                                    ? const Text('Inventário excluído.') // Mensagem quando o inventário está vazio
+                                    ? const Text('Inventário excluído.')
                                     : Column(
                                         crossAxisAlignment: CrossAxisAlignment.start,
                                         children: [
@@ -319,14 +275,11 @@ class _InventoryHistoryDetailState extends State<InventoryHistoryDetail> {
                                 ),
                               ),
                             ),
-
-                            SizedBox(height: 16),
-
-                            const Text(
-                              'Itens do Inventário',
+                            const SizedBox(height: 16),
+                            const Text('Itens do Inventário',
                               style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                             ),
-                            SizedBox(height: 8),
+                            const SizedBox(height: 8),
                             ..._records.map((record) {
                               return Card(
                                 child: ListTile(
@@ -334,10 +287,10 @@ class _InventoryHistoryDetailState extends State<InventoryHistoryDetail> {
                                   subtitle: Column(
                                     crossAxisAlignment: CrossAxisAlignment.start,
                                     children: [
-                                      _alignRow('Unitizador:', '${record[DBInventory.columnUnitizer] ?? ''}'),
-                                      _alignRow('Depósito:', '${record[DBInventory.columnDeposit] ?? ''}'),
-                                      _alignRow('Código de Barras:', '${record[DBInventory.columnBarcode] ?? ''}'),
-                                      _alignRow('Total:', '${record[DBInventory.columnTotal] ?? ''}'),
+                                      _alignRow('Unitizador:',        '${record[DBInventory.columnUnitizer] ?? ''}'),
+                                      _alignRow('Depósito:',          '${record[DBInventory.columnDeposit] ?? ''}'),
+                                      _alignRow('Código de Barras:',  '${record[DBInventory.columnBarcode] ?? ''}'),
+                                      _alignRow('Total:',             '${record[DBInventory.columnTotal] ?? ''}'),
                                     ],
                                   ),
                                   trailing: IconButton(

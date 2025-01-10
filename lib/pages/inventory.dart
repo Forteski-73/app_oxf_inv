@@ -76,11 +76,10 @@ class _InventoryPageState extends State<InventoryPage> {
   }
 
   Future<int> startInventory() async {
-    // Busca o inventário com status Não Iniciado ou Iniciado
     DBInventory db = DBInventory.instance;
     Map<String, dynamic>? inventoryContext = await db.queryFirstInventoryByStatus();
     int st = 0;
-    if (inventoryContext != null) { // Atualiza para iniciado
+    if (inventoryContext != null) { // Atualiza para em andamento
       inventoryContext["status"] = "EM ANDAMENTO";
       st = await updateInventoryStatus(inventoryContext);
       inventory = inventoryContext;
@@ -93,7 +92,6 @@ class _InventoryPageState extends State<InventoryPage> {
   }
 
   Future<int> finishInventory() async {
-    // Busca o inventário com status Não Iniciado ou Iniciado
     DBInventory db = DBInventory.instance;
     Map<String, dynamic>? inventoryContext = await db.queryFirstInventoryByStatus();
     int st = 0;
@@ -110,24 +108,21 @@ class _InventoryPageState extends State<InventoryPage> {
   }
 
   Future<void> createInventory() async {
-    //String date = DateTime.now().toIso8601String().split('T').first;
     String currentDate = DateFormat('yyyyMMdd').format(DateTime.now());
-    String code = 'INV-$currentDate';
-    String date = DateFormat('dd/MM/yyyy').format(DateTime.now());
-    DateTime dt = DateTime.now();
-    String hour = dt.toIso8601String().split('T').last.split('.').first;
-    String name = "";
+    String code   = 'INV-$currentDate';
+    String date   = DateFormat('dd/MM/yyyy').format(DateTime.now());
+    DateTime dt   = DateTime.now();
+    String hour   = dt.toIso8601String().split('T').last.split('.').first;
+    String name   = "";
     String sector = "";
-
-    //code = "INV-20242010-001";
 
     Map<String, dynamic> inventoryRow = {
       DBInventory.columnCode: code,
-      DBInventory.columnDate: date, //${DateFormat('HH:mm').format(dt)},
+      DBInventory.columnDate: date,
       DBInventory.columnHour: hour,
       DBInventory.columnName: name,
       DBInventory.columnSector: sector,
-      DBInventory.columnStatus: 'NÃO INICIADO', // Set status to INICIADO
+      DBInventory.columnStatus: 'NÃO INICIADO',
     };
 
     DBInventory db = DBInventory.instance;
@@ -143,10 +138,10 @@ class _InventoryPageState extends State<InventoryPage> {
     }
     
     if (inventory != null) { 
-      _codeController.text = inventory?["code"];
-      _dateController.text = '${inventory?["date"]} $hour';
-      _nameController.text = inventory?["name"];
-      _sectorController.text = inventory?["sector"];
+      _codeController.text    = inventory?["code"];
+      _dateController.text    = '${inventory?["date"]} $hour';
+      _nameController.text    = inventory?["name"];
+      _sectorController.text  = inventory?["sector"];
     }
     setState(() {});
   }
@@ -160,7 +155,6 @@ class _InventoryPageState extends State<InventoryPage> {
       DBInventory.columnSector: inventory["sector"]!=''?inventory["sector"]:_sectorController.text,
     });
     return st;
-    //loadData();  // Recarregar os dados após a atualização
   }
 
   // Confirmação para finalizar
@@ -366,12 +360,6 @@ class _InventoryPageState extends State<InventoryPage> {
                           int result = await startInventory();
                           if (result == 1) {
                             Navigator.pushNamed(context, '/inventoryRecord');
-                            /*Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) => const InventoryRecordsPage(),
-                              ),
-                            );*/
                           }
                         }
                       : null,
@@ -404,10 +392,7 @@ class _InventoryPageState extends State<InventoryPage> {
                       borderRadius: BorderRadius.circular(8),
                     ),
                   ),
-                  child: const Text(
-                    'FINALIZAR',
-                    style: TextStyle(fontSize: 16, color: Colors.white),
-                  ),
+                  child: const Text('FINALIZAR', style: TextStyle(fontSize: 16, color: Colors.white),),
                 ),
                 const SizedBox(height: 10),
                 ElevatedButton(
@@ -424,27 +409,21 @@ class _InventoryPageState extends State<InventoryPage> {
                       borderRadius: BorderRadius.circular(8),
                     ),
                   ),
-                  child: const Text(
-                    'CANCELAR',
-                    style: TextStyle(fontSize: 16, color: Colors.white),
-                  ),
+                  child: const Text('CANCELAR', style: TextStyle(fontSize: 16, color: Colors.white),),
                 ),
               ],
             ),
           ),
-          // Rodapé
           Container(
             color: Colors.grey[200],
             padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
             child: const Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text(
-                  "Oxford Porcelanas",
+                Text("Oxford Porcelanas",
                   style: TextStyle(fontSize: 14),
                 ),
-                Text(
-                  "Versão: 1.0",
+                Text("Versão: 1.0",
                   style: TextStyle(fontSize: 14),
                 ),
               ],
@@ -454,5 +433,4 @@ class _InventoryPageState extends State<InventoryPage> {
       ),
     );
   }
-
 }

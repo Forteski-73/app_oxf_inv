@@ -129,7 +129,7 @@ class _SearchProductState extends State<SearchProduct> {
             ),
           ),
           Expanded(
-            flex: 3, // Oupa o restante do espaço
+            flex: 3, // Ocupa o restante do espaço
             child: Text(value),
           ),
         ],
@@ -195,7 +195,7 @@ class _SearchProductState extends State<SearchProduct> {
                       ],
                     ),
                     onTap: () {
-                      // Retorna o produto selecionado para a página chamadora
+                      // Retorna o produto selecionado para a página requisitante
                       widget.onProductSelected(product['ItemBarCode']);
                       Navigator.pop(context);
                     },
