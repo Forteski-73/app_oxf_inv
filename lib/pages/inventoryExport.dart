@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:excel/excel.dart';
 import 'dart:io';
-import 'package:path/path.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:sqflite/sqflite.dart';
 import 'package:mailer/mailer.dart';
 import 'package:mailer/smtp_server.dart';
 import 'package:app_oxf_inv/operator/db_inventory.dart';
 import 'package:app_oxf_inv/operator/db_inventoryExport.dart';
+import 'package:ftpconnect/ftpconnect.dart';
 
 class InventoryExportPage extends StatefulWidget {
   final int inventoryId;
@@ -25,8 +25,9 @@ class _InventoryExportPage extends State<InventoryExportPage> {
   Map<String, dynamic> _inventory                 = {};
   List<Map<String, dynamic>> _records             = [];
   String _separator                               = ';';
-  TextEditingController _filePathController       = TextEditingController();
   final TextEditingController _emailController    = TextEditingController();
+  TextEditingController _fileHostController       = TextEditingController();
+  TextEditingController _filePathController       = TextEditingController();
   final TextEditingController _userController     = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
   bool _exportToEmail                             = true;
@@ -63,8 +64,9 @@ class _InventoryExportPage extends State<InventoryExportPage> {
         _fileNameController.text  = settings['fileName'] ?? '';
         _exportToEmail            = settings['exportToEmail'] ?? true;
         _exportToFilePath         = settings['exportToFilePath'] ?? false;
-        _filePathController.text  = settings['filePath'] ?? '';
         _emailController.text     = settings['email'] ?? '';
+        _filePathController.text  = settings['filePath'] ?? '';
+        _fileHostController.text  = settings['host'] ?? '';
         _userController.text      = settings['user'] ?? '';
         _passwordController.text  = settings['password'] ?? '';
 
@@ -111,7 +113,8 @@ class _InventoryExportPage extends State<InventoryExportPage> {
         if (_inventory.isNotEmpty) {
           _fileNameController.text = '${_inventory[DBInventory.columnCode] ?? ''}.xlsx';
         }
-        _filePathController.text = r'\\srvapp02\Studio\Publico\teste_inventario\';
+        _filePathController.text = '/Ox_imagens/';
+        _fileHostController.text = 'oxserver.oxford.ind.br';
       });
     } catch (e) {
       setState(() {
@@ -122,25 +125,26 @@ class _InventoryExportPage extends State<InventoryExportPage> {
 
   Future<void> exportToExcel(BuildContext context) async {
     try {
-      await _dbInventoryExport.saveExportSettings( // Salva as configurações de exportação
-        _selectedFields              ['Unitizador'] ?? false,
-        _selectedFields                 ['Posição'] ?? false,
-        _selectedFields                ['Depósito'] ?? false,
-        _selectedFields                   ['Bloco'] ?? false,
-        _selectedFields                  ['Quadra'] ?? false,
-        _selectedFields                    ['Lote'] ?? false,
-        _selectedFields                   ['Andar'] ?? false,
-        _selectedFields        ['Código de Barras'] ?? false,
-        _selectedFields    ['Qtde Padrão da Pilha'] ?? false,
+      await _dbInventoryExport.saveExportSettings(
+        _selectedFields['Unitizador'] ?? false,
+        _selectedFields['Posição'] ?? false,
+        _selectedFields['Depósito'] ?? false,
+        _selectedFields['Bloco'] ?? false,
+        _selectedFields['Quadra'] ?? false,
+        _selectedFields['Lote'] ?? false,
+        _selectedFields['Andar'] ?? false,
+        _selectedFields['Código de Barras'] ?? false,
+        _selectedFields['Qtde Padrão da Pilha'] ?? false,
         _selectedFields['Qtde de Pilhas Completas'] ?? false,
-        _selectedFields   ['Qtde de Itens Avulsos'] ?? false,
+        _selectedFields['Qtde de Itens Avulsos'] ?? false,
         _fileNameController.text,
         _exportToEmail,
         _exportToFilePath,
-        _filePathController.text,
         _emailController.text,
+        _filePathController.text,
+        _fileHostController.text,
         _userController.text,
-        _passwordController.text
+        _passwordController.text,
       );
 
       Database db = await DBInventory.instance.database;
@@ -169,7 +173,7 @@ class _InventoryExportPage extends State<InventoryExportPage> {
           } else if (value != null) {
             row.add(TextCellValue(value.toString()));
           } else {
-            row.add(null); // Permite valores nulos
+            row.add(null);
           }
         }
         sheet.appendRow(row);
@@ -178,23 +182,55 @@ class _InventoryExportPage extends State<InventoryExportPage> {
       if (_exportToEmail) {
         await _sendEmailWithAttachment(context, excel.encode());
       } else {
-        // Salva o arquivo em pasta
-        final Directory directory = Directory(_filePathController.text);
-        if (await directory.exists()) {
-          String filePath = join(directory.path, _fileNameController.text);
-          var file = File(filePath);
-          List<int> bytes = excel.encode() ?? [];
-          await file.writeAsBytes(bytes);
-
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Arquivo exportado para: $filePath', style: const TextStyle(fontSize: 18))));
-        } else {
-          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Não ', style: TextStyle(fontSize: 18))));
-        }
+        await _sendFileNetwork(context, excel);
       }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Erro ao exportar: $e', style: const TextStyle(fontSize: 18))));
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text("Erro ao exportar: $e", style: const TextStyle(fontSize: 18)),
+      ));
+    }
+  }
+
+  Future<void> _sendFileNetwork(BuildContext context, Excel excel) async {
+    final String fileName = "inventario_${DateTime.now().millisecondsSinceEpoch}.xlsx";
+
+    FTPConnect ftpConnect = FTPConnect(_fileHostController.text, user: _userController.text, pass: _passwordController.text);
+
+    try {
+      // Conecta ao servidor FTP
+      bool connected = await ftpConnect.connect();
+      if (!connected) throw Exception("Falha ao conectar ao servidor FTP.");
+
+      // Gera os bytes do arquivo Excel
+      List<int>? fileBytes = excel.save();
+      if (fileBytes == null) throw Exception("Erro ao gerar o arquivo Excel.");
+
+      // Cria arquivo temporário
+      final directory = await getTemporaryDirectory();
+      String filePath = "${directory.path}/$fileName";
+      File tempFile = File(filePath);
+      await tempFile.writeAsBytes(fileBytes);
+
+      // Muda para o diretório remoto
+      bool changedDir = await ftpConnect.changeDirectory(_filePathController.text);
+      if (!changedDir) throw Exception("Não foi possível acessar o diretório no servidor.");
+
+      // Faz upload do arquivo
+      bool uploaded = await ftpConnect.uploadFile(tempFile);
+      if (!uploaded) throw Exception("Falha ao enviar o arquivo para o servidor.");
+
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text("Arquivo exportado com sucesso para o servidor FTP."),
+      ));
+
+      // Exclui arquivo temporário
+      await tempFile.delete();
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text("Erro ao gravar na rede: $e"),
+      ));
+    } finally {
+      ftpConnect.disconnect();
     }
   }
 
@@ -387,7 +423,15 @@ class _InventoryExportPage extends State<InventoryExportPage> {
                         TextField(
                           controller: _filePathController,
                           decoration: const InputDecoration(
-                            labelText: "Pasta na Rede",
+                            labelText: "Pasta",
+                            border: OutlineInputBorder(),
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        TextField(
+                          controller: _fileHostController,
+                          decoration: const InputDecoration(
+                            labelText: "Host",
                             border: OutlineInputBorder(),
                           ),
                         ),

@@ -26,17 +26,16 @@ class ConfiguracoesScreenState extends State<SettingsPage> {
         rows = await dbHelper.queryAllRows();
       }
 
-      // Atualiza a lista de campos com os dados carregados do banco
       setState(() {
         campos = List<Map<String, dynamic>>.from(rows);
       });
   }
 
-  // Função para inserir valores padrão
+  // Insere os valores padrão
   Future<void> _insertDefaultValues() async {
     final dbHelper = DBSettings.instance;
 
-    // Definir os valores padrões a serem inseridos
+    // Valores padrões
     final List<Map<String, dynamic>> defaultValues = [
       {"_id": 1, "nome": "Unitizador",                "exibir": 1, "obrigatorio": 0},
       {"_id": 2, "nome": "Posição",                   "exibir": 1, "obrigatorio": 0},
@@ -51,13 +50,11 @@ class ConfiguracoesScreenState extends State<SettingsPage> {
       {"_id": 11, "nome": "Qtde de Itens Avulsos",    "exibir": 1, "obrigatorio": 0},
     ];
 
-    // Inserir os valores padrões na tabela
     for (var campo in defaultValues) {
       await dbHelper.insert(campo);
     }
   }
 
-  // Atualizar um campo no banco
   Future<void> _updateField(int id, bool exibir, bool obrigatorio) async {
     final dbHelper = DBSettings.instance;
     await dbHelper.update({
@@ -68,7 +65,7 @@ class ConfiguracoesScreenState extends State<SettingsPage> {
     loadData();  // Recarregar os dados após a atualização
   }
 
-  // Função para restaurar os padrões
+  // Restaura os padrões
   Future<void> restoreDefault() async {
     setState(() {
       for (var i = 0; i < campos.length; i++) {
@@ -76,7 +73,7 @@ class ConfiguracoesScreenState extends State<SettingsPage> {
       }
     });
 
-    // Atualizar os valores no banco
+    // Atualizar as informações
     for (var campo in campos) {
       await _updateField(campo['_id'], true, false);
     }
@@ -179,7 +176,7 @@ Widget build(BuildContext context) {
                   ],
                 ),
               ),
-              const Divider(), // Divisória abaixo do cabeçalho
+              const Divider(), // Espaço abaixo do cabeçalho
               Expanded(
                 child: ListView.separated(
                   itemCount: campos.length,
@@ -241,7 +238,7 @@ Widget build(BuildContext context) {
                     mainAxisSize: MainAxisSize.min, // Ajusta o tamanho para caber no conteúdo
                     children: [
                       Icon(Icons.refresh, color: Colors.white, size: 30),
-                      SizedBox(width: 8), // Espaçamento entre ícone e texto
+                      SizedBox(width: 8),
                       Text("Restaurar Padrão", style: TextStyle(color: Colors.white, fontSize: 16)),
                     ],
                   ),
@@ -265,7 +262,6 @@ Widget build(BuildContext context) {
     ),
   );
 }
-
   void main() {
     runApp(MaterialApp(
       debugShowCheckedModeBanner: false,

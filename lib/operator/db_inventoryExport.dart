@@ -23,8 +23,9 @@ class DBInventoryExport {
   static const columnQtdeDeItensAvulsos     = 'qtdeDeItensAvulsos';
   static const columnExportToEmail          = 'exportToEmail';
   static const columnExportToFilePath       = 'exportToFilePath';
-  static const columnFilePath               = 'filePath';
   static const columnEmail                  = 'email';
+  static const columnFilePath               = 'filePath';
+  static const columnHost                   = 'host';
   static const columnUser                   = 'user';
   static const columnPassword               = 'password';
 
@@ -85,8 +86,9 @@ class DBInventoryExport {
         $columnQtdeDeItensAvulsos INTEGER,
         $columnExportToEmail INTEGER,
         $columnExportToFilePath INTEGER,
-        $columnFilePath TEXT,
         $columnEmail TEXT,
+        $columnFilePath TEXT,
+        $columnHost TEXT,
         $columnUser TEXT,
         $columnPassword TEXT 
       );
@@ -108,8 +110,9 @@ class DBInventoryExport {
     String fileName,
     bool exportToEmail,
     bool exportToFilePath,
-    String filePath,
     String email,
+    String filePath,
+    String host,
     String user,
     String password
   ) async {
@@ -140,8 +143,9 @@ class DBInventoryExport {
             columnQtdeDeItensAvulsos:     qtdeDeItensAvulsos ? 1 : 0,
             columnExportToEmail:          exportToEmail ? 1 : 0,
             columnExportToFilePath:       exportToFilePath ? 1 : 0,
-            columnFilePath:               filePath,
             columnEmail:                  email,
+            columnFilePath:               filePath,
+            columnHost:                   host,
             columnUser:                   user,
             columnPassword:               password
           },
@@ -165,8 +169,9 @@ class DBInventoryExport {
             columnQtdeDeItensAvulsos:     qtdeDeItensAvulsos ? 1 : 0,
             columnExportToEmail:          exportToEmail ? 1 : 0,
             columnExportToFilePath:       exportToFilePath ? 1 : 0,
-            columnFilePath:               filePath,
             columnEmail:                  email,
+            columnFilePath:               filePath,
+            columnHost:                   host,
             columnUser:                   user,
             columnPassword:               password
           },
@@ -204,8 +209,9 @@ class DBInventoryExport {
           'qtdeDeItensAvulsos':     data[columnQtdeDeItensAvulsos]    == 1,
           'exportToEmail':          data[columnExportToEmail]         == 1,
           'exportToFilePath':       data[columnExportToFilePath]      == 1,
-          'filePath':               data[columnFilePath].toString(),
           'email':                  data[columnEmail].toString(),
+          'filePath':               data[columnFilePath].toString(),
+          'host':                   data[columnHost].toString(),
           'user':                   data[columnUser].toString(),
           'password':               data[columnPassword].toString(),
         };

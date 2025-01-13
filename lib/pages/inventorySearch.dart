@@ -1,4 +1,118 @@
 import 'package:flutter/material.dart';
+import 'package:ftpconnect/ftpconnect.dart';
+import 'package:excel/excel.dart';
+import 'dart:io';
+import 'package:path_provider/path_provider.dart';
+
+void main() {
+  runApp(InventorySearchPage());
+}
+class InventorySearchPage extends StatefulWidget {
+  const InventorySearchPage({super.key});
+
+  @override
+  _InventorySearchPage createState() => _InventorySearchPage();
+}
+
+class _InventorySearchPage extends State<InventorySearchPage> {
+  final String  host    = "oxserver.oxford.ind.br";
+  final String  user    = "representantes";
+  final String  pass    = "repres..ox";
+  String        message = "Status: Idle";
+  bool          st      = false;
+
+  Future<void> _uploadExcelFile() async {
+    setState(() {
+      message = "Conectando ao servidor FTP...";
+    });
+
+    FTPConnect ftpConnect = FTPConnect(host, user: user, pass: pass);
+
+    try {
+      // Conectar ao servidor
+      st = await ftpConnect.connect();
+      print("Conectou.........: $st");
+
+      setState(() {
+        message = "Conectado ao servidor FTP.";
+      });
+
+      // Gerar arquivo Excel
+      Excel excel = Excel.createExcel();
+      Sheet sheetObject = excel['Sheet1'];
+
+      List<int>? fileBytes = excel.save();
+      if (fileBytes == null) throw Exception("Erro ao gerar o arquivo Excel.");
+
+     
+      // Criar arquivo temporário
+      final directory = await getTemporaryDirectory();
+      String filePath = "${directory.path}/temp_excel_file.xlsx";
+
+      File tempFile = File(filePath);
+      await tempFile.writeAsBytes(fileBytes);
+
+      setState(() {
+        message = "Arquivo Excel gerado. Enviando para o servidor...";
+      });
+
+      // Alterar o diretório no servidor para o destino
+      bool changedDir = await ftpConnect.changeDirectory("/Ox_imagens/");
+      if (!changedDir) {
+        throw Exception("Não foi possível acessar o diretório no servidor.");
+      }
+
+      // Fazer upload do arquivo
+      bool uploadResult = await ftpConnect.uploadFile(tempFile);
+      if (uploadResult) {
+        setState(() {
+          message = "Arquivo enviado com sucesso!";
+        });
+      } else {
+        setState(() {
+          message = "Falha ao enviar o arquivo.";
+        });
+      }
+
+      // Excluir arquivo temporário
+      await tempFile.delete();
+    } catch (e) {
+      setState(() {
+        message = "Erro: $e";
+        print("ERROR...........: $message");
+      });
+    } finally {
+      // Desconectar do servidor
+      ftpConnect.disconnect();
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text("FTP Upload"),
+      ),
+      body: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Text(message, style: TextStyle(fontSize: 16)),
+            SizedBox(height: 20),
+            ElevatedButton(
+              onPressed: _uploadExcelFile,
+              child: Text("Conectar e Enviar Excel"),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+
+/*import 'package:flutter/material.dart';
 import 'package:network_info_plus/network_info_plus.dart';
 import 'package:device_info_plus/device_info_plus.dart';
 import 'package:permission_handler/permission_handler.dart';
@@ -12,7 +126,7 @@ class InventorySearchPage extends StatefulWidget {
 
   @override
   _InventorySearchPage createState() => _InventorySearchPage();
-}
+
 
 class _InventorySearchPage extends State<InventorySearchPage> {
   @override
@@ -90,7 +204,7 @@ Future<String> getDeviceSerialNumber() async {
     );
   }
 }
-
+*/
 
 /*import 'package:flutter/material.dart';
 import 'package:mailer/mailer.dart';
@@ -200,8 +314,8 @@ class _EmailPageState extends State<EmailPage> {
   }
 }
 */
-
-/*import 'package:flutter/material.dart';
+/*
+import 'package:flutter/material.dart';
 import 'package:ftpconnect/ftpconnect.dart'; // Usando ftpconnect
 import 'package:excel/excel.dart';
 import 'dart:io';
@@ -220,7 +334,7 @@ class _InventorySearchPage extends State<InventorySearchPage> {
   @override
   void initState() {
     super.initState();
-    _filePathController.text = 'ftp://ftp.exemplo.com/'; // Endereço FTP
+    _filePathController.text = 'ftp://representantes@oxserver.oxford.ind.br/Ox_imagens/'; // Endereço FTP ftp://representantes@oxserver.oxford.ind.br/Ox_imagens/
     _fileNameController.text = 'inventario.xlsx'; // Nome do arquivo
   }
 
@@ -245,7 +359,7 @@ class _InventorySearchPage extends State<InventorySearchPage> {
       await tempFile.writeAsBytes(bytes);
 
       // 5. Conectar ao servidor FTP
-      final ftpClient = FTPConnect('ftp://177.70.21.15', user: 'oxford', pass: 'Oxf2018!');
+      final ftpClient = FTPConnect('ftp://oxserver.oxford.ind.br', user: 'representantes', pass: 'repres..ox');
 
       // 6. Conectar e fazer upload
       st_ftp = await ftpClient.connect();

@@ -1,6 +1,4 @@
 import 'package:flutter/material.dart';
-import '../pages/InventoryHistory.dart';
-import 'inventory.dart';
 
 void main() {
   runApp(const InventoryManagementPage());
@@ -20,7 +18,7 @@ class InventoryManagementPage extends StatelessWidget {
           icon: const Icon(Icons.arrow_back),
           onPressed: () {
             // Volta para a rota inicial (menu)
-            Navigator.popUntil(context, ModalRoute.withName('/menu'));  // Aqui / é a rota do menu principal
+            Navigator.popUntil(context, ModalRoute.withName('/menu'));  // Rota do menu principal
           },
         ),
       ),
