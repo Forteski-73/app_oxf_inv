@@ -11,7 +11,7 @@ import 'pages/sync.dart';
 import 'menu/menu.dart'; 
 import 'pages/home.dart';
 import 'pages/inventory.dart';
-import 'pages/inventRecords.dart'; 
+import 'pages/inventRecords.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();

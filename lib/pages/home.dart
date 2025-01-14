@@ -8,7 +8,6 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
-  bool _isWhiteLogo = false; // Controla a exibição da logo
 
   @override
   Widget build(BuildContext context) {
@@ -25,32 +24,91 @@ class _HomePageState extends State<HomePage> {
               ),
             ),
           ),
-          // Centraliza a logo
+          // Centraliza o conteúdo
           Center(
-            child: GestureDetector(
-              onTap: () {
-                setState(() {
-                  _isWhiteLogo = true;
-                });
-                Future.delayed(const Duration(milliseconds: 500), () {
-                  setState(() {
-                    _isWhiteLogo = false;
-                  });
-                  // Navega para o menu ao clicar na logo
-                  Navigator.pushNamed(context, '/menu');
-                });
-              },
-              child: AnimatedSwitcher(
-                duration: const Duration(milliseconds: 300),
-                child: Image.asset(
-                  _isWhiteLogo
-                      ? 'assets/images/oxf_logo_branco.png'
-                      : 'assets/images/oxf_logo.png',
-                  key: ValueKey<bool>(_isWhiteLogo),
-                  width: 155,
-                  height: 155,
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                // Logo principal
+                GestureDetector(
+                  child: AnimatedSwitcher(
+                    duration: const Duration(milliseconds: 300),
+                    child: Image.asset(
+                      'assets/images/oxf_logo.png',
+                      width: 200,
+                      height: 200,
+                    ),
+                  ),
                 ),
-              ),
+                const SizedBox(height: 20),
+                // Botão Inventário com ícone
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                  child: SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton(
+                      onPressed: () {
+                        Navigator.pushNamed(context, '/menu');
+                      },
+                      style: ElevatedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 25),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                      ),
+                      child: const Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            Icons.barcode_reader, // Ícone do botão
+                            size: 30,
+                            color: Colors.black,
+                          ),
+                          SizedBox(width: 8),
+                          Text(
+                            'Inventário',
+                            style: TextStyle(fontSize: 20, color: Colors.black),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 20),
+                // Botão Produtos com ícone
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                  child: SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton(
+                      onPressed: () {
+                        Navigator.pushNamed(context, '/inventorySearch');
+                      },
+                      style: ElevatedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 25),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                      ),
+                      child: const Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            Icons.manage_search_outlined, // Ícone do botão
+                            size: 30,
+                            color: Colors.black,
+                          ),
+                          SizedBox(width: 8),
+                          Text(
+                            'Produtos',
+                            style: TextStyle(fontSize: 20, color: Colors.black),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ],
             ),
           ),
         ],

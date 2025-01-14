@@ -21,6 +21,7 @@ class DBInventoryExport {
   static const columnQtdePadraoDaPilha      = 'qtdePadraoDaPilha';
   static const columnQtdeDePilhasCompletas  = 'qtdeDePilhasCompletas';
   static const columnQtdeDeItensAvulsos     = 'qtdeDeItensAvulsos';
+  static const columnTotal                  = 'total';
   static const columnExportToEmail          = 'exportToEmail';
   static const columnExportToFilePath       = 'exportToFilePath';
   static const columnEmail                  = 'email';
@@ -71,26 +72,27 @@ class DBInventoryExport {
   Future _onCreate(Database db, int version) async {
     await db.execute(''' 
       CREATE TABLE IF NOT EXISTS $table (
-        $columnId INTEGER PRIMARY KEY AUTOINCREMENT,
-        $columnFileName TEXT,
-        $columnUnitizador INTEGER,
-        $columnPosicao INTEGER,
-        $columnDeposito INTEGER,
-        $columnBloco INTEGER,
-        $columnQuadra INTEGER,
-        $columnLote INTEGER,
-        $columnAndar INTEGER,
-        $columnCodigoDeBarras INTEGER,
-        $columnQtdePadraoDaPilha INTEGER,
-        $columnQtdeDePilhasCompletas INTEGER,
-        $columnQtdeDeItensAvulsos INTEGER,
-        $columnExportToEmail INTEGER,
-        $columnExportToFilePath INTEGER,
-        $columnEmail TEXT,
-        $columnFilePath TEXT,
-        $columnHost TEXT,
-        $columnUser TEXT,
-        $columnPassword TEXT 
+        $columnId                       INTEGER PRIMARY KEY AUTOINCREMENT,
+        $columnFileName                 TEXT,
+        $columnUnitizador               INTEGER,
+        $columnPosicao                  INTEGER,
+        $columnDeposito                 INTEGER,
+        $columnBloco                    INTEGER,
+        $columnQuadra                   INTEGER,
+        $columnLote                     INTEGER,
+        $columnAndar                    INTEGER,
+        $columnCodigoDeBarras           INTEGER,
+        $columnQtdePadraoDaPilha        INTEGER,
+        $columnQtdeDePilhasCompletas    INTEGER,
+        $columnQtdeDeItensAvulsos       INTEGER,
+        $columnTotal                    INTEGER,
+        $columnExportToEmail            INTEGER,
+        $columnExportToFilePath         INTEGER,
+        $columnEmail                    TEXT,
+        $columnFilePath                 TEXT,
+        $columnHost                     TEXT,
+        $columnUser                     TEXT,
+        $columnPassword                 TEXT 
       );
     ''');
   }
@@ -107,6 +109,7 @@ class DBInventoryExport {
     bool qtdePadraoDaPilha,
     bool qtdeDePilhasCompletas,
     bool qtdeDeItensAvulsos,
+    bool total,
     String fileName,
     bool exportToEmail,
     bool exportToFilePath,
@@ -118,7 +121,7 @@ class DBInventoryExport {
   ) async {
     try {
       final db = await database;
-
+      
       final existingRecords = await db.query( // Verifica se existe algum registro
         table,
         limit: 1,  // Limita para o primeiro registro
@@ -141,6 +144,7 @@ class DBInventoryExport {
             columnQtdePadraoDaPilha:      qtdePadraoDaPilha ? 1 : 0,
             columnQtdeDePilhasCompletas:  qtdeDePilhasCompletas ? 1 : 0,
             columnQtdeDeItensAvulsos:     qtdeDeItensAvulsos ? 1 : 0,
+            columnTotal:                  total ? 1 : 0,
             columnExportToEmail:          exportToEmail ? 1 : 0,
             columnExportToFilePath:       exportToFilePath ? 1 : 0,
             columnEmail:                  email,
@@ -167,6 +171,7 @@ class DBInventoryExport {
             columnQtdePadraoDaPilha:      qtdePadraoDaPilha ? 1 : 0,
             columnQtdeDePilhasCompletas:  qtdeDePilhasCompletas ? 1 : 0,
             columnQtdeDeItensAvulsos:     qtdeDeItensAvulsos ? 1 : 0,
+            columnTotal:                  total ? 1 : 0,
             columnExportToEmail:          exportToEmail ? 1 : 0,
             columnExportToFilePath:       exportToFilePath ? 1 : 0,
             columnEmail:                  email,
@@ -183,7 +188,6 @@ class DBInventoryExport {
     }
   }
 
-
   Future<Map<String, dynamic>> loadExportSettings() async {
     try {
       final db = await database;
@@ -191,6 +195,11 @@ class DBInventoryExport {
         table,
         limit: 1,  // Sempre carregamos o primeiro registro (id = 1)
       );
+
+      //_deleteAllRecords(db);
+     // _deleteTable(db);
+      //_onCreate(db,1);
+
       Map<String, dynamic> settings = {};
       if (result.isNotEmpty) {
         final data = result.first;
@@ -207,6 +216,7 @@ class DBInventoryExport {
           'qtdePadraoDaPilha':      data[columnQtdePadraoDaPilha]     == 1,
           'qtdeDePilhasCompletas':  data[columnQtdeDePilhasCompletas] == 1,
           'qtdeDeItensAvulsos':     data[columnQtdeDeItensAvulsos]    == 1,
+          'total':                  data[columnTotal]                 == 1,
           'exportToEmail':          data[columnExportToEmail]         == 1,
           'exportToFilePath':       data[columnExportToFilePath]      == 1,
           'email':                  data[columnEmail].toString(),

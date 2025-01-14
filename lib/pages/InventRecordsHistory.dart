@@ -228,6 +228,9 @@ class _InventoryHistoryDetailState extends State<InventoryHistoryDetail> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
+                            const Text('INVENTÁRIO',
+                              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                            ),
                             Card(
                               color: _inventory[DBInventory.columnStatus] == 'CONCLUÍDO'
                                   ? Colors.green.shade100
@@ -275,11 +278,10 @@ class _InventoryHistoryDetailState extends State<InventoryHistoryDetail> {
                                 ),
                               ),
                             ),
-                            const SizedBox(height: 16),
-                            const Text('Itens do Inventário',
+                            const SizedBox(height: 10),
+                            const Text('ITENS DO INVENTÁRIO',
                               style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                             ),
-                            const SizedBox(height: 8),
                             ..._records.map((record) {
                               return Card(
                                 child: ListTile(

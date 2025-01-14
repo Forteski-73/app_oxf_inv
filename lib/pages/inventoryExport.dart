@@ -20,21 +20,20 @@ class InventoryExportPage extends StatefulWidget {
 class _InventoryExportPage extends State<InventoryExportPage> {
   final TextEditingController _fileNameController = TextEditingController();
   final List<String> _fields = ['Unitizador', 'Posição', 'Depósito', 'Bloco', 'Quadra', 'Lote', 'Andar',
-    'Código de Barras', 'Qtde Padrão da Pilha', 'Qtde de Pilhas Completas', 'Qtde de Itens Avulsos'];
-  Map<String, bool> _selectedFields               = {};
-  Map<String, dynamic> _inventory                 = {};
-  List<Map<String, dynamic>> _records             = [];
-  String _separator                               = ';';
+    'Código de Barras', 'Qtde Padrão da Pilha', 'Qtde de Pilhas Completas', 'Qtde de Itens Avulsos', 'Total'];
+  Map<String, bool>           _selectedFields     = {};
+  Map<String, dynamic>        _inventory          = {};
+  String                      _separator          = ';';
   final TextEditingController _emailController    = TextEditingController();
-  TextEditingController _fileHostController       = TextEditingController();
-  TextEditingController _filePathController       = TextEditingController();
+  final TextEditingController _fileHostController = TextEditingController();
+  final TextEditingController _filePathController = TextEditingController();
   final TextEditingController _userController     = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
-  bool _exportToEmail                             = true;
-  bool _exportToFilePath                          = false;
-  late DBInventory _dbInventory;
-  late DBInventoryExport _dbInventoryExport;
-  bool _isLoading = true;
+  bool                        _exportToEmail      = true;
+  bool                        _exportToFilePath   = false;
+  bool                        _isExporting        = false;
+  late DBInventory            _dbInventory;
+  late DBInventoryExport  _dbInventoryExport;
 
   @override
   void initState() {
@@ -66,7 +65,7 @@ class _InventoryExportPage extends State<InventoryExportPage> {
         _exportToFilePath         = settings['exportToFilePath'] ?? false;
         _emailController.text     = settings['email'] ?? '';
         _filePathController.text  = settings['filePath'] ?? '';
-        _fileHostController.text  = settings['host'] ?? '';
+        _fileHostController.text  = settings['host'] ?? 'oxserver.oxford.ind.br';
         _userController.text      = settings['user'] ?? '';
         _passwordController.text  = settings['password'] ?? '';
 
@@ -83,6 +82,7 @@ class _InventoryExportPage extends State<InventoryExportPage> {
           "Qtde Padrão da Pilha":     settings['qtdePadraoDaPilha'],
           "Qtde de Pilhas Completas": settings['qtdeDePilhasCompletas'],
           "Qtde de Itens Avulsos":    settings['qtdeDeItensAvulsos'],
+          "Total":                    settings['total'],
           "exportToFilePath":         settings['exportToFilePath'],
           "exportToEmail":            settings['exportToEmail'],
         };
@@ -106,8 +106,6 @@ class _InventoryExportPage extends State<InventoryExportPage> {
 
       setState(() {
         _inventory = inventoryResult.isNotEmpty ? inventoryResult.first : {};
-        _records = recordsResult;
-        _isLoading = false;
 
         // Atualiza o nome do arquivo após carregar os dados
         if (_inventory.isNotEmpty) {
@@ -118,13 +116,12 @@ class _InventoryExportPage extends State<InventoryExportPage> {
       });
     } catch (e) {
       setState(() {
-        _isLoading = false;
+
       });
     }
   }
 
-  Future<void> exportToExcel(BuildContext context) async {
-    try {
+ Future<void> _ExportSettings() async {
       await _dbInventoryExport.saveExportSettings(
         _selectedFields['Unitizador'] ?? false,
         _selectedFields['Posição'] ?? false,
@@ -137,6 +134,7 @@ class _InventoryExportPage extends State<InventoryExportPage> {
         _selectedFields['Qtde Padrão da Pilha'] ?? false,
         _selectedFields['Qtde de Pilhas Completas'] ?? false,
         _selectedFields['Qtde de Itens Avulsos'] ?? false,
+        _selectedFields['Total'] ?? false,
         _fileNameController.text,
         _exportToEmail,
         _exportToFilePath,
@@ -146,7 +144,16 @@ class _InventoryExportPage extends State<InventoryExportPage> {
         _userController.text,
         _passwordController.text,
       );
+  }
 
+  Future<void> exportToExcel(BuildContext context) async {
+    setState(() {
+      _isExporting = true;
+    });
+    try {
+      await _ExportSettings();
+
+      // Código de exportação existente...
       Database db = await DBInventory.instance.database;
 
       List<Map<String, dynamic>> inventoryRecords = await db.query(
@@ -159,11 +166,9 @@ class _InventoryExportPage extends State<InventoryExportPage> {
       excel.rename('Sheet1', 'Inventário');
       var sheet = excel['Inventário'];
 
-      // Colunas do cabeçalho
+      // Colunas do cabeçalho e registros
       List<String> selectedHeaders = _fields.where((field) => _selectedFields[field] == true).toList();
       sheet.appendRow(selectedHeaders.map((field) => TextCellValue(field)).toList());
-
-      // Adiciona os registros
       for (var record in inventoryRecords) {
         List<CellValue?> row = [];
         for (var field in selectedHeaders) {
@@ -188,11 +193,15 @@ class _InventoryExportPage extends State<InventoryExportPage> {
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
         content: Text("Erro ao exportar: $e", style: const TextStyle(fontSize: 18)),
       ));
+    } finally {
+      setState(() {
+        _isExporting = false;
+      });
     }
   }
 
   Future<void> _sendFileNetwork(BuildContext context, Excel excel) async {
-    final String fileName = "inventario_${DateTime.now().millisecondsSinceEpoch}.xlsx";
+    final String fileName = "${_fileNameController.text}.xlsx"; //_${DateTime.now().millisecondsSinceEpoch}
 
     FTPConnect ftpConnect = FTPConnect(_fileHostController.text, user: _userController.text, pass: _passwordController.text);
 
@@ -219,11 +228,11 @@ class _InventoryExportPage extends State<InventoryExportPage> {
       bool uploaded = await ftpConnect.uploadFile(tempFile);
       if (!uploaded) throw Exception("Falha ao enviar o arquivo para o servidor.");
 
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: Text("Arquivo exportado com sucesso para o servidor FTP."),
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+        content:Text("Arquivo exportado com sucesso para o servidor FTP."),
       ));
 
-      // Exclui arquivo temporário
+      // Exclui o arquivo temporário
       await tempFile.delete();
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
@@ -237,7 +246,7 @@ class _InventoryExportPage extends State<InventoryExportPage> {
   Future<void> _sendEmailWithAttachment(BuildContext context, List<int>? excelFile) async {
     if (excelFile == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Erro ao gerar o arquivo Excel', style: TextStyle(fontSize: 18))));
+        const SnackBar(content: Text('Erro ao gerar o arquivo Excel', style: TextStyle(fontSize: 18))));
       return;
     }
 
@@ -279,17 +288,18 @@ class _InventoryExportPage extends State<InventoryExportPage> {
 
   String _mapFieldToColumnName(String field) {
     switch (field) {
-      case 'Unitizador':               return DBInventoryExport.columnUnitizador;
-      case 'Posição':                  return DBInventoryExport.columnPosicao;
-      case 'Depósito':                 return DBInventoryExport.columnDeposito;
-      case 'Bloco':                    return DBInventoryExport.columnBloco;
-      case 'Quadra':                   return DBInventoryExport.columnQuadra;
-      case 'Lote':                     return DBInventoryExport.columnLote;
-      case 'Andar':                    return DBInventoryExport.columnAndar;
-      case 'Código de Barras':         return DBInventoryExport.columnCodigoDeBarras;
-      case 'Qtde Padrão da Pilha':     return DBInventoryExport.columnQtdePadraoDaPilha;
-      case 'Qtde de Pilhas Completas': return DBInventoryExport.columnQtdeDePilhasCompletas;
-      case 'Qtde de Itens Avulsos':    return DBInventoryExport.columnQtdeDeItensAvulsos;
+      case 'Unitizador':               return 'unitizer';
+      case 'Posição':                  return 'position';
+      case 'Depósito':                 return 'deposit';
+      case 'Bloco':                    return 'block_a';
+      case 'Quadra':                   return 'block_b';
+      case 'Lote':                     return 'lot';
+      case 'Andar':                    return 'floor';
+      case 'Código de Barras':         return 'barcode';
+      case 'Qtde Padrão da Pilha':     return 'standard_stack_qtd';
+      case 'Qtde de Pilhas Completas': return 'number_complete_stacks';
+      case 'Qtde de Itens Avulsos':    return 'number_loose_items';
+      case 'Total':                    return 'total';
       default: return '';
     }
   }
@@ -464,16 +474,25 @@ class _InventoryExportPage extends State<InventoryExportPage> {
       bottomNavigationBar: Padding(
         padding: const EdgeInsets.fromLTRB(8.0, 0.0, 8.0, 15.0),
         child: ElevatedButton(
-          onPressed: () {
-            exportToExcel(context);
-          },
+          onPressed: _isExporting
+              ? null 
+              : () {
+                  exportToExcel(context);
+                },
           style: ElevatedButton.styleFrom(
             backgroundColor: Colors.blue,
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
             minimumSize: const Size(double.infinity, 50),
           ),
-          child: _isLoading
-              ? const CircularProgressIndicator(color: Colors.white)
+          child: _isExporting
+              ? Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: const [
+                    CircularProgressIndicator(color: Colors.white),
+                    SizedBox(width: 10),
+                    Text('Exportando...', style: TextStyle(color: Colors.white)),
+                  ],
+                )
               : const Text('Exportar', style: TextStyle(color: Colors.white)),
         ),
       ),
