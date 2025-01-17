@@ -110,26 +110,31 @@ class _SyncPageState extends State<SyncPage> with SingleTickerProviderStateMixin
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            ElevatedButton.icon(
-              onPressed: _isSyncing ? null : () => integrateData(context),
-              icon: _isSyncing
-                  ? AnimatedBuilder(
-                      animation: _controller,
-                      builder: (context, child) {
-                        return Transform.rotate(
-                          angle: -_controller.value * 2 * 3.1416, // Rotação em radianos
-                          child: const Icon(Icons.sync, color: Colors.white, size: 35),
-                        );
-                      },
-                    )
-                  : const Icon(Icons.sync, color: Colors.white, size: 35),
-              label: const Text('Sincronizar', style: TextStyle(color: Colors.white, fontSize: 18)),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.blue,
-                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
-                textStyle: const TextStyle(fontSize: 16),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
+            SizedBox(
+              width: 240,
+              child: ElevatedButton.icon(
+                onPressed: _isSyncing ? null : () => integrateData(context),
+                icon: _isSyncing
+                    ? AnimatedBuilder(
+                        animation: _controller,
+                        builder: (context, child) {
+                          return Transform.rotate(
+                            angle: -_controller.value * 2 * 3.1416, // Rotação em radianos
+                            child: const Icon(Icons.sync, color: Colors.white, size: 35),
+                          );
+                        },
+                      )
+                    : const Icon(Icons.sync, color: Colors.white, size: 35),
+                  label: Text(_isSyncing ? 'Sincronizando...' : 'Sincronizar',
+                    style: const TextStyle(color: Colors.white, fontSize: 18),
+                  ),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.blue,
+                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
+                  textStyle: const TextStyle(fontSize: 16),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
                 ),
               ),
             ),
