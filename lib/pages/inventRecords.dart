@@ -1,3 +1,5 @@
+import 'dart:ffi';
+
 import 'package:flutter/material.dart';
 import 'package:app_oxf_inv/operator/db_settings.dart';
 import 'package:app_oxf_inv/operator/db_inventory.dart';
@@ -184,28 +186,89 @@ class InventoryPageState extends State<InventoryRecordsPage> {
     });
   }
 
-  void _validateFields(String value, int id) {
-    const sequence1 = '07891361'; // Primeira sequência válida
-    const sequence2 = '7891361';  // Segunda sequência válida
-    
-    if (value.isEmpty) {
-      return;
-    }
+  Future<bool> _validateFields(String value, int id) async {
 
-    // Verifica a sequência "0789361" ou "789361"
-    if (id == 8 && !_isSequenceValid(value, sequence1) && !_isSequenceValid(value, sequence2)) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Código inválido.',
-          style: TextStyle(color: Colors.white, fontSize: 18,
-            fontWeight: FontWeight.bold,
+    String  field_name;
+    String  field_type;
+    int     min_size;
+    int     max_size;
+    bool    st = true;
+
+    List<Map<String, dynamic>> resultDT = await DBSettings.instance.queryFieldDataTypeSettingsBySettingId(id);
+
+    if (resultDT.isNotEmpty) {
+      field_name = resultDT[0]['field_name'];
+      field_type = resultDT[0]['field_type'];
+      min_size = resultDT[0]['min_size'];
+      max_size = resultDT[0]['max_size'];
+
+      // Validação do tipo de campo
+      if (field_type == 'Numérico') {
+        if (!RegExp(r'^\d+$').hasMatch(value)) {
+          // Exibir mensagem de erro: "O campo ${field_name} deve conter apenas números."
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('O campo ${field_name} deve conter apenas números.'),
+            ),
+          );
+          st = false; // Interrompe a validação se o campo não for numérico
+        }
+      }
+
+      // Validação do tamanho do campo
+      if (value.length < min_size || value.length > max_size) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+                'O campo ${field_name} deve ter entre ${min_size} e ${max_size} caracteres.'),
           ),
-        ),
-          backgroundColor: Color.fromARGB(255, 247, 94, 83),
+        );
+        st = false; // Interrompe a validação se o tamanho não estiver dentro dos limites
+      }
+    } else {
+      st = false;
+      // Exibir mensagem de erro: "Não foi possível recuperar as configurações do campo."
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Não foi possível recuperar as configurações do campo.'),
         ),
       );
-      _clearField(id);
     }
-    return;
+
+    /*
+    List<Map<String, dynamic>> result1 = await DBSettings.instance.queryMasksBySettingId(id); // mascaras para o campo
+
+    List<Map<String, dynamic>> result = await DBSettings.instance.queryFieldDataTypeSettingsWithMasks();
+    
+    // Encontra a máscara associada ao campo com base no id
+    String? mask = '';
+    for (var row in result) {
+      if (row['field_id'] == id) {
+        mask = row['mask'];
+        break;
+      }
+    }
+
+    // Verifique se a máscara foi encontrada e faça a validação
+    if (mask != null && mask.isNotEmpty) {
+      // Se a máscara for encontrada, use-a para validar o valor
+      if (!_isSequenceValid(value, mask)) {
+        // Aqui você pode mostrar um erro ou mensagem de validação
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Valor do campo não corresponde à máscara: $mask'))
+        );
+
+        setState(() {
+          _isSaveButtonEnabled = false; // Desabilita o botão de salvar se a validação falhar
+        });
+      } else {
+        setState(() {
+          _isSaveButtonEnabled = true; // Habilita o botão de salvar se a validação for bem-sucedida
+        });
+      }
+    }*/
+
+    return st;
   }
 
   bool _isSequenceValid(String value, String sequence) {
@@ -280,9 +343,19 @@ class InventoryPageState extends State<InventoryRecordsPage> {
           controller: controller,
           style: const TextStyle(fontSize: 18),
           enabled: enabled,
+          focusNode: focusNode,
           onChanged: (value) {
             _validateMandatoryFields(settings);
-            _validateFields(value, id);
+            //_validateFields(value, id);
+          },
+          
+          onEditingComplete: () async {
+            bool isValid = await _validateFields(controller.text, id);
+            if (!isValid) {
+              setState(() {
+                controller.text = "";
+              });
+            }
           },
           keyboardType: TextInputType.number,
           decoration: InputDecoration(

@@ -11,6 +11,9 @@ class SettingsPage extends StatefulWidget {
 class ConfiguracoesScreenState extends State<SettingsPage> {
   late List<Map<String, dynamic>> campos = [];
 
+  List<Map<String, dynamic>> maskData = []; // Estado global para máscaras
+  List<TextEditingController> controllers = []; // Controladores de texto
+
   @override
   void initState() {
     super.initState();
@@ -110,7 +113,7 @@ class ConfiguracoesScreenState extends State<SettingsPage> {
                     ),
                     child: const Text(
                       'CANCELAR',
-                      style: TextStyle(color: Colors.white),
+                      style: TextStyle(fontSize: 16, color: Colors.white),
                     ),
                   ),
                 ),
@@ -130,7 +133,7 @@ class ConfiguracoesScreenState extends State<SettingsPage> {
                     ),
                     child: const Text(
                       'SIM',
-                      style: TextStyle(color: Colors.white),
+                      style: TextStyle(fontSize: 16, color: Colors.white),
                     ),
                   ),
                 ),
@@ -146,192 +149,268 @@ class ConfiguracoesScreenState extends State<SettingsPage> {
     final dbHelper = DBSettings.instance;
     final fieldData = await dbHelper.queryFieldDataTypeSettingsBySettingId(settingId);
 
-    Map<String, dynamic> field  = {};
-    String fieldName            = name;
-    String fieldType            = "";
-    String minSize              = "";
-    String maxSize              = "";
+    Map<String, dynamic> field = {};
+    String fieldName = name;
+    String fieldType = "";
+    String minSize = "";
+    String maxSize = "";
 
     if (fieldData.isNotEmpty) {
-      field       = fieldData.first;
-      fieldName   = field['field_name'];
-      fieldType   = field['field_type'] ?? '';
-      minSize     = field['min_size'].toString();
-      maxSize     = field['max_size'].toString();
+      field = fieldData.first;
+      fieldName = field['field_name'];
+      fieldType = field['field_type'] ?? '';
+      minSize = field['min_size'].toString();
+      maxSize = field['max_size'].toString();
     }
 
-    // Lista para armazenar as linhas do grid (máscaras) e os TextEditingControllers
-    List<Map<String, dynamic>>  maskData = [];
-    List<TextEditingController> controllers = [];  // Para controlar os campos de texto
+    // Recuperar máscaras do banco de dados
+    final maskList = await dbHelper.queryMasksBySettingId(settingId);
+
+    // Inicializar as máscaras e seus controladores
+    List<Map<String, dynamic>> maskData = maskList
+        .map((mask) => {
+              'mask': mask['mask'],
+              'id': mask['id'], // ID da máscara para possíveis operações futuras
+            })
+        .toList();
+
+    List<TextEditingController> controllers = maskData
+        .map((mask) => TextEditingController(text: mask['mask']))
+        .toList();
 
     showDialog(
       context: context,
       builder: (BuildContext context) {
-        return AlertDialog(
-          insetPadding: EdgeInsets.zero, // Remove o padding padrão
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(0), // Sem borda arredondada
-          ),
-          content: Container(
-            width: double.infinity, // A largura vai ocupar toda a tela
-            height: double.infinity, // A altura vai ocupar toda a tela
-            padding: const EdgeInsets.all(16),
-            child: SingleChildScrollView(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  TextField(
-                    controller: TextEditingController(text: fieldName),
-                    decoration: const InputDecoration(
-                      labelText: "Nome do Campo",
-                      border: OutlineInputBorder(),
-                    ),
-                    onChanged: (value) {
-                      fieldName = value;
-                    },
-                  ),
-                  const SizedBox(height: 8),
-                  DropdownButtonFormField<String>(
-                    value: fieldType.isNotEmpty ? fieldType : null,
-                    decoration: const InputDecoration(
-                      labelText: "Tipo",
-                      border: OutlineInputBorder(),
-                    ),
-                    items: const [
-                      DropdownMenuItem(
-                        value: 'Numérico',
-                        child: Text('Numérico'),
+        return StatefulBuilder(
+          builder: (BuildContext context, StateSetter setDialogState) {
+            return AlertDialog(
+              insetPadding: EdgeInsets.zero,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(0),
+              ),
+              content: Container(
+                width: double.infinity,
+                height: double.infinity,
+                padding: const EdgeInsets.all(16),
+                child: SingleChildScrollView(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Nome do Campo
+                      TextField(
+                        controller: TextEditingController(text: fieldName),
+                        decoration: const InputDecoration(
+                          labelText: "Nome do Campo",
+                          border: OutlineInputBorder(),
+                        ),
+                        onChanged: (value) {
+                          fieldName = value;
+                        },
                       ),
-                      DropdownMenuItem(
-                        value: 'Alfanumérico',
-                        child: Text('Alfanumérico'),
+                      const SizedBox(height: 8),
+                      // Tipo do Campo
+                      DropdownButtonFormField<String>(
+                        value: fieldType.isNotEmpty ? fieldType : null,
+                        decoration: const InputDecoration(
+                          labelText: "Tipo",
+                          border: OutlineInputBorder(),
+                        ),
+                        items: const [
+                          DropdownMenuItem(
+                            value: 'Numérico',
+                            child: Text('Numérico'),
+                          ),
+                          DropdownMenuItem(
+                            value: 'Alfanumérico',
+                            child: Text('Alfanumérico'),
+                          ),
+                        ],
+                        onChanged: (value) {
+                          setDialogState(() {
+                            fieldType = value!;
+                          });
+                        },
+                      ),
+                      const SizedBox(height: 8),
+                      // Tamanho Mínimo
+                      TextField(
+                        controller: TextEditingController(text: minSize),
+                        decoration: const InputDecoration(
+                          labelText: "Tam. Mínimo",
+                          border: OutlineInputBorder(),
+                        ),
+                        keyboardType: TextInputType.number,
+                        onChanged: (value) {
+                          minSize = value;
+                        },
+                      ),
+                      const SizedBox(height: 8),
+                      // Tamanho Máximo
+                      TextField(
+                        controller: TextEditingController(text: maxSize),
+                        decoration: const InputDecoration(
+                          labelText: "Tam. Máximo",
+                          border: OutlineInputBorder(),
+                        ),
+                        keyboardType: TextInputType.number,
+                        onChanged: (value) {
+                          maxSize = value;
+                        },
+                      ),
+                      const SizedBox(height: 16),
+                      // DataTable - Mini Grid
+                      SingleChildScrollView(
+                        scrollDirection: Axis.horizontal,
+                        child: DataTable(
+                          columns: const [
+                            DataColumn(label: Text("Máscara")),
+                            DataColumn(label: Text("Ação")),
+                          ],
+                          rows: maskData.asMap().map<int, DataRow>((index, mask) {
+                            final controller = controllers[index];
+                            return MapEntry(
+                              index,
+                              DataRow(cells: [
+                                DataCell(
+                                  TextField(
+                                    controller: controller,
+                                    onChanged: (value) {
+                                      setDialogState(() {
+                                        mask['mask'] = value; // Atualiza a máscara
+                                      });
+                                    },
+                                    decoration: const InputDecoration(
+                                      border: InputBorder.none, //OutlineInputBorder(),
+                                      labelText: '',
+                                    ),
+                                  ),
+                                ),
+                                DataCell(
+                                  IconButton(
+                                    icon: const Icon(Icons.delete, color: Colors.red),
+                                    onPressed: () async {
+                                      // Deleta máscara do banco de dados antes de remover do contexto
+                                      if (maskData[index]['id'] != null) {
+                                        await dbHelper.deleteMask(maskData[index]['id']);
+                                      }
+                                      setDialogState(() {
+                                        maskData.removeAt(index); // Remover da lista local
+                                        controllers.removeAt(index); // Remover o controlador
+                                      });
+                                    },
+                                  ),
+                                ),
+                              ]),
+                            );
+                          }).values.toList(),
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Container(
+                        width: double.infinity,  // Faz o botão ocupar toda a largura
+                        child: ElevatedButton(
+                          onPressed: () {
+                            setDialogState(() {
+                              maskData.add({'mask': '', 'id': null});
+                              controllers.add(TextEditingController());
+                            });
+                          },
+                          style: ElevatedButton.styleFrom(
+                            padding: const EdgeInsets.symmetric(horizontal: 20),
+                            backgroundColor: Colors.blue,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                          ),
+                          child: const Row(
+                            mainAxisSize: MainAxisSize.max,  // Garante que o Row ocupe toda a largura
+                            children: [
+                              Icon(Icons.playlist_add, color: Colors.white, size: 30),
+                              SizedBox(width: 5),
+                              Text('Adicionar Máscara', style: TextStyle(color: Colors.white)),
+                            ],
+                          ),
+                        ),
                       ),
                     ],
-                    onChanged: (value) {
-                      setState(() {
-                        fieldType = value!;
-                      });
-                    },
                   ),
-                  const SizedBox(height: 8),
-                  TextField(
-                    controller: TextEditingController(text: minSize),
-                    decoration: const InputDecoration(
-                      labelText: "Tam. Mínimo",
-                      border: OutlineInputBorder(),
+                ),
+              ),
+              actions: [
+              Row(
+                children: [
+                  // Botão Cancelar
+                  Expanded(
+                    child: ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        padding: const EdgeInsets.all(16),
+                        backgroundColor: Colors.red,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                      ),
+                      onPressed: () {
+                        Navigator.of(context).pop(); // Fecha o popup
+                      },
+                      child: const Text(
+                        'CANCELAR',
+                        style: TextStyle(color: Colors.white),
+                      ),
                     ),
-                    keyboardType: TextInputType.number,
-                    onChanged: (value) {
-                      minSize = value;
-                    },
                   ),
-                  const SizedBox(height: 8),
-                  TextField(
-                    controller: TextEditingController(text: maxSize),
-                    decoration: const InputDecoration(
-                      labelText: "Tam. Máximo",
-                      border: OutlineInputBorder(),
-                    ),
-                    keyboardType: TextInputType.number,
-                    onChanged: (value) {
-                      maxSize = value;
-                    },
-                  ),
-                  const SizedBox(height: 16),
+                  const SizedBox(width: 8),
+                  // Botão OK
+                  Expanded(
+                    child: ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        padding: const EdgeInsets.all(16),
+                        backgroundColor: Colors.blue, 
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                      ),
+                      onPressed: () async {
+                        // Atualizar os dados no banco
+                        await dbHelper.updateFieldDataTypeSetting({
+                          DBSettings.columnSettingId: settingId,
+                          DBSettings.columnFieldName: fieldName,
+                          DBSettings.columnFieldType: fieldType,
+                          DBSettings.columnMinSize: minSize,
+                          DBSettings.columnMaxSize: maxSize,
+                        });
 
-                  // Mini Grid - DataTable
-                  SingleChildScrollView(
-                    scrollDirection: Axis.horizontal,
-                    child: DataTable(
-                      columns: const [
-                        DataColumn(label: Text("Máscara")),
-                        DataColumn(label: Text("Ação")),
-                      ],
-                      rows: maskData.asMap().map<int, DataRow>((index, mask) {
-                        final controller = controllers[index];
-                        return MapEntry(
-                          index,
-                          DataRow(cells: [
-                            DataCell(
-                              TextField(
-                                controller: controller,
-                                onChanged: (value) {
-                                  mask['mask'] = value;  // Atualiza a máscara
-                                },
-                                decoration: const InputDecoration(
-                                  border: OutlineInputBorder(),
-                                  labelText: 'Digite a Máscara',
-                                ),
-                              ),
-                            ),
-                            DataCell(
-                              IconButton(
-                                icon: const Icon(Icons.delete),
-                                onPressed: () {
-                                  setState(() {
-                                    maskData.removeAt(index);
-                                    controllers.removeAt(index);
-                                  });
-                                },
-                              ),
-                            ),
-                          ]),  
-                        );
-                      }).values.toList(),
+                        // Salvar as máscaras no banco
+                        for (var mask in maskData) {
+                          if (mask['mask'] != null && mask['mask']!.isNotEmpty) {
+                            if (mask['id'] != null) {
+                              // Atualizar máscara existente
+                              await dbHelper.updateMask({
+                                DBSettings.columnId: mask['id'],
+                                DBSettings.columnMask: mask['mask'],
+                              });
+                            } else {
+                              // Inserir nova máscara
+                              await dbHelper.insertMask({
+                                DBSettings.columnMask: mask['mask'],
+                                DBSettings.columnFieldDataTypeSettingId: settingId,
+                              });
+                            }
+                          }
+                        }
+                        Navigator.of(context).pop();
+                      },
+                      child: const Text(
+                        'OK',
+                        style: TextStyle(color: Colors.white),  // Cor do texto
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 8),
-                  ElevatedButton(
-                    onPressed: () {
-                      setState(() {
-                        maskData.add({'mask': '', 'id': null});     // Adiciona nova linha
-                        controllers.add(TextEditingController());   // Adiciona controlador para a nova máscara
-                      });
-                    },
-                    child: const Text('Adicionar Máscara'),
                   ),
                 ],
               ),
-            ),
-          ),
-          actions: [  // Agora, actions dentro de AlertDialog
-            TextButton(
-              onPressed: () {
-                Navigator.of(context).pop();
-              },
-              child: const Text(
-                'CANCELAR',
-                style: TextStyle(color: Colors.red),
-              ),
-            ),
-            TextButton(
-              onPressed: () async {
-                // Atualizando os dados na tabela "field_data_type_setting"
-                await dbHelper.updateFieldDataTypeSetting({
-                  DBSettings.columnId: settingId,
-                  DBSettings.columnFieldName: fieldName,
-                  DBSettings.columnFieldType: fieldType,
-                  DBSettings.columnMinSize: minSize,
-                  DBSettings.columnMaxSize: maxSize,
-                });
+            ],
 
-                // Salvando os dados na tabela "mask"
-                for (var mask in maskData) {
-                  if (mask['mask'] != null && mask['mask']!.isNotEmpty) {
-                    await dbHelper.insertMask({
-                      DBSettings.columnMask: mask['mask'],
-                      DBSettings.columnFieldDataTypeSettingId: settingId,
-                    });
-                  }
-                }
-                Navigator.of(context).pop();
-              },
-              child: const Text(
-                'OK',
-                style: TextStyle(color: Colors.blue),
-              ),
-            ),
-          ],
+            );
+          },
         );
       },
     );

@@ -119,10 +119,31 @@ class DBSettings {
   }*/
 
   Future<int> updateFieldDataTypeSetting(Map<String, dynamic> row) async {
-  Database db = await instance.database;
-  int id = row[DBSettings.columnId];
-  return await db.update(DBSettings.tableFieldDataTypeSetting, row, where: '${DBSettings.columnId} = ?', whereArgs: [id]);
-}
+    Database db = await instance.database;
+    int id = row[DBSettings.columnSettingId];
+
+    // Verifica se o registro existe antes de atualizar
+    List<Map<String, dynamic>> existingRows = await db.query(
+      DBSettings.tableFieldDataTypeSetting,
+      where: '${DBSettings.columnSettingId} = ?',
+      whereArgs: [id],
+    );
+
+    if (existingRows.isEmpty) {
+      // Se o registro não existir, insere-o antes de atualizar
+      await insertFieldDataTypeSetting(row);
+    } else {
+      // Caso contrário, atualiza o registro existente
+      await db.update(
+        DBSettings.tableFieldDataTypeSetting,
+        row,
+        where: '${DBSettings.columnSettingId} = ?',
+        whereArgs: [id],
+      );
+    }
+
+    return 1; // Retorna 1 para indicar sucesso
+  }
 
   Future<List<Map<String, dynamic>>> queryAllFieldDataTypeSettings() async {
     Database db = await instance.database;
@@ -198,48 +219,31 @@ class DBSettings {
     Database db = await instance.database;
     List<Map<String, Object?>> result;
 
-    // Primeiramente, consulta a tabela 'field_data_type_setting' para verificar se existe o registro com o setting_id
     result = await db.query(
       tableFieldDataTypeSetting,
       where: '$columnSettingId = ?',
       whereArgs: [settingId],
     );
-    /*
-    // Se o resultado não contiver dados, insere um novo registro na tabela 'field_data_type_setting'
-    if (result.isEmpty) {
-      // Consulta o nome (columnNome) na tabela settings com o settingId
-      List<Map<String, dynamic>> settingsResult = await db.query(
-        tableSettings,
-        where: '$columnId = ?',
-        whereArgs: [settingId],
-      );
-
-      // Verificar se o nome foi encontrado
-      String? settingName = settingsResult.isNotEmpty ? settingsResult[0][columnNome] : 'null';
-
-      // Preparando os dados para o novo registro
-      Map<String, dynamic> newRow = {
-        columnSettingId: settingId,  // Definindo o setting_id
-        columnFieldName: settingName, // Agora, usamos o nome obtido da tabela 'settings'
-        columnFieldType: null,        // Definindo como null, pois não temos dados para esse campo
-        columnMinSize: null,          // Definindo como null, pois não temos dados para esse campo
-        columnMaxSize: null,          // Definindo como null, pois não temos dados para esse campo
-      };
-
-      // Inserir um novo registro na tabela 'field_data_type_setting'
-      await db.insert(tableFieldDataTypeSetting, newRow);
-
-      // Após a inserção, consulta novamente para retornar o novo registro
-      result = await db.query(
-        tableFieldDataTypeSetting,
-        where: '$columnSettingId = ?',
-        whereArgs: [settingId],
-      );
-    }*/
 
     return result;
   }
 
+  // Método para consultar máscaras associadas a um settingId
+  Future<List<Map<String, dynamic>>> queryMasksBySettingId(int settingId) async {
+    Database db = await instance.database;
+    final result = await db.rawQuery('''
+      SELECT 
+        m.$columnId AS id,
+        m.$columnMask AS mask,
+        m.$columnFieldDataTypeSettingId AS field_data_type_setting_id
+      FROM $tableMask AS m
+      INNER JOIN $tableFieldDataTypeSetting AS f
+      ON m.$columnFieldDataTypeSettingId = f.$columnId
+      WHERE f.$columnSettingId = ?
+    ''', [settingId]);
+
+    return result;
+  }
 
   /*  // insert
   Future<int> insert(Map<String, dynamic> row) async {

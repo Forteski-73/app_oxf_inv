@@ -309,7 +309,7 @@ class _InventoryPageState extends State<InventoryPage> {
                               ),
                               const SizedBox(height: 16),
                               TextField(
-                                keyboardType: TextInputType.number,
+                                keyboardType: TextInputType.text,
                                 decoration: const InputDecoration(
                                   labelText: 'Setor',
                                   border: OutlineInputBorder(),
