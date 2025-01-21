@@ -18,12 +18,23 @@ class InventoryPageState extends State<InventoryRecordsPage> {
   late Future<Map<String, Map<String, dynamic>>> _settingsFuture;
   final List<TextEditingController> controllers = List.generate(11,(index) => TextEditingController(),);
   final TextEditingController _totalController = TextEditingController();
+  
+  final List<FocusNode> focusNodes = List.generate(11, (index) => FocusNode());
+  TextEditingController controller = TextEditingController();
 
   @override
   void dispose() {  // Certifique-se de limpar os controladores ao sair
+    
     for (var controller in controllers) {
       controller.dispose();
     }
+
+    for (var focus in focusNodes) {
+      focus.dispose();
+    }
+
+    controller.dispose();
+
     super.dispose();
   }
 
@@ -36,8 +47,28 @@ class InventoryPageState extends State<InventoryRecordsPage> {
       await createInventoryRecord();
       setState(() { });
     });
+
+    for (int i = 0; i < focusNodes.length; i++) {
+      focusNodes[i].addListener(() {
+        if ((!focusNodes[i].hasFocus) && (controllers[i].text != "")) {
+          // Chama onEditingComplete ao perder o foco do campo
+          // no enter ou quando sai com o dedo mesmo
+          _onEditingComplete(controllers[i].text, i);
+        }
+      });
+    }
   }
-  
+
+  Future<void> _onEditingComplete(String value, int _id) async {
+    bool isValid = await _validateFields(value, _id);
+    if (!isValid) {
+      setState(() {
+        controllers[_id].text = "";
+        FocusScope.of(context).requestFocus(focusNodes[_id]);
+      });
+    }
+  }
+
   Future<Map<String, Map<String, dynamic>>> _loadSettings() async {
     final rows = await DBSettings.instance.querySettingAllRows();
 
@@ -192,15 +223,16 @@ class InventoryPageState extends State<InventoryRecordsPage> {
     String  field_type;
     int     min_size;
     int     max_size;
+    int     settingId = (id+1);
     bool    st = true;
 
-    List<Map<String, dynamic>> resultDT = await DBSettings.instance.queryFieldDataTypeSettingsBySettingId(id);
+    List<Map<String, dynamic>> resultDT = await DBSettings.instance.queryFieldDataTypeSettingsBySettingId(settingId);
 
     if (resultDT.isNotEmpty) {
       field_name = resultDT[0]['field_name'];
       field_type = resultDT[0]['field_type'];
-      min_size = resultDT[0]['min_size'];
-      max_size = resultDT[0]['max_size'];
+      min_size   = resultDT[0]['min_size'];
+      max_size   = resultDT[0]['max_size'];
 
       // Validação do tipo de campo
       if (field_type == 'Numérico') {
@@ -212,63 +244,73 @@ class InventoryPageState extends State<InventoryRecordsPage> {
             ),
           );
           st = false; // Interrompe a validação se o campo não for numérico
+          return st;
         }
       }
 
       // Validação do tamanho do campo
       if (value.length < min_size || value.length > max_size) {
+        
+        String msg = 'O campo $field_name deve ter $max_size caracteres.';
+        if(min_size != max_size) {
+          msg = 'O campo $field_name deve ter entre $min_size e $max_size caracteres.';
+        }
+        
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(
-                'O campo ${field_name} deve ter entre ${min_size} e ${max_size} caracteres.'),
+            content: Text('$msg'),
           ),
         );
         st = false; // Interrompe a validação se o tamanho não estiver dentro dos limites
+        return st;
       }
-    } else {
-      st = false;
-      // Exibir mensagem de erro: "Não foi possível recuperar as configurações do campo."
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Não foi possível recuperar as configurações do campo.'),
-        ),
-      );
-    }
 
-    /*
-    List<Map<String, dynamic>> result1 = await DBSettings.instance.queryMasksBySettingId(id); // mascaras para o campo
-
-    List<Map<String, dynamic>> result = await DBSettings.instance.queryFieldDataTypeSettingsWithMasks();
-    
-    // Encontra a máscara associada ao campo com base no id
-    String? mask = '';
-    for (var row in result) {
-      if (row['field_id'] == id) {
-        mask = row['mask'];
-        break;
+      /* VALIDAÇÕES DAS MÁSCARAS */
+      List<Map<String, dynamic>> result = await DBSettings.instance.queryMasksBySettingId(settingId); // mascaras para o campo
+      if (result.isNotEmpty)
+      {
+        st = false;
+        for (var item in result) {
+          final mask = item['mask'] as String;
+          
+          String pattern = generatePattern(mask, field_type);
+          final regExp = RegExp(pattern);
+          
+          if (regExp.hasMatch(value)) { // Verifica a qual padrão a máscara corresponde
+            st = true;
+            break; // interrompe pois já achou um verdadeiro
+          } 
+        }
       }
     }
-
-    // Verifique se a máscara foi encontrada e faça a validação
-    if (mask != null && mask.isNotEmpty) {
-      // Se a máscara for encontrada, use-a para validar o valor
-      if (!_isSequenceValid(value, mask)) {
-        // Aqui você pode mostrar um erro ou mensagem de validação
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Valor do campo não corresponde à máscara: $mask'))
-        );
-
-        setState(() {
-          _isSaveButtonEnabled = false; // Desabilita o botão de salvar se a validação falhar
-        });
-      } else {
-        setState(() {
-          _isSaveButtonEnabled = true; // Habilita o botão de salvar se a validação for bem-sucedida
-        });
-      }
-    }*/
 
     return st;
+  }
+
+  String generatePattern(String _mask, String  _fieldType) {
+    // Expressão para encontrar números e asteriscos  ^3256391\d{6}$  ^3256391\*{6}$
+    final regExp = RegExp(r'(\d+)|(\*+)');
+    final matches = regExp.allMatches(_mask);
+
+    // Constrói o padrão dinâmico
+    StringBuffer pattern = StringBuffer('^');
+    for (final match in matches) {
+      if (match.group(1) != null) {
+        // Adiciona o número fixo
+        pattern.write(match.group(1));
+      } else if (match.group(2) != null) {
+        // Adiciona a quantidade de "*"
+        int count = match.group(2)!.length;
+        if (_fieldType == 'Numérico') {
+          pattern.write(r'\d{' + count.toString() + r'}');
+        }
+        else {
+          pattern.write(r'[a-zA-Z0-9]{' + count.toString() + r'}');
+        }
+      }
+    }
+    pattern.write(r'$');
+    return pattern.toString();
   }
 
   bool _isSequenceValid(String value, String sequence) {
@@ -295,6 +337,7 @@ class InventoryPageState extends State<InventoryRecordsPage> {
     required bool   enabled,
     required bool   required,
     required TextEditingController controller,
+    required FocusNode focusNode,
     required Map<String, Map<String, dynamic>> settings,
     Widget? suffixIcon, 
     BuildContext? context,
@@ -341,22 +384,23 @@ class InventoryPageState extends State<InventoryRecordsPage> {
         padding: const EdgeInsets.only(bottom: 8.0),
         child: TextField(
           controller: controller,
+          focusNode: focusNode,
           style: const TextStyle(fontSize: 18),
           enabled: enabled,
-          focusNode: focusNode,
           onChanged: (value) {
             _validateMandatoryFields(settings);
             //_validateFields(value, id);
           },
-          
-          onEditingComplete: () async {
-            bool isValid = await _validateFields(controller.text, id);
-            if (!isValid) {
+          //onEditingComplete: _onEditingComplete(controller.text, id);
+          //onEditingComplete: () async {
+            //_onEditingComplete(controller.text, id);
+           // bool isValid = await _validateFields(controller.text, id);
+            /*if (!isValid) {
               setState(() {
                 controller.text = "";
               });
-            }
-          },
+            }*/
+          //},
           keyboardType: TextInputType.number,
           decoration: InputDecoration(
             labelText: labelWithAsterisk,
@@ -419,6 +463,7 @@ class InventoryPageState extends State<InventoryRecordsPage> {
                     enabled:    settings['Unitizador']?['exibir'] == 1,
                     required:   settings['Unitizador']?['obrigatorio'] == 1,
                     controller: controllers[0],
+                    focusNode: focusNodes[0],
                     settings:   settings,
                     suffixIcon: const Icon(Icons.barcode_reader),
                   ),
@@ -430,6 +475,7 @@ class InventoryPageState extends State<InventoryRecordsPage> {
                     enabled:    settings['Posição']?['exibir'] == 1,
                     required:   settings['Posição']?['obrigatorio'] == 1,
                     controller: controllers[1],
+                    focusNode: focusNodes[1],
                     settings:   settings,
                     suffixIcon: const Icon(Icons.barcode_reader),
                   ),
@@ -444,6 +490,7 @@ class InventoryPageState extends State<InventoryRecordsPage> {
                           enabled:    settings['Depósito']?['exibir'] == 1,
                           required:   settings['Depósito']?['obrigatorio'] == 1,
                           controller: controllers[2],
+                          focusNode: focusNodes[2],
                           settings:   settings,
                         ),
                       ),
@@ -456,6 +503,7 @@ class InventoryPageState extends State<InventoryRecordsPage> {
                           enabled:    settings['Bloco']?['exibir'] == 1,
                           required:   settings['Bloco']?['obrigatorio'] == 1,
                           controller: controllers[3],
+                          focusNode: focusNodes[3],
                           settings:   settings,
                         ),
                       ),
@@ -472,6 +520,7 @@ class InventoryPageState extends State<InventoryRecordsPage> {
                           enabled:    settings['Quadra']?['exibir'] == 1,
                           required:   settings['Quadra']?['obrigatorio'] == 1,
                           controller: controllers[4],
+                          focusNode: focusNodes[4],
                           settings:   settings,
                         ),
                       ),
@@ -484,6 +533,7 @@ class InventoryPageState extends State<InventoryRecordsPage> {
                           enabled:    settings['Lote']?['exibir'] == 1,
                           required:   settings['Lote']?['obrigatorio'] == 1,
                           controller: controllers[5],
+                          focusNode: focusNodes[5],
                           settings:   settings,
                         ),
                       ),
@@ -497,6 +547,7 @@ class InventoryPageState extends State<InventoryRecordsPage> {
                     enabled:    settings['Andar']?['exibir'] == 1,
                     required:   settings['Andar']?['obrigatorio'] == 1,
                     controller: controllers[6],
+                    focusNode: focusNodes[6],
                     settings:   settings,
                   ),
                   const SizedBox(height: 8),
@@ -507,6 +558,7 @@ class InventoryPageState extends State<InventoryRecordsPage> {
                     enabled:    settings['Código de Barras']?['exibir'] == 1,
                     required:   settings['Código de Barras']?['obrigatorio'] == 1,
                     controller: controllers[7],
+                    focusNode: focusNodes[7],
                     settings:   settings,
                     suffixIcon: const Icon(Icons.barcode_reader),
                     context:    context,
@@ -522,6 +574,7 @@ class InventoryPageState extends State<InventoryRecordsPage> {
                           enabled:    settings['Qtde Padrão da Pilha']?['exibir'] == 1,
                           required:   settings['Qtde Padrão da Pilha']?['obrigatorio'] == 1,
                           controller: controllers[8],
+                          focusNode: focusNodes[8],
                           settings:   settings,
                         ),
                       ),
@@ -534,6 +587,7 @@ class InventoryPageState extends State<InventoryRecordsPage> {
                           enabled:    settings['Qtde de Pilhas Completas']?['exibir'] == 1,
                           required:   settings['Qtde de Pilhas Completas']?['obrigatorio'] == 1,
                           controller: controllers[9],
+                          focusNode: focusNodes[9],
                           settings:   settings,
                         ),
                       ),
@@ -547,6 +601,7 @@ class InventoryPageState extends State<InventoryRecordsPage> {
                     enabled:    settings['Qtde de Itens Avulsos']?['exibir'] == 1,
                     required:   settings['Qtde de Itens Avulsos']?['obrigatorio'] == 1,
                     controller: controllers[10],
+                    focusNode: focusNodes[10],
                     settings:   settings,
                   ),
                   Align(
