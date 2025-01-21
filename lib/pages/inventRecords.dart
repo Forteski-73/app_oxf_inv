@@ -281,6 +281,12 @@ class InventoryPageState extends State<InventoryRecordsPage> {
             break; // interrompe pois já achou um verdadeiro
           } 
         }
+        if(!st) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Valor do campo $field_name inválido.'),
+          ),
+        );
+        }
       }
     }
 
