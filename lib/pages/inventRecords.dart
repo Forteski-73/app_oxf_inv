@@ -283,7 +283,7 @@ class InventoryPageState extends State<InventoryRecordsPage> {
         }
         if(!st) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Valor do campo $field_name inválido.'),
+          SnackBar(content: Text('$field_name inválido.'),
           ),
         );
         }
