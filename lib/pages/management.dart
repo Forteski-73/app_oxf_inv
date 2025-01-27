@@ -11,14 +11,28 @@ class InventoryManagementPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Gerenciamento de Inventário', style: TextStyle(color: Colors.white)),
+        title: const Column(
+          mainAxisAlignment: MainAxisAlignment.start,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Aplicativo de Consulta de Estrutura de Produtos. ACEP',
+              style: TextStyle(color: Colors.white, fontSize: 12),
+            ),
+            SizedBox(height: 2),
+            Text(
+              'Gerenciamento de Inventário',
+              style: TextStyle(color: Colors.white, fontSize: 20),
+            ),
+          ],
+        ),
         backgroundColor: Colors.black,
         iconTheme: const IconThemeData(color: Colors.white),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
           onPressed: () {
             // Volta para a rota inicial (menu)
-            Navigator.popUntil(context, ModalRoute.withName('/menu'));  // Rota do menu principal
+            Navigator.popUntil(context, ModalRoute.withName('/menu')); // Rota do menu principal
           },
         ),
       ),

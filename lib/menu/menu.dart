@@ -14,7 +14,19 @@ class MenuPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Menu', style: TextStyle(color: Colors.white)),
+        title: const Column(
+          mainAxisAlignment: MainAxisAlignment.start,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('Aplicativo de Consulta de Estrutura de Produtos. ACEP',
+              style: TextStyle(color: Colors.white,fontSize: 12,),
+            ),
+            SizedBox(height: 2),
+            Text('Menu',
+              style: TextStyle(color: Colors.white, fontSize: 20, ),
+            ),
+          ],
+        ),
         backgroundColor: Colors.black,
         iconTheme: const IconThemeData(color: Colors.white),
       ),

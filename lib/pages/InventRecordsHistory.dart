@@ -209,9 +209,20 @@ class _InventoryHistoryDetailState extends State<InventoryHistoryDetail> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(
-          _inventory['code'] ?? 'Detalhes do Inventário',
-          style: const TextStyle(color: Colors.white),
+        title: Column(
+          mainAxisAlignment: MainAxisAlignment.start,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'Aplicativo de Consulta de Estrutura de Produtos. ACEP',
+              style: TextStyle(color: Colors.white, fontSize: 12),
+            ),
+            const SizedBox(height: 2),
+            Text(
+              _inventory['code'] ?? 'Detalhes do Inventário',
+              style: const TextStyle(color: Colors.white),
+            ),
+          ],
         ),
         backgroundColor: Colors.black,
         iconTheme: const IconThemeData(color: Colors.white),

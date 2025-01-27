@@ -170,9 +170,18 @@ class _ImportProductPage extends State<ImportProduct> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text(
-          'Importar CSV',
-          style: TextStyle(color: Colors.white),
+        title: const Column(
+          mainAxisAlignment: MainAxisAlignment.start,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('Aplicativo de Consulta de Estrutura de Produtos. ACEP',
+              style: TextStyle(color: Colors.white,fontSize: 12,),
+            ),
+            SizedBox(height: 2),
+            Text('Importar CSV',
+              style: TextStyle(color: Colors.white, fontSize: 20, ),
+            ),
+          ],
         ),
         backgroundColor: Colors.black,
         iconTheme: const IconThemeData(color: Colors.white),

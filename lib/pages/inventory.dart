@@ -168,7 +168,8 @@ class _InventoryPageState extends State<InventoryPage> {
           ),
           content: const Text(
             'Deseja realmente finalizar o inventário?\n'
-            'Esta ação bloqueará todas as alterações.',
+            'Esta ação bloqueará todas as alterações.', 
+            style: TextStyle(fontSize: 18,),
           ),
           actions: [
             Row(
@@ -218,7 +219,19 @@ class _InventoryPageState extends State<InventoryPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Criação de Inventário', style: TextStyle(color: Colors.white)),
+        title: const Column(
+          mainAxisAlignment: MainAxisAlignment.start,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('Aplicativo de Consulta de Estrutura de Produtos. ACEP',
+              style: TextStyle(color: Colors.white,fontSize: 12,),
+            ),
+            SizedBox(height: 2),
+            Text('Criação de Inventário',
+              style: TextStyle(color: Colors.white, fontSize: 20, ),
+            ),
+          ],
+        ),
         backgroundColor: Colors.black,
         iconTheme: const IconThemeData(color: Colors.white),
       ),

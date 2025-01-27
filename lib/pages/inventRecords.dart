@@ -67,6 +67,17 @@ class InventoryPageState extends State<InventoryRecordsPage> {
         FocusScope.of(context).requestFocus(focusNodes[_id]);
       });
     }
+    else {
+      if(_id == 1) {
+        String posicao = controllers[_id].text;
+        controllers[2].text = posicao.substring(0, 2);
+        controllers[3].text = posicao.substring(2, 4);
+        controllers[4].text = posicao.substring(4, 5);
+        controllers[5].text = posicao.substring(5, 7);
+        controllers[6].text = posicao.substring(7, 8);
+        FocusScope.of(context).requestFocus(focusNodes[7]);
+      }
+    }
   }
 
   Future<Map<String, Map<String, dynamic>>> _loadSettings() async {
@@ -183,9 +194,12 @@ class InventoryPageState extends State<InventoryRecordsPage> {
           const SnackBar(content: Text('Dados salvos com sucesso!', style: TextStyle(fontSize: 18))),
         );
 
-        for (var controller in controllers) { // Limpar os campos após salvar
-          controller.clear();
-        }
+        /*for (var i = 0; i < controllers.length; i++) {
+          if (i > 6) {
+            controllers[i].clear();
+          }
+        }*/
+        saveMoreRecords(context);
 
         createInventoryRecord(); createInventoryRecord(); // Prepara o próximo registro
 
@@ -205,6 +219,80 @@ class InventoryPageState extends State<InventoryRecordsPage> {
     }
 
     return st;
+  }
+
+Future<void> saveMoreRecords(BuildContext context) async {
+  bool next = await showDialog<bool>(
+    context: context,
+    builder: (BuildContext context) {
+      return AlertDialog(
+        content: const Text("Encerrar contagem desse unitizador?",style: TextStyle(fontSize: 18,),),
+        actionsAlignment: MainAxisAlignment.center, // Centraliza os botões
+        actions: [
+          TextButton(
+            style: TextButton.styleFrom(
+              backgroundColor: Colors.blue, // Fundo azul
+              padding: const EdgeInsets.all(16), // Espaçamento interno
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8), // Borda arredondada
+              ),
+            ),
+            onPressed: () {
+              Navigator.of(context).pop(false);
+            },
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: const [
+                Icon(Icons.done, color: Colors.white), // Ícone
+                SizedBox(width: 8), // Espaçamento entre ícone e texto
+                Text(
+                  "NÃO",
+                  style: TextStyle(color: Colors.white, fontSize: 16), // Texto branco
+                ),
+              ],
+            ),
+          ),
+          TextButton(
+            style: TextButton.styleFrom(
+              backgroundColor: Colors.blue, // Fundo azul
+              padding: const EdgeInsets.all(16), // Espaçamento interno
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8), // Borda arredondada
+              ),
+            ),
+            onPressed: () {
+              Navigator.of(context).pop(true);
+            },
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: const [
+                Icon(Icons.add, color: Colors.white), // Ícone
+                SizedBox(width: 8), // Espaçamento entre ícone e texto
+                Text(
+                  "SIM",
+                  style: TextStyle(color: Colors.white, fontSize: 16), // Texto branco
+                ),
+              ],
+            ),
+          ),
+        ],
+      );
+    },
+  ) ?? false;
+
+    if (next) {
+      for (var controller in controllers) { // Limpar os campos após salvar
+        controller.clear();
+      }
+      FocusScope.of(context).requestFocus(focusNodes[0]);
+    } else {
+      for (var i = 0; i < controllers.length; i++) { // mantém Unitizador e Localização
+        if (i > 6) {
+          controllers[i].clear();
+        }
+      }
+      FocusScope.of(context).requestFocus(focusNodes[7]);
+    }
   }
 
   void clearFields() {
@@ -423,9 +511,21 @@ class InventoryPageState extends State<InventoryRecordsPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Criação de Inventário', style: TextStyle(color: Colors.white)),
-        backgroundColor: Colors.black,
-        iconTheme: const IconThemeData(color: Colors.white),
+      title: const Column(
+        mainAxisAlignment: MainAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text('Aplicativo de Consulta de Estrutura de Produtos. ACEP',
+            style: TextStyle(color: Colors.white,fontSize: 12,),
+          ),
+          SizedBox(height: 2),
+          Text('Criação de Inventário',
+            style: TextStyle(color: Colors.white, fontSize: 20, ),
+          ),
+        ],
+      ),
+      backgroundColor: Colors.black,
+      iconTheme: const IconThemeData(color: Colors.white),
       ),
       body: SingleChildScrollView( // coloca scroll para rolar o conteúdo
         child: Padding(

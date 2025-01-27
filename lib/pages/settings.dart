@@ -188,6 +188,15 @@ class ConfiguracoesScreenState extends State<SettingsPage> {
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(0),
               ),
+              // Column para incluir a barra superior com título
+              titlePadding: EdgeInsets.zero,  // Remover o padding da title
+              title: Container(
+                color: Colors.black,  // Cor do fundo da "AppBar"
+                padding: const EdgeInsets.all(16),
+                child: const Text('Configuração do Campo',
+                  style: TextStyle(color: Colors.white, fontSize: 20),
+                ),
+              ),
               content: Container(
                 width: double.infinity,
                 height: double.infinity,
@@ -420,7 +429,19 @@ class ConfiguracoesScreenState extends State<SettingsPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Configurações', style: TextStyle(color: Colors.white)),
+        title: const Column(
+          mainAxisAlignment: MainAxisAlignment.start,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('Aplicativo de Consulta de Estrutura de Produtos. ACEP',
+              style: TextStyle(color: Colors.white,fontSize: 12,),
+            ),
+            SizedBox(height: 2),
+            Text('Configurações',
+              style: TextStyle(color: Colors.white, fontSize: 20, ),
+            ),
+          ],
+        ),
         backgroundColor: Colors.black,
         iconTheme: const IconThemeData(color: Colors.white),
       ),
@@ -468,7 +489,20 @@ class ConfiguracoesScreenState extends State<SettingsPage> {
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
                             Expanded(
-                              child: Text(campo['nome'], style: const TextStyle(fontSize: 16)),
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.start, // Alinha o texto à esquerda
+                                children: [
+                                  const Icon(
+                                    Icons.more_vert, // Ícone de seta para a direita
+                                    size: 20, // Tamanho do ícone
+                                    color: Colors.black, // Cor do ícone
+                                  ),
+                                  Text(
+                                    campo['nome'], 
+                                    style: const TextStyle(fontSize: 16),
+                                  ),
+                                ],
+                              ),
                             ),
                             Switch(
                               value: campo['exibir'] == 1,
@@ -515,7 +549,7 @@ class ConfiguracoesScreenState extends State<SettingsPage> {
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(8),
                       ),
-                      minimumSize: const Size(double.infinity, 50),
+                      minimumSize: const Size(double.infinity, 45),
                     ),
                     child: const Row(
                       mainAxisSize: MainAxisSize.min,
