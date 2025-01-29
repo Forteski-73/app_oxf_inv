@@ -69,7 +69,8 @@ class MenuPage extends StatelessWidget {
                 context,
                 icon: Icons.settings_outlined,
                 label: "Configurações",
-                routeName: '/settings', // Rota para Configurações
+                routeName: '/settingsProfile', // Rota para Configurações
+                //routeName: '/settings', // Rota para Configurações
               ),
             ],
           ),

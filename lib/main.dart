@@ -5,6 +5,7 @@ import 'pages/importProduct.dart';
 import 'pages/management.dart';
 import 'pages/inventorySearch.dart';
 import 'pages/settings.dart';
+import 'pages/SettingsProfile.dart';
 import 'pages/InventoryHistory.dart';
 import 'pages/InventRecordsHistory.dart';
 import 'pages/sync.dart';
@@ -43,6 +44,7 @@ class MyApp extends StatelessWidget {
         '/sync': (context) => const SyncPage(),                       // Rota para Sincronização
         '/inventorySearch': (context) => const InventorySearchPage(), // Rota para Pesquisar Produtos
         '/settings': (context) => const SettingsPage(),               // Rota para Configurações
+        '/settingsProfile': (context) => const SettingsProfilePage(),               // Rota para Configurações
         '/inventory': (context) => const InventoryPage(),             // Rota para Consultar Inventários
         '/inventoryHistory': (context) => const InventoryHistory(),   // Rota para Consultar Histórico
         '/inventoryHistoryDetail': (context) {                        // Rota para Consultar Detalhes do Inventário
