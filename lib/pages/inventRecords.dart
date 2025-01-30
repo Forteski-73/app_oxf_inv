@@ -81,7 +81,7 @@ class InventoryPageState extends State<InventoryRecordsPage> {
   }
 
   Future<Map<String, Map<String, dynamic>>> _loadSettings() async {
-    final rows = await DBSettings.instance.querySettingAllRows();
+    final rows = await DBSettings.instance.querySettingAllRows(1);
 
     return {
       for (var row in rows) row['nome']: row,

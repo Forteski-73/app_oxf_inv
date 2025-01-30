@@ -43,7 +43,7 @@ class MyApp extends StatelessWidget {
         '/importProduct': (context) => ImportProduct(),               // Rota para Importação de Produtos
         '/sync': (context) => const SyncPage(),                       // Rota para Sincronização
         '/inventorySearch': (context) => const InventorySearchPage(), // Rota para Pesquisar Produtos
-        '/settings': (context) => const SettingsPage(),               // Rota para Configurações
+        //'/settings': (context) => const SettingsPage(),               // Rota para Configurações
         '/settingsProfile': (context) => const SettingsProfilePage(),               // Rota para Configurações
         '/inventory': (context) => const InventoryPage(),             // Rota para Consultar Inventários
         '/inventoryHistory': (context) => const InventoryHistory(),   // Rota para Consultar Histórico

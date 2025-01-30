@@ -6,12 +6,18 @@ class DBSettings {
   static const _databaseName = "settings.db";
   static const _databaseVersion = 1;
 
+  // Tabela "settings_profile"
+  static const tableSettingsProfile = 'settings_profile';
+  static const columnProfile = 'profile';
+
   // Tabela "settings"
   static const tableSettings = 'settings';
   static const columnId = '_id';
+  static const sequence = 'sequence';
   static const columnNome = 'nome';
   static const columnExibir = 'exibir';
   static const columnObrigatorio = 'obrigatorio';
+  static const columnProfileId = 'profile_id'; // FK para settings_profile
 
   // Tabela "field_data_type_setting"
   static const tableFieldDataTypeSetting = 'field_data_type_setting';
@@ -50,11 +56,21 @@ class DBSettings {
   Future _onCreate(Database db, int version) async {
     // Criar tabela "settings"
     await db.execute('''
+      CREATE TABLE $tableSettingsProfile (
+        $columnId INTEGER PRIMARY KEY AUTOINCREMENT,
+        $columnProfile TEXT
+      )
+    ''');
+
+    await db.execute('''
       CREATE TABLE $tableSettings (
-        $columnId INTEGER PRIMARY KEY,
+        $columnId INTEGER PRIMARY KEY AUTOINCREMENT,
+        $sequence INTEGER NOT NULL,
         $columnNome TEXT NOT NULL,
         $columnExibir INTEGER NOT NULL,
-        $columnObrigatorio INTEGER NOT NULL
+        $columnObrigatorio INTEGER NOT NULL,
+        $columnProfileId INTEGER NOT NULL,
+        FOREIGN KEY ($columnProfileId) REFERENCES $tableSettingsProfile($columnId) ON DELETE CASCADE
       )
     ''');
 
@@ -82,6 +98,65 @@ class DBSettings {
     ''');
   }
 
+  Future _onUpgrade(Database db, int oldVersion, int newVersion) async {
+    if (oldVersion < 2) {
+      await db.execute('''
+        CREATE TABLE $tableSettingsProfile (
+          $columnId INTEGER PRIMARY KEY AUTOINCREMENT,
+          $columnProfile TEXT NOT NULL
+        )
+      ''');
+
+      await db.execute('''
+        ALTER TABLE $tableSettings ADD COLUMN $columnProfileId INTEGER NOT NULL DEFAULT 1;
+      ''');
+
+      await db.execute('''
+        CREATE INDEX idx_settings_profile ON $tableSettings($columnProfileId);
+      ''');
+    }
+  }
+
+  Future<void> resetDatabase() async {
+    Database db = await instance.database;
+
+    // Excluir as tabelas existentes
+    await db.execute('DROP TABLE IF EXISTS $tableMask');
+    await db.execute('DROP TABLE IF EXISTS $tableFieldDataTypeSetting');
+    await db.execute('DROP TABLE IF EXISTS $tableSettings');
+    await db.execute('DROP TABLE IF EXISTS $tableSettingsProfile');
+
+    // Chamar o método _onCreate para recriar as tabelas
+    await _onCreate(db, _databaseVersion);
+
+    // chamar em qualquer lugar para resetar o banco
+    //await DBSettings.instance.resetDatabase();
+  }
+
+  Future<int> insertSettingsProfile(Map<String, dynamic> row) async {
+    Database db = await instance.database;
+    return await db.insert(tableSettingsProfile, row);
+  }
+
+
+  Future<List<Map<String, dynamic>>> queryAllSettingsProfiles() async {
+    
+    //await DBSettings.instance.resetDatabase();
+
+    Database db = await instance.database;
+    return await db.query(tableSettingsProfile);
+  }
+
+  Future<int> updateSettingsProfile(Map<String, dynamic> row) async {
+    Database db = await instance.database;
+    return await db.update(tableSettingsProfile, row, where: '$columnId = ?', whereArgs: [row[columnId]]);
+  }
+
+  Future<int> deleteSettingsProfile(int id) async {
+    Database db = await instance.database;
+    return await db.delete(tableSettingsProfile, where: '$columnId = ?', whereArgs: [id]);
+  }
+
   // Métodos CRUD para a tabela "settings"
 
   Future<int> insertSettings(Map<String, dynamic> row) async {
@@ -89,10 +164,15 @@ class DBSettings {
     return await db.insert(tableSettings, row);
   }
 
-  Future<int> updateSettings(Map<String, dynamic> row) async {
+  Future<int> updateSettings(int profileId, Map<String, dynamic> row) async {
     Database db = await instance.database;
     int id = row[columnId];
-    return await db.update(tableSettings, row, where: '$columnId = ?', whereArgs: [id]);
+    return await db.update(
+      tableSettings, 
+      row, 
+      where: '$columnId = ? AND $profileId = ?',
+      whereArgs: [id, profileId],
+    );
   }
 
   Future<List<Map<String, dynamic>>> queryAllSettings() async {
@@ -258,11 +338,13 @@ class DBSettings {
     return await db.update(tableSettings, row, where: '$columnId = ?', whereArgs: [id]);
   }*/
 
-  Future<List<Map<String, dynamic>>> querySettingAllRows() async {
-    Database db = await instance.database;
-    final result = await db.query(tableSettings);
-    
-    return List<Map<String, dynamic>>.from(result); // Converte o resultado para uma lista mutável
+  Future<List<Map<String, dynamic>>> querySettingAllRows(int profileId) async {
+    final db = await database;
+    return await db!.query(
+      DBSettings.tableSettings,
+      where: '${DBSettings.columnProfileId} = ?', // Adicione a coluna profileId na sua tabela
+      whereArgs: [profileId],
+    );
   }
 
   /*// Delete

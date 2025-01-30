@@ -1,5 +1,6 @@
-import 'package:flutter/material.dart';
+import 'package:flutter/material.dart'; 
 import 'package:app_oxf_inv/operator/db_settings.dart';
+import 'settings.dart';
 
 class SettingsProfilePage extends StatefulWidget {
   const SettingsProfilePage({super.key});
@@ -10,20 +11,49 @@ class SettingsProfilePage extends StatefulWidget {
 
 class SettingsProfilePageState extends State<SettingsProfilePage> {
   final DBSettings dbHelper = DBSettings.instance;
-  List<Map<String, dynamic>> maskData = [];
+  List<Map<String, dynamic>> profilesData = [];
   List<TextEditingController> controllers = [];
 
   @override
   void initState() {
     super.initState();
-    _loadMaskData();
+    _loadSettingsProfileData();
   }
 
-  Future<void> _loadMaskData() async {
-    final masks = await dbHelper.queryAllMasks();
+Future<void> _UpdateSettingsProfileData(int profileId, String profileName) async {
+  if (profileId > 0 && profileName.isNotEmpty) {
+    Map<String, dynamic> updatedData = {
+      '_id': profileId,
+      'profile': profileName,
+    };
+
+    await dbHelper.updateSettingsProfile(updatedData);
+
     setState(() {
-      maskData = List<Map<String, dynamic>>.from(masks);
-      controllers = maskData.map((mask) => TextEditingController(text: mask['mask'])).toList();
+      final index = profilesData.indexWhere((profile) => profile['id'] == profileId);
+      if (index != -1) {
+        profilesData[index]['profile'] = profileName;
+        controllers[index].text = profileName; // Atualiza o campo de texto com o novo valor
+      }
+    });
+  }
+}
+
+  Future<void> _loadSettingsProfileData() async {
+    final profiles = await dbHelper.queryAllSettingsProfiles();
+    setState(() {
+      profilesData = profiles.map((e) => Map<String, dynamic>.from(e)).toList(); // Copia cada mapa para torná-lo mutável
+      controllers = profilesData.map((profile) => TextEditingController(text: profile['profile'])).toList();
+    });
+  }
+
+  Future<void> _addProfile() async {
+    // Insere no banco e obtém o ID gerado
+    int newId = await dbHelper.insertSettingsProfile({'profile': ''});
+
+    setState(() {
+      profilesData.add({'profile': '', 'id': newId});
+      controllers.add(TextEditingController());
     });
   }
 
@@ -31,7 +61,23 @@ class SettingsProfilePageState extends State<SettingsProfilePage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Configurações'),
+        title: const Column(
+          mainAxisAlignment: MainAxisAlignment.start,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Aplicativo de Consulta de Estrutura de Produtos. ACEP',
+              style: TextStyle(color: Colors.white, fontSize: 12),
+            ),
+            SizedBox(height: 2),
+            Text(
+              'Configurações',
+              style: TextStyle(color: Colors.white, fontSize: 20),
+            ),
+          ],
+        ),
+        backgroundColor: Colors.black,
+        iconTheme: const IconThemeData(color: Colors.white),
       ),
       body: Column(
         children: [
@@ -43,23 +89,40 @@ class SettingsProfilePageState extends State<SettingsProfilePage> {
                 child: DataTable(
                   columnSpacing: 20.0,
                   columns: const [
-                    DataColumn(label: Text("Perfil")),
-                    DataColumn(label: Text("Ação")),
+                    DataColumn(
+                      label: Text(
+                        "Lista de Configurações",
+                        style: TextStyle(fontSize: 18),
+                      ),
+                    ),
+                    DataColumn(
+                      label: Text(
+                        "",
+                        style: TextStyle(fontSize: 18),
+                      ),
+                    ),
+                    DataColumn(
+                      label: Text(
+                        "",
+                        style: TextStyle(fontSize: 18),
+                      ),
+                    ),
                   ],
-                  rows: maskData.asMap().entries.map((entry) {
+                  rows: profilesData.asMap().entries.map((entry) {
                     final index = entry.key;
-                    final mask = entry.value;
                     final controller = controllers[index];
+                    
                     return DataRow(cells: [
                       DataCell(
                         SizedBox(
-                          width: MediaQuery.of(context).size.width * 0.7,
+                          width: MediaQuery.of(context).size.width * 0.5,
                           child: TextField(
                             controller: controller,
-                            onChanged: (value) {
-                              setState(() {
-                                maskData[index]['mask'] = value;
-                              });
+                            onChanged: (value) async {
+                              profilesData[index]['profile'] = value;
+                              if (profilesData[index]['_id'] != null) {
+                                _UpdateSettingsProfileData(profilesData[index]['_id'],profilesData[index]['profile']);
+                              }
                             },
                             decoration: const InputDecoration(
                               border: InputBorder.none,
@@ -70,13 +133,35 @@ class SettingsProfilePageState extends State<SettingsProfilePage> {
                       ),
                       DataCell(
                         IconButton(
+                          icon: const Icon(Icons.settings, color: Colors.blue, size: 30),
+                          onPressed: () {
+                            if (profilesData.isNotEmpty) {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => SettingsPage(
+                                    profileId: profilesData[index]['_id'],
+                                  ),
+                                ),
+                              );
+                            } else {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                    content: Text('Adicione um perfil primeiro.')),
+                              );
+                            }
+                          },
+                        ),
+                      ),
+                      DataCell(
+                        IconButton(
                           icon: const Icon(Icons.delete, color: Colors.red),
                           onPressed: () async {
-                            if (maskData[index]['id'] != null) {
-                              await dbHelper.deleteMask(maskData[index]['id']);
+                            if (profilesData[index]['_id'] != null) {
+                              // Remove o perfil do banco de dados
                             }
                             setState(() {
-                              maskData.removeAt(index);
+                              profilesData.removeAt(index);
                               controllers.removeAt(index);
                             });
                           },
@@ -92,12 +177,7 @@ class SettingsProfilePageState extends State<SettingsProfilePage> {
           SizedBox(
             width: double.infinity,
             child: ElevatedButton(
-              onPressed: () {
-                setState(() {
-                  maskData.add({'mask': '', 'id': null});
-                  controllers.add(TextEditingController());
-                });
-              },
+              onPressed: _addProfile,
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.blue,
                 padding: const EdgeInsets.symmetric(vertical: 15),
@@ -121,6 +201,18 @@ class SettingsProfilePageState extends State<SettingsProfilePage> {
           ),
         ],
       ),
+      bottomNavigationBar: Container(
+        color: Colors.grey[200],
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+        child: const Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text("Oxford Porcelanas", style: TextStyle(fontSize: 14)),
+            Text("Versão: 1.0", style: TextStyle(fontSize: 14)),
+          ],
+        ),
+      ),
     );
   }
 }
+

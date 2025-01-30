@@ -1,18 +1,20 @@
 import 'package:flutter/material.dart';
 import 'package:app_oxf_inv/operator/db_settings.dart';
 
-class SettingsPage extends StatefulWidget {
-  const SettingsPage({super.key});
+  class SettingsPage extends StatefulWidget {
+    final int profileId;  // Defina o profileId como uma propriedade do StatefulWidget
 
-  @override
-  ConfiguracoesScreenState createState() => ConfiguracoesScreenState();
-}
+    const SettingsPage({super.key, required this.profileId}); // Construtor para receber o profileId
+
+    @override
+    ConfiguracoesScreenState createState() => ConfiguracoesScreenState(); // Sem passar parâmetro
+  }
 
 class ConfiguracoesScreenState extends State<SettingsPage> {
   late List<Map<String, dynamic>> campos = [];
-
-  List<Map<String, dynamic>> maskData = []; // Estado global para máscaras
-  List<TextEditingController> controllers = []; // Controladores de texto
+  
+  List<Map<String, dynamic>> maskData = [];
+  List<TextEditingController> controllers = [];
 
   @override
   void initState() {
@@ -22,11 +24,11 @@ class ConfiguracoesScreenState extends State<SettingsPage> {
 
   Future<void> loadData() async {
     final dbHelper = DBSettings.instance;
-    List<Map<String, dynamic>> rows = await dbHelper.querySettingAllRows();
+    List<Map<String, dynamic>> rows = await dbHelper.querySettingAllRows(widget.profileId);  // Acesse profileId com widget.profileId
 
     if (!rows.isNotEmpty) {
-      await _insertDefaultValues();
-      rows = await dbHelper.querySettingAllRows();
+      await _insertDefaultValues(widget.profileId);
+      rows = await dbHelper.querySettingAllRows(widget.profileId);
     }
 
     setState(() {
@@ -34,31 +36,44 @@ class ConfiguracoesScreenState extends State<SettingsPage> {
     });
   }
 
-  Future<void> _insertDefaultValues() async {
+  Future<void> _insertDefaultValues(int profileId) async {
     final dbHelper = DBSettings.instance;
-
+    
     final List<Map<String, dynamic>> defaultValues = [
-      {"_id": 1, "nome": "Unitizador", "exibir": 1, "obrigatorio": 0},
-      {"_id": 2, "nome": "Posição", "exibir": 1, "obrigatorio": 0},
-      {"_id": 3, "nome": "Depósito", "exibir": 1, "obrigatorio": 0},
-      {"_id": 4, "nome": "Bloco", "exibir": 1, "obrigatorio": 0},
-      {"_id": 5, "nome": "Quadra", "exibir": 1, "obrigatorio": 0},
-      {"_id": 6, "nome": "Lote", "exibir": 1, "obrigatorio": 0},
-      {"_id": 7, "nome": "Andar", "exibir": 1, "obrigatorio": 0},
-      {"_id": 8, "nome": "Código de Barras", "exibir": 1, "obrigatorio": 0},
-      {"_id": 9, "nome": "Qtde Padrão da Pilha", "exibir": 1, "obrigatorio": 0},
-      {"_id": 10, "nome": "Qtde de Pilhas Completas", "exibir": 1, "obrigatorio": 0},
-      {"_id": 11, "nome": "Qtde de Itens Avulsos", "exibir": 1, "obrigatorio": 0},
+      {"sequence": 1, "nome": "Unitizador",  "exibir": 1, "obrigatorio": 0, "profile_id": profileId},
+      {"sequence": 2, "nome": "Posição",     "exibir": 1, "obrigatorio": 0, "profile_id": profileId},
+      {"sequence": 3, "nome": "Depósito",    "exibir": 1, "obrigatorio": 0, "profile_id": profileId},
+      {"sequence": 4, "nome": "Bloco",       "exibir": 1, "obrigatorio": 0, "profile_id": profileId},
+      {"sequence": 5, "nome": "Quadra",      "exibir": 1, "obrigatorio": 0, "profile_id": profileId},
+      {"sequence": 6, "nome": "Lote",        "exibir": 1, "obrigatorio": 0, "profile_id": profileId},
+      {"sequence": 7, "nome": "Andar",       "exibir": 1, "obrigatorio": 0, "profile_id": profileId},
+      {"sequence": 8, "nome": "Código de Barras",          "exibir": 1, "obrigatorio": 0, "profile_id": profileId},
+      {"sequence": 9, "nome": "Qtde Padrão da Pilha",      "exibir": 1, "obrigatorio": 0, "profile_id": profileId},
+      {"sequence": 10, "nome": "Qtde de Pilhas Completas", "exibir": 1, "obrigatorio": 0, "profile_id": profileId},
+      {"sequence": 11, "nome": "Qtde de Itens Avulsos",    "exibir": 1, "obrigatorio": 0, "profile_id": profileId},
     ];
+    /*final List<Map<String, dynamic>> defaultValues = [
+      {"_id": 1, "nome": "Unitizador",  "exibir": 1, "obrigatorio": 0, "profile_id": profileId},
+      {"_id": 2, "nome": "Posição",     "exibir": 1, "obrigatorio": 0, "profile_id": profileId},
+      {"_id": 3, "nome": "Depósito",    "exibir": 1, "obrigatorio": 0, "profile_id": profileId},
+      {"_id": 4, "nome": "Bloco",       "exibir": 1, "obrigatorio": 0, "profile_id": profileId},
+      {"_id": 5, "nome": "Quadra",      "exibir": 1, "obrigatorio": 0, "profile_id": profileId},
+      {"_id": 6, "nome": "Lote",        "exibir": 1, "obrigatorio": 0, "profile_id": profileId},
+      {"_id": 7, "nome": "Andar",       "exibir": 1, "obrigatorio": 0, "profile_id": profileId},
+      {"_id": 8, "nome": "Código de Barras",          "exibir": 1, "obrigatorio": 0, "profile_id": profileId},
+      {"_id": 9, "nome": "Qtde Padrão da Pilha",      "exibir": 1, "obrigatorio": 0, "profile_id": profileId},
+      {"_id": 10, "nome": "Qtde de Pilhas Completas", "exibir": 1, "obrigatorio": 0, "profile_id": profileId},
+      {"_id": 11, "nome": "Qtde de Itens Avulsos",    "exibir": 1, "obrigatorio": 0, "profile_id": profileId},
+    ];*/
 
     for (var campo in defaultValues) {
-      await dbHelper.insertSettings(campo);
+      await dbHelper.insertSettings(campo); 
     }
   }
 
   Future<void> _updateField(int id, bool exibir, bool obrigatorio) async {
     final dbHelper = DBSettings.instance;
-    await dbHelper.updateSettings({
+    await dbHelper.updateSettings(widget.profileId,{
       DBSettings.columnId: id,
       DBSettings.columnExibir: exibir ? 1 : 0,
       DBSettings.columnObrigatorio: obrigatorio ? 1 : 0,
@@ -586,6 +601,6 @@ void main() {
   runApp(MaterialApp(
     debugShowCheckedModeBanner: false,
     theme: ThemeData.dark(),
-    home: const SettingsPage(),
+    home: const SettingsPage(profileId: 1),
   ));
 }
