@@ -185,7 +185,7 @@ class ConfiguracoesScreenState extends State<SettingsPage> {
     List<Map<String, dynamic>> maskData = maskList
         .map((mask) => {
               'mask': mask['mask'],
-              'id': mask['id'], // ID da máscara para possíveis operações futuras
+              '_id': mask['_id'], // ID da máscara para possíveis operações futuras
             })
         .toList();
 
@@ -314,8 +314,8 @@ class ConfiguracoesScreenState extends State<SettingsPage> {
                                     icon: const Icon(Icons.delete, color: Colors.red),
                                     onPressed: () async {
                                       // Deleta máscara do banco de dados antes de remover do contexto
-                                      if (maskData[index]['id'] != null) {
-                                        await dbHelper.deleteMask(maskData[index]['id']);
+                                      if (maskData[index]['_id'] != null) {
+                                        await dbHelper.deleteMask(maskData[index]['_id']);
                                       }
                                       setDialogState(() {
                                         maskData.removeAt(index); // Remover da lista local
@@ -335,7 +335,7 @@ class ConfiguracoesScreenState extends State<SettingsPage> {
                         child: ElevatedButton(
                           onPressed: () {
                             setDialogState(() {
-                              maskData.add({'mask': '', 'id': null});
+                              maskData.add({'mask': '', '_id': null});
                               controllers.add(TextEditingController());
                             });
                           },
@@ -360,85 +360,86 @@ class ConfiguracoesScreenState extends State<SettingsPage> {
                   ),
                 ),
               ),
-              actions: [
-              Row(
-                children: [
-                  // Botão Cancelar
-                  Expanded(
-                    child: ElevatedButton(
-                      style: ElevatedButton.styleFrom(
-                        padding: const EdgeInsets.all(16),
-                        backgroundColor: Colors.red,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8),
+                actions: [
+                  Row(
+                    children: [
+                      // Botão Cancelar
+                      Expanded(
+                        child: ElevatedButton(
+                          style: ElevatedButton.styleFrom(
+                            padding: const EdgeInsets.all(16),
+                            backgroundColor: Colors.red,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                          ),
+                          onPressed: () {
+                            Navigator.of(context).pop(); // Fecha o popup
+                          },
+                          child: const Text(
+                            'CANCELAR',
+                            style: TextStyle(color: Colors.white),
+                          ),
                         ),
                       ),
-                      onPressed: () {
-                        Navigator.of(context).pop(); // Fecha o popup
-                      },
-                      child: const Text(
-                        'CANCELAR',
-                        style: TextStyle(color: Colors.white),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  // Botão OK
-                  Expanded(
-                    child: ElevatedButton(
-                      style: ElevatedButton.styleFrom(
-                        padding: const EdgeInsets.all(16),
-                        backgroundColor: Colors.blue, 
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                      ),
-                      onPressed: () async {
-                        // Atualizar os dados no banco
-                        await dbHelper.updateFieldDataTypeSetting({
-                          DBSettings.columnSettingId: settingId,
-                          DBSettings.columnFieldName: fieldName,
-                          DBSettings.columnFieldType: fieldType,
-                          DBSettings.columnMinSize: minSize,
-                          DBSettings.columnMaxSize: maxSize,
-                        });
+                      const SizedBox(width: 8),
+                      // Botão OK
+                      Expanded(
+                        child: ElevatedButton(
+                          style: ElevatedButton.styleFrom(
+                            padding: const EdgeInsets.all(16),
+                            backgroundColor: Colors.blue, 
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                          ),
+                          onPressed: () async {
+                            // Atualizar os dados no banco
+                            int id = await dbHelper.saveFieldDataTypeSetting({
+                              DBSettings.columnSettingId: settingId,
+                              DBSettings.columnFieldName: fieldName,
+                              DBSettings.columnFieldType: fieldType,
+                              DBSettings.columnMinSize: minSize,
+                              DBSettings.columnMaxSize: maxSize,
+                            });
 
-                        // Salvar as máscaras no banco
-                        for (var mask in maskData) {
-                          if (mask['mask'] != null && mask['mask']!.isNotEmpty) {
-                            if (mask['id'] != null) {
-                              // Atualizar máscara existente
-                              await dbHelper.updateMask({
-                                DBSettings.columnId: mask['id'],
-                                DBSettings.columnMask: mask['mask'],
-                              });
-                            } else {
-                              // Inserir nova máscara
-                              await dbHelper.insertMask({
-                                DBSettings.columnMask: mask['mask'],
-                                DBSettings.columnFieldDataTypeSettingId: settingId,
-                              });
+                            if (id > 0) {
+                              // Salvar as máscaras no banco
+                              for (var mask in maskData) {
+                                if (mask['mask'] != null && mask['mask']!.isNotEmpty) {
+                                  if (mask['_id'] != null) {
+                                    // Atualizar máscara existente
+                                    await dbHelper.updateMask({
+                                      DBSettings.columnId: mask['_id'],
+                                      DBSettings.columnMask: mask['mask'],
+                                    });
+                                  } else {
+                                    // Inserir nova máscara
+                                    await dbHelper.insertMask({
+                                      DBSettings.columnMask: mask['mask'],
+                                      DBSettings.columnFieldDataTypeSettingId: id,
+                                    });
+                                  }
+                                }
+                              }
                             }
-                          }
-                        }
-                        Navigator.of(context).pop();
-                      },
-                      child: const Text(
-                        'OK',
-                        style: TextStyle(color: Colors.white),  // Cor do texto
+                            Navigator.of(context).pop();
+                          },
+                          child: const Text(
+                            'OK',
+                            style: TextStyle(color: Colors.white),  // Cor do texto
+                          ),
+                        ),
                       ),
-                    ),
+                    ],
                   ),
                 ],
-              ),
-            ],
-
-            );
-          },
-        );
-      },
-    );
-  }
+              );
+            },
+          );
+        },
+      );
+    }
 
   @override
   Widget build(BuildContext context) {

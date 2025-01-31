@@ -77,7 +77,7 @@ class DBSettings {
     // Criar tabela "field_data_type_setting" com FK para "settings"
     await db.execute('''
       CREATE TABLE $tableFieldDataTypeSetting (
-        $columnId INTEGER PRIMARY KEY,
+        $columnId INTEGER PRIMARY KEY AUTOINCREMENT,
         $columnFieldName TEXT NOT NULL,
         $columnFieldType TEXT CHECK($columnFieldType IN ('Numérico', 'Alfanumérico')),
         $columnMinSize INTEGER CHECK($columnMinSize > 0),
@@ -90,7 +90,7 @@ class DBSettings {
     // Criar tabela "Mask"
     await db.execute('''
       CREATE TABLE $tableMask (
-        $columnId INTEGER PRIMARY KEY,
+        $columnId INTEGER PRIMARY KEY AUTOINCREMENT,
         $columnMask TEXT,
         $columnFieldDataTypeSettingId INTEGER NOT NULL,
         FOREIGN KEY ($columnFieldDataTypeSettingId) REFERENCES $tableFieldDataTypeSetting($columnId) ON DELETE CASCADE
@@ -198,31 +198,32 @@ class DBSettings {
     return await db.update(tableFieldDataTypeSetting, row, where: '$columnId = ?', whereArgs: [id]);
   }*/
 
-  Future<int> updateFieldDataTypeSetting(Map<String, dynamic> row) async {
+  Future<int> saveFieldDataTypeSetting(Map<String, dynamic> row) async {
     Database db = await instance.database;
-    int id = row[DBSettings.columnSettingId];
+    int settingId = row[DBSettings.columnSettingId];
 
-    // Verifica se o registro existe antes de atualizar
     List<Map<String, dynamic>> existingRows = await db.query(
       DBSettings.tableFieldDataTypeSetting,
       where: '${DBSettings.columnSettingId} = ?',
-      whereArgs: [id],
+      whereArgs: [settingId],
     );
 
     if (existingRows.isEmpty) {
-      // Se o registro não existir, insere-o antes de atualizar
-      await insertFieldDataTypeSetting(row);
+      // Se o registro não existir, insere-o e retorna o novo _id
+      int newId = await db.insert(DBSettings.tableFieldDataTypeSetting, row);
+      return newId;
     } else {
-      // Caso contrário, atualiza o registro existente
+      // Se o registro já existe, atualiza-o
       await db.update(
         DBSettings.tableFieldDataTypeSetting,
         row,
         where: '${DBSettings.columnSettingId} = ?',
-        whereArgs: [id],
+        whereArgs: [settingId],
       );
-    }
 
-    return 1; // Retorna 1 para indicar sucesso
+      // Retorna o "_id" do registro existente
+      return existingRows.first[DBSettings.columnId] as int;
+    }
   }
 
   Future<List<Map<String, dynamic>>> queryAllFieldDataTypeSettings() async {
@@ -254,16 +255,49 @@ class DBSettings {
     return result;
   }
 
-  // Métodos CRUD para a tabela "Mask"
-
   Future<int> insertMask(Map<String, dynamic> row) async {
     Database db = await instance.database;
-    return await db.insert(tableMask, row);
+    try {
+      // Verifica se o FieldDataTypeSettingId existe antes de inserir
+      final List<Map<String, dynamic>> result = await db.query(
+        tableFieldDataTypeSetting,
+        where: '$columnId = ?',
+        whereArgs: [row[columnFieldDataTypeSettingId]],
+      );
+
+      if (result.isEmpty) {
+        print('Erro: field_data_type_setting_id não encontrado.');
+        return -1;
+      }
+
+      int id = await db.insert(tableMask, row);
+      print('Máscara inserida com sucesso. ID: $id');
+
+      return id;
+
+    } catch (e) {
+      print('Erro ao inserir máscara: $e');
+
+      return -1;
+    }
   }
 
   Future<int> updateMask(Map<String, dynamic> row) async {
     Database db = await instance.database;
     int id = row[columnId];
+
+    // Verifica se o registro existe antes de atualizar
+    final List<Map<String, dynamic>> existingRows = await db.query(
+      tableMask,
+      where: '$columnId = ?',
+      whereArgs: [id],
+    );
+
+    if (existingRows.isEmpty) {
+      print('Erro: Máscara com ID $id não encontrada.');
+      return -1;
+    }
+
     return await db.update(tableMask, row, where: '$columnId = ?', whereArgs: [id]);
   }
 
@@ -313,7 +347,7 @@ class DBSettings {
     Database db = await instance.database;
     final result = await db.rawQuery('''
       SELECT 
-        m.$columnId AS id,
+        m.$columnId AS _id,
         m.$columnMask AS mask,
         m.$columnFieldDataTypeSettingId AS field_data_type_setting_id
       FROM $tableMask AS m

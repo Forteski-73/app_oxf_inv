@@ -52,7 +52,7 @@ Future<void> _UpdateSettingsProfileData(int profileId, String profileName) async
     int newId = await dbHelper.insertSettingsProfile({'profile': ''});
 
     setState(() {
-      profilesData.add({'profile': '', 'id': newId});
+      profilesData.add({'profile': '', '_id': newId});
       controllers.add(TextEditingController());
     });
   }
@@ -158,7 +158,8 @@ Future<void> _UpdateSettingsProfileData(int profileId, String profileName) async
                           icon: const Icon(Icons.delete, color: Colors.red),
                           onPressed: () async {
                             if (profilesData[index]['_id'] != null) {
-                              // Remove o perfil do banco de dados
+                              // Remove do banco de dados
+                              _showDeleteConfirmationDialog(context, profilesData[index]['_id']);
                             }
                             setState(() {
                               profilesData.removeAt(index);
@@ -192,7 +193,7 @@ Future<void> _UpdateSettingsProfileData(int profileId, String profileName) async
                   Icon(Icons.playlist_add, color: Colors.white, size: 30),
                   SizedBox(width: 5),
                   Text(
-                    'Adicionar Perfil',
+                    'Adicionar',
                     style: TextStyle(fontSize: 16, color: Colors.white),
                   ),
                 ],
@@ -214,5 +215,86 @@ Future<void> _UpdateSettingsProfileData(int profileId, String profileName) async
       ),
     );
   }
+
+   Future<void> _showDeleteConfirmationDialog(BuildContext context, int recordId) async {
+    final scaffoldContext = context; // Salva o contexto antes de exibir o diálogo pra não dar pau depois
+    return showDialog<void>(
+      context: scaffoldContext,
+      builder: (BuildContext dialogContext) {
+        return AlertDialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(8),
+          ),
+          content: const Text('Deseja realmente excluir este registro?',),
+          actions: [
+            Row(
+              children: [
+                Expanded(
+                  child: ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      padding: const EdgeInsets.all(16),
+                      backgroundColor: Colors.red,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                    ),
+                    onPressed: () {
+                      Navigator.of(dialogContext).pop(); // Fecha o popup
+                    },
+                    child: const Text(
+                      'CANCELAR',
+                      style: TextStyle(color: Colors.white),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      padding: const EdgeInsets.all(16),
+                      backgroundColor: Colors.blue,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                    ),
+                    onPressed: () async {
+                      await _delProfileRecord(recordId);
+                      Navigator.of(dialogContext).pop(); // Fecha o popup
+                    },
+                    child: const Text('SIM',
+                      style: TextStyle(color: Colors.white),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+
+  Future<void> _delProfileRecord(int recordId) async {
+    int st = 0;
+    try {
+      st = await DBSettings.instance.deleteSettingsProfile(recordId);
+      if(st > 0) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Configuração excluída com sucesso!', style: TextStyle(fontSize: 18))),
+        );
+      }
+      else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Erro ao excluir o registro.', style: TextStyle(fontSize: 18))),
+        );
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Erro ao atualizar os dados: $e', style: const TextStyle(fontSize: 18))),
+      );
+    }
+  }
+
 }
 
