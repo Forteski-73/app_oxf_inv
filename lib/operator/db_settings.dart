@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:ffi';
 import 'package:sqflite/sqflite.dart';
 import 'package:path/path.dart';
 
@@ -342,12 +343,11 @@ class DBSettings {
     return result;
   }
 
-  Future<List<Map<String, dynamic>>> queryFieldDataTypeSettingsBySettingId(
-    int settingId, String profile) async {
+  Future<List<Map<String, dynamic>>> queryFieldDataTypeSettingsBySettingId(int profileId) async {
     Database db = await instance.database;
 
     // Obtém o profileId com base no nome do perfil
-    final profileId = await getProfileIdByProfile(profile);
+    //final profileId = await getProfileIdByProfile(profile);
 
     // Se o profileId não for encontrado, retorna uma lista vazia
     if (profileId == null) {
@@ -371,21 +371,27 @@ class DBSettings {
     return resultFields;
   }
 
-  // Método para consultar máscaras associadas a um settingId
-  Future<List<Map<String, dynamic>>> queryMasksBySettingId(int settingId) async {
+  Future<List<Map<String, dynamic>>> queryMasksBySettingId(int profileId) async {
     Database db = await instance.database;
-    final result = await db.rawQuery('''
-      SELECT 
-        m.$columnId AS _id,
-        m.$columnMask AS mask,
-        m.$columnFieldDataTypeSettingId AS field_data_type_setting_id
-      FROM $tableMask AS m
-      INNER JOIN $tableFieldDataTypeSetting AS f
-      ON m.$columnFieldDataTypeSettingId = f.$columnId
-      WHERE f.$columnSettingId = ?
-    ''', [settingId]);
+    try {
+      final result = await db.rawQuery('''
+        SELECT 
+          m.$columnId AS _id,
+          m.$columnMask AS mask,
+          m.$columnFieldDataTypeSettingId AS field_data_type_setting_id
+        FROM $tableMask AS m
+        INNER JOIN $tableFieldDataTypeSetting AS f
+        ON m.$columnFieldDataTypeSettingId = f.$columnId
+        INNER JOIN $tableSettings AS s 
+          ON s.$columnId = f.$columnSettingId
+        WHERE s.$columnProfileId = ?
+      ''', [profileId]);
 
-    return result;
+      return result;
+    } catch (e) {
+      print('Erro ao consultar máscaras: $e');
+      return []; // Retorna uma lista vazia em caso de erro
+    }
   }
 
   /*  // insert
@@ -424,7 +430,7 @@ class DBSettings {
     );
   }
 
-  Future<int?> getProfileIdByProfile(String profile) async {
+  Future<int> getProfileIdByProfile(String profile) async {
     Database db = await instance.database;
     final List<Map<String, dynamic>> result = await db!.query(
       'settings_profile', // Nome da tabela onde o profile está armazenado
@@ -437,7 +443,7 @@ class DBSettings {
       return result.first['_id']; // Assume que a coluna do ID na tabela é 'id'
     }
 
-    return null; // Retorna null caso não encontre o perfil
+    return 0; // Retorna null caso não encontre o perfil
   }
 
   /*// Delete
