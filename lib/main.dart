@@ -51,7 +51,7 @@ class MyApp extends StatelessWidget {
           final int inventoryId = ModalRoute.of(context)?.settings.arguments as int;  // Recuperar o argumento passado na navegação
           return InventoryHistoryDetail(inventoryId: inventoryId); // Passar o argumento para o construtor da página
         },
-        '/inventoryRecord': (context) => const InventoryRecordsPage(),
+        '/inventoryRecord': (context) => InventoryRecordsPage(),
       },
     );
   }

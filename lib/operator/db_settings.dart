@@ -329,7 +329,7 @@ class DBSettings {
   }
 
   // Método para consultar os dados da tabela "field_data_type_setting" por setting_id
-  Future<List<Map<String, dynamic>>> queryFieldDataTypeSettingsBySettingId(int settingId) async {
+  Future<List<Map<String, dynamic>>> queryFieldDataTypeSettingsBySettingId1(int settingId) async {
     Database db = await instance.database;
     List<Map<String, Object?>> result;
 
@@ -340,6 +340,35 @@ class DBSettings {
     );
 
     return result;
+  }
+
+  Future<List<Map<String, dynamic>>> queryFieldDataTypeSettingsBySettingId(
+    int settingId, String profile) async {
+    Database db = await instance.database;
+
+    // Obtém o profileId com base no nome do perfil
+    final profileId = await getProfileIdByProfile(profile);
+
+    // Se o profileId não for encontrado, retorna uma lista vazia
+    if (profileId == null) {
+      return [];
+    }
+
+    // Realiza a consulta agora com o profileId e settingId
+    final resultFields = await db.rawQuery('''
+      SELECT 
+        f.$columnFieldName AS field_name,
+        f.$columnFieldType AS field_type,
+        f.$columnMinSize AS min_size,
+        f.$columnMaxSize AS max_size
+      FROM $tableFieldDataTypeSetting AS f
+      INNER JOIN $tableSettings AS s 
+        ON s.$columnId = f.$columnSettingId
+      WHERE s.$columnProfileId = ?
+    ''', [profileId]);
+
+    // Se não retornar resultados, retornar uma lista vazia
+    return resultFields;
   }
 
   // Método para consultar máscaras associadas a um settingId
@@ -373,12 +402,42 @@ class DBSettings {
   }*/
 
   Future<List<Map<String, dynamic>>> querySettingAllRows(int profileId) async {
-    final db = await database;
-    return await db!.query(
+    Database db = await instance.database;
+    return await db.query(
       DBSettings.tableSettings,
       where: '${DBSettings.columnProfileId} = ?', // Adicione a coluna profileId na sua tabela
       whereArgs: [profileId],
     );
+  }
+
+  Future<List<Map<String, dynamic>>> querySettingForProfile(String profile) async {
+    final profileId = await getProfileIdByProfile(profile); // Obtém o profileId
+
+    if (profileId == null) return []; // Se não encontrar o nenhum perfil, retorna uma lista vazia
+
+    Database db = await instance.database;
+
+    return await db.query(
+      DBSettings.tableSettings,
+      where: '${DBSettings.columnProfileId} = ?',
+      whereArgs: [profileId],
+    );
+  }
+
+  Future<int?> getProfileIdByProfile(String profile) async {
+    Database db = await instance.database;
+    final List<Map<String, dynamic>> result = await db!.query(
+      'settings_profile', // Nome da tabela onde o profile está armazenado
+      where: 'profile = ?', // Nome do campo de perfil na tabela
+      whereArgs: [profile],
+    );
+
+    if (result.isNotEmpty) {
+      // Se encontrar o perfil, retorna o profileId
+      return result.first['_id']; // Assume que a coluna do ID na tabela é 'id'
+    }
+
+    return null; // Retorna null caso não encontre o perfil
   }
 
   /*// Delete

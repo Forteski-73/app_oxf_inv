@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:app_oxf_inv/operator/db_inventory.dart';
+import 'package:app_oxf_inv/operator/db_settings.dart';
 import 'package:intl/intl.dart';
 
 class InventoryPage extends StatefulWidget {
@@ -14,9 +15,11 @@ class _InventoryPageState extends State<InventoryPage> {
   final TextEditingController _codeController   = TextEditingController();
   final TextEditingController _dateController   = TextEditingController(); 
   final TextEditingController _nameController   = TextEditingController();
-  final TextEditingController _sectorController = TextEditingController(); 
+  final TextEditingController _sectorController = TextEditingController();
+  String _selectedProfile = "";
   int _statusController = 0;
   Map<String, dynamic>? inventory;
+  List<String> _profileOptions = [];  // Lista de opções para o Dropdown
 
   @override
   void initState() {
@@ -26,15 +29,20 @@ class _InventoryPageState extends State<InventoryPage> {
     _dateController.addListener(_updateButtonState);
     _nameController.addListener(_updateButtonState);
     _sectorController.addListener(_updateButtonState);
+    _selectedProfile = inventory?["profile"] ?? '';
 
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       await createInventory();
+
+      await _loadProfiles(); // Carrega os perfis do banco de dados
+
       setState(() {
         // Atualiza o estado para refletir mudanças no inventário
         _codeController.text = inventory?["code"] ?? '';
         _dateController.text = inventory?["date"] ?? '';
         _nameController.text = inventory?["name"] ?? '';
         _sectorController.text = inventory?["sector"] ?? '';
+        _selectedProfile = inventory?["profile"] ?? '';
       });
     });
   }
@@ -50,29 +58,43 @@ class _InventoryPageState extends State<InventoryPage> {
               _codeController.text.isNotEmpty &&
               _dateController.text.isNotEmpty &&
               _nameController.text.isNotEmpty &&
-              _sectorController.text.isNotEmpty;
+              _sectorController.text.isNotEmpty &&
+              _selectedProfile.isNotEmpty;
       case 1:
         return _statusController == 0 &&
               _codeController.text.isNotEmpty &&
               _dateController.text.isNotEmpty &&
               _nameController.text.isNotEmpty &&
-              _sectorController.text.isNotEmpty;
+              _sectorController.text.isNotEmpty &&
+              _selectedProfile.isNotEmpty;
 
       case 2:
         return _statusController > 0 &&
               _codeController.text.isNotEmpty &&
               _dateController.text.isNotEmpty &&
               _nameController.text.isNotEmpty &&
-              _sectorController.text.isNotEmpty;
+              _sectorController.text.isNotEmpty &&
+              _selectedProfile.isNotEmpty;
       case 3:
         return _statusController >= 0 &&
               _codeController.text.isNotEmpty &&
               _dateController.text.isNotEmpty &&
               _nameController.text.isNotEmpty &&
-              _sectorController.text.isNotEmpty;
+              _sectorController.text.isNotEmpty &&
+              _selectedProfile.isNotEmpty;
       default:
         return false;
     }
+  }
+
+  // Função para carregar os perfis do banco de dados
+  Future<void> _loadProfiles() async {
+    DBSettings db = DBSettings.instance;
+    List<Map<String, dynamic>> profiles = await db.queryAllSettingsProfiles();
+
+    setState(() {
+      _profileOptions = profiles.map((profile) => profile["profile"] as String).toList();
+    });
   }
 
   Future<int> startInventory() async {
@@ -109,12 +131,13 @@ class _InventoryPageState extends State<InventoryPage> {
 
   Future<void> createInventory() async {
     String currentDate = DateFormat('yyyyMMdd').format(DateTime.now());
-    String code   = 'INV-$currentDate';
-    String date   = DateFormat('dd/MM/yyyy').format(DateTime.now());
-    DateTime dt   = DateTime.now();
-    String hour   = dt.toIso8601String().split('T').last.split('.').first;
-    String name   = "";
-    String sector = "";
+    String code    = 'INV-$currentDate';
+    String date    = DateFormat('dd/MM/yyyy').format(DateTime.now());
+    DateTime dt    = DateTime.now();
+    String hour    = dt.toIso8601String().split('T').last.split('.').first;
+    String name    = "";
+    String sector  = "";
+    String profile = "";
 
     Map<String, dynamic> inventoryRow = {
       DBInventory.columnCode: code,
@@ -123,6 +146,7 @@ class _InventoryPageState extends State<InventoryPage> {
       DBInventory.columnName: name,
       DBInventory.columnSector: sector,
       DBInventory.columnStatus: 'NÃO INICIADO',
+      DBInventory.columnProfile: profile,
     };
 
     DBInventory db = DBInventory.instance;
@@ -142,6 +166,7 @@ class _InventoryPageState extends State<InventoryPage> {
       _dateController.text    = '${inventory?["date"]} $hour';
       _nameController.text    = inventory?["name"];
       _sectorController.text  = inventory?["sector"];
+      _selectedProfile        = inventory?["profile"] ?? "";
     }
     setState(() {});
   }
@@ -153,6 +178,7 @@ class _InventoryPageState extends State<InventoryPage> {
       DBInventory.columnStatus: inventory["status"]!=''?inventory["status"]:'',
       DBInventory.columnName: inventory["name"]!=''?inventory["name"]:_nameController.text,
       DBInventory.columnSector: inventory["sector"]!=''?inventory["sector"]:_sectorController.text,
+      DBInventory.columnProfile: inventory["profile"] != '' ? inventory["profile"] : _selectedProfile,
     });
     return st;
   }
@@ -330,6 +356,40 @@ class _InventoryPageState extends State<InventoryPage> {
                                 style: const TextStyle(fontSize: 18),
                                 controller: _sectorController,
                               ),
+                              const SizedBox(height: 16),
+                              // Dropdown para selecionar o perfil de configurações
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 12),
+                                decoration: BoxDecoration(
+                                  border: Border.all(color: Theme.of(context).dividerColor), // Borda com cor do tema
+                                  borderRadius: BorderRadius.circular(4),
+                                ),
+                                child: SizedBox(
+                                  height: 54, // Definindo uma altura maior para o DropdownButton
+                                  child: DropdownButtonHideUnderline( // Esconde a linha inferior corretamente
+                                    child: DropdownButton<String>(
+                                      style: const TextStyle(fontSize: 18, color: Colors.black),
+                                      value: _selectedProfile.isNotEmpty ? _selectedProfile : null,
+                                      hint: const Text("Selecione um perfil de configuração"),
+                                      onChanged: (String? newValue) {
+                                        setState(() {
+                                          _selectedProfile = newValue ?? '';
+                                        });
+                                      },
+                                      items: _profileOptions.map((String profile) {
+                                        return DropdownMenuItem<String>(
+                                          value: profile,
+                                          child: Padding(
+                                            padding: const EdgeInsets.symmetric(vertical: 15), // Espaçamento vertical para centralizar
+                                            child: Text(profile),
+                                          ),
+                                        );
+                                      }).toList(),
+                                      isExpanded: true, // Largura máxima da tela
+                                    ),
+                                  ),
+                                ),
+                              )
                             ],
                           ),
                         ),
@@ -372,7 +432,7 @@ class _InventoryPageState extends State<InventoryPage> {
                       ? () async {
                           int result = await startInventory();
                           if (result == 1) {
-                            Navigator.pushNamed(context, '/inventoryRecord');
+                            Navigator.pushNamed(context, '/inventoryRecord', arguments: _selectedProfile,);
                           }
                         }
                       : null,
@@ -427,7 +487,7 @@ class _InventoryPageState extends State<InventoryPage> {
               ],
             ),
           ),
-          Container(
+          /*Container(
             color: Colors.grey[200],
             padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
             child: const Row(
@@ -441,7 +501,7 @@ class _InventoryPageState extends State<InventoryPage> {
                 ),
               ],
             ),
-          ),
+          ),*/
         ],
       ),
     );

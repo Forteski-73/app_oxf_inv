@@ -17,6 +17,7 @@ class DBInventory {
   static const columnSector   = 'sector';
   static const columnStatus   = 'status';
   static const columnTotal    = 'total';
+  static const columnProfile  = 'profile';
 
   // Tabela Status Options
   static const tableStatusOptions = 'status_options';
@@ -76,14 +77,15 @@ class DBInventory {
     // Criação da tabela Inventory
     await db.execute('''
       CREATE TABLE $tableInventory (
-        $columnId     INTEGER PRIMARY KEY AUTOINCREMENT,
-        $columnCode   TEXT NOT NULL,
-        $columnDate   TEXT NOT NULL,
-        $columnHour   TEXT NOT NULL,
-        $columnName   TEXT NOT NULL,
-        $columnSector TEXT NOT NULL,
-        $columnStatus TEXT NOT NULL,
-        $columnTotal  INTEGER,
+        $columnId       INTEGER PRIMARY KEY AUTOINCREMENT,
+        $columnCode     TEXT NOT NULL,
+        $columnDate     TEXT NOT NULL,
+        $columnHour     TEXT NOT NULL,
+        $columnName     TEXT NOT NULL,
+        $columnSector   TEXT NOT NULL,
+        $columnStatus   TEXT NOT NULL,
+        $columnTotal    INTEGER,
+        $columnProfile  TEXT NOT NULL,
         FOREIGN KEY ($columnStatus) REFERENCES $tableStatusOptions($columnStatus)
       )
     ''');

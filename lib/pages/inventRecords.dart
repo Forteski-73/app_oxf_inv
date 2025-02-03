@@ -6,7 +6,8 @@ import 'package:app_oxf_inv/operator/db_inventory.dart';
 import 'searchProduct.dart';
 
 class InventoryRecordsPage extends StatefulWidget {
-  const InventoryRecordsPage({super.key});
+  InventoryRecordsPage({super.key});
+  late String selectedProfile = "";
 
   @override
   InventoryPageState createState() => InventoryPageState();
@@ -15,7 +16,7 @@ class InventoryRecordsPage extends StatefulWidget {
 class InventoryPageState extends State<InventoryRecordsPage> {
   Map<String, dynamic> inventoryRecordRow = {};
   bool _isSaveButtonEnabled = false;
-  late Future<Map<String, Map<String, dynamic>>> _settingsFuture;
+  late Future<Map<String, Map<String, dynamic>>> _settingsFuture = Future.value({});
   final List<TextEditingController> controllers = List.generate(11,(index) => TextEditingController(),);
   final TextEditingController _totalController = TextEditingController();
   
@@ -23,8 +24,7 @@ class InventoryPageState extends State<InventoryRecordsPage> {
   TextEditingController controller = TextEditingController();
 
   @override
-  void dispose() {  // Certifique-se de limpar os controladores ao sair
-    
+  void dispose() {  
     for (var controller in controllers) {
       controller.dispose();
     }
@@ -41,18 +41,24 @@ class InventoryPageState extends State<InventoryRecordsPage> {
   @override
   void initState() {
     super.initState();
-    _settingsFuture = _loadSettings();
 
+    // Não podemos acessar o 'context' diretamente no initState, então vamos fazer isso depois que o widget for construído
     WidgetsBinding.instance.addPostFrameCallback((_) async {
+      // Acessa os argumentos da rota de forma segura
+      widget.selectedProfile = ModalRoute.of(context)?.settings.arguments as String? ?? ''; 
+      _settingsFuture = _loadSettings();
+      
+      // Você pode fazer outras inicializações aqui
       await createInventoryRecord();
-      setState(() { });
+
+      // Garante que o estado será atualizado após as operações assíncronas
+      setState(() {});
     });
 
     for (int i = 0; i < focusNodes.length; i++) {
       focusNodes[i].addListener(() {
-        if ((!focusNodes[i].hasFocus) && (controllers[i].text != "")) {
-          // Chama onEditingComplete ao perder o foco do campo
-          // no enter ou quando sai com o dedo mesmo
+        if (!focusNodes[i].hasFocus && controllers[i].text != "") {
+          // Chama onEditingComplete quando o campo perde o foco
           _onEditingComplete(controllers[i].text, i);
         }
       });
@@ -81,7 +87,7 @@ class InventoryPageState extends State<InventoryRecordsPage> {
   }
 
   Future<Map<String, Map<String, dynamic>>> _loadSettings() async {
-    final rows = await DBSettings.instance.querySettingAllRows(1);
+    final rows = await DBSettings.instance.querySettingForProfile(widget.selectedProfile);
 
     return {
       for (var row in rows) row['nome']: row,
@@ -240,14 +246,12 @@ Future<void> saveMoreRecords(BuildContext context) async {
             onPressed: () {
               Navigator.of(context).pop(false);
             },
-            child: Row(
+            child: const Row(
               mainAxisSize: MainAxisSize.min,
-              children: const [
-                Icon(Icons.done, color: Colors.white), // Ícone
+              children: [
+                Icon(Icons.done, color: Colors.white),
                 SizedBox(width: 8), // Espaçamento entre ícone e texto
-                Text(
-                  "NÃO",
-                  style: TextStyle(color: Colors.white, fontSize: 16), // Texto branco
+                Text("NÃO", style: TextStyle(color: Colors.white, fontSize: 16), // Texto branco
                 ),
               ],
             ),
@@ -263,9 +267,9 @@ Future<void> saveMoreRecords(BuildContext context) async {
             onPressed: () {
               Navigator.of(context).pop(true);
             },
-            child: Row(
+            child: const Row(
               mainAxisSize: MainAxisSize.min,
-              children: const [
+              children: [
                 Icon(Icons.add, color: Colors.white), // Ícone
                 SizedBox(width: 8), // Espaçamento entre ícone e texto
                 Text(
@@ -314,7 +318,7 @@ Future<void> saveMoreRecords(BuildContext context) async {
     int     settingId = (id+1);
     bool    st = true;
 
-    List<Map<String, dynamic>> resultDT = await DBSettings.instance.queryFieldDataTypeSettingsBySettingId(settingId);
+    List<Map<String, dynamic>> resultDT = await DBSettings.instance.queryFieldDataTypeSettingsBySettingId(settingId, widget.selectedProfile);
 
     if (resultDT.isNotEmpty) {
       field_name = resultDT[0]['field_name'];

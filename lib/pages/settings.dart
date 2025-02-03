@@ -162,7 +162,7 @@ class ConfiguracoesScreenState extends State<SettingsPage> {
 
   Future<void> _showFieldDetailsDialog(BuildContext context, int settingId, String name) async {
     final dbHelper = DBSettings.instance;
-    final fieldData = await dbHelper.queryFieldDataTypeSettingsBySettingId(settingId);
+    final fieldData = await dbHelper.queryFieldDataTypeSettingsBySettingId1(settingId);
 
     Map<String, dynamic> field = {};
     String fieldName = name;
