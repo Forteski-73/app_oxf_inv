@@ -394,18 +394,36 @@ class DBSettings {
     }
   }
 
-  /*  // insert
-  Future<int> insert(Map<String, dynamic> row) async {
+  // retorna as mascaras de um compo e pervil
+  Future<List<Map<String, dynamic>>> queryMasksByFieldAndProfile(
+      String fieldName, String profile) async {
     Database db = await instance.database;
-    return await db.insert(tableSettings, row);
-  }
+    try {
+      // Obtém o profileId com base no nome do perfil
+      final profileId = await getProfileIdByProfile(profile);
+      if (profileId == null || profileId == 0) {
+        return [];
+      }
 
-  // Update
-  Future<int> update(Map<String, dynamic> row) async {
-    Database db = await instance.database;
-    int id = row[columnId];
-    return await db.update(tableSettings, row, where: '$columnId = ?', whereArgs: [id]);
-  }*/
+      // Executa a consulta para obter as máscaras associadas ao campo e ao perfil
+      final result = await db.rawQuery('''
+        SELECT 
+          m.$columnId AS mask_id,
+          m.$columnMask AS mask
+        FROM $tableMask AS m
+        INNER JOIN $tableFieldDataTypeSetting AS f
+          ON m.$columnFieldDataTypeSettingId = f.$columnId
+        INNER JOIN $tableSettings AS s 
+          ON s.$columnId = f.$columnSettingId
+        WHERE s.$columnProfileId = ? AND f.$columnFieldName = ?
+      ''', [profileId, fieldName]);
+
+      return result;
+    } catch (e) {
+      print('Erro ao consultar máscaras por campo e perfil: $e');
+      return [];
+    }
+  }
 
   Future<List<Map<String, dynamic>>> querySettingAllRows(int profileId) async {
     Database db = await instance.database;
