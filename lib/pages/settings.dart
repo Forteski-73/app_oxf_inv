@@ -90,6 +90,8 @@ class ConfiguracoesScreenState extends State<SettingsPage> {
           'obrigatorio': 0,
         };
       }
+      final dbHelper = DBSettings.instance;
+      dbHelper.deleteFieldDataTypeSettingsByProfileId(widget.profileId);
     });
 
     for (var campo in campos) {
@@ -160,9 +162,10 @@ class ConfiguracoesScreenState extends State<SettingsPage> {
     );
   }
 
-  Future<void> _showFieldDetailsDialog(BuildContext context, int settingId, String name) async {
+  Future<void> _showFieldDetailsDialog(BuildContext context, int perfilId, int settingId, String name) async {
     final dbHelper = DBSettings.instance;
-    final fieldData = await dbHelper.queryFieldDataTypeSettingsBySettingId1(settingId);
+    //final fieldData = await dbHelper.queryFieldDataTypeSettingsBySettingId1(settingId);
+    final fieldData = await dbHelper.getFieldDataTypeSettings(perfilId, settingId);
 
     Map<String, dynamic> field = {};
     String fieldName = name;
@@ -179,15 +182,16 @@ class ConfiguracoesScreenState extends State<SettingsPage> {
     }
 
     // Recuperar máscaras do banco de dados
-    final maskList = await dbHelper.queryMasksBySettingId(settingId);
+    //final maskList = field['_id'] != null ? await dbHelper.queryMasksBySettingId(field['_id']) : null;
+    final maskList = field['_id'] != null ? await dbHelper.getMaskData(field['setting_id']) : null;
 
     // Inicializar as máscaras e seus controladores
-    List<Map<String, dynamic>> maskData = maskList
-        .map((mask) => {
+    List<Map<String, dynamic>> maskData = maskList != null 
+        ? maskList.map((mask) => {
               'mask': mask['mask'],
               '_id': mask['_id'], // ID da máscara para possíveis operações futuras
-            })
-        .toList();
+            }).toList()
+        : [];
 
     List<TextEditingController> controllers = maskData
         .map((mask) => TextEditingController(text: mask['mask']))
@@ -499,7 +503,8 @@ class ConfiguracoesScreenState extends State<SettingsPage> {
                       final campo = campos[index];
                       return InkWell(
                         onTap: () {
-                          _showFieldDetailsDialog(context, campo['_id'], campo['nome']);
+                          _showFieldDetailsDialog(context, widget.profileId, campo['_id'], campo['nome']);
+                          //_showFieldDetailsDialog(context, campo['_id'], campo['nome']);
                         },
                         child: Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,

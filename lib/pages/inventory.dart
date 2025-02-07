@@ -358,19 +358,42 @@ class _InventoryPageState extends State<InventoryPage> {
                               ),
                               const SizedBox(height: 16),
                               // Dropdown para selecionar o perfil de configurações
-                              Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 12),
-                                decoration: BoxDecoration(
-                                  border: Border.all(color: Theme.of(context).dividerColor), // Borda com cor do tema
-                                  borderRadius: BorderRadius.circular(4),
+                              SizedBox(
+                                height: 54, 
+                                child: InputDecorator(
+                                  decoration: InputDecoration(
+                                    labelText: 'Selecione um perfil de configuração',
+                                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(4)),
+                                    contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                                  ),
+                                  child: DropdownButtonHideUnderline(
+                                    child: DropdownButton<String>(
+                                      style: const TextStyle(fontSize: 18, color: Colors.black),
+                                      value: _selectedProfile.isNotEmpty ? _selectedProfile : null,
+                                      onChanged: (String? newValue) {
+                                        setState(() {
+                                          _selectedProfile = newValue ?? '';
+                                        });
+                                      },
+                                      items: _profileOptions.map((String profile) {
+                                        return DropdownMenuItem<String>(
+                                          value: profile,
+                                          child: Text(profile),
+                                        );
+                                      }).toList(),
+                                      isExpanded: true,
+                                    ),
+                                  ),
                                 ),
-                                child: SizedBox(
+                              )
+                                /*child: SizedBox(
                                   height: 54, // Definindo uma altura maior para o DropdownButton
                                   child: DropdownButtonHideUnderline( // Esconde a linha inferior corretamente
                                     child: DropdownButton<String>(
                                       style: const TextStyle(fontSize: 18, color: Colors.black),
                                       value: _selectedProfile.isNotEmpty ? _selectedProfile : null,
-                                      hint: const Text("Selecione um perfil de configuração"),
+                                      labelText: 'Selecione um perfil de configuração',
+                                      //hint: const Text("Selecione um perfil de configuração"),
                                       onChanged: (String? newValue) {
                                         setState(() {
                                           _selectedProfile = newValue ?? '';
@@ -388,8 +411,8 @@ class _InventoryPageState extends State<InventoryPage> {
                                       isExpanded: true, // Largura máxima da tela
                                     ),
                                   ),
-                                ),
-                              )
+                                ),*/
+                              
                             ],
                           ),
                         ),
@@ -437,8 +460,7 @@ class _InventoryPageState extends State<InventoryPage> {
                         }
                       : null,
                   icon: const Icon(Icons.barcode_reader, color: Colors.white),
-                  label: const Text(
-                    'REGISTRAR ITENS',
+                  label: const Text('REGISTRAR ITENS',
                     style: TextStyle(fontSize: 16, color: Colors.white),
                   ),
                   style: ElevatedButton.styleFrom(

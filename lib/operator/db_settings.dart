@@ -334,11 +334,19 @@ class DBSettings {
     Database db = await instance.database;
     List<Map<String, Object?>> result;
 
-    result = await db.query(
+    /*result = await db.query(
       tableFieldDataTypeSetting,
       where: '$columnSettingId = ?',
       whereArgs: [settingId],
-    );
+    );*/
+    
+    result = await db.rawQuery('''
+      SELECT f.*
+      FROM $tableSettings AS s
+      INNER JOIN $tableFieldDataTypeSetting AS f
+      ON s.$columnId = f.$columnSettingId
+      WHERE f.$columnId = ?
+    ''', [settingId]);
 
     return result;
   }
@@ -353,6 +361,25 @@ class DBSettings {
     if (profileId == null) {
       return [];
     }
+    
+      /*
+      // Tabela "settings"
+      static const tableSettings = 'settings';
+      static const columnId = '_id';
+      static const sequence = 'sequence';
+      static const columnNome = 'nome';
+      static const columnExibir = 'exibir';
+      static const columnObrigatorio = 'obrigatorio';
+      static const columnProfileId = 'profile_id'; // FK para settings_profile
+
+      // Tabela "field_data_type_setting"
+      static const tableFieldDataTypeSetting = 'field_data_type_setting';
+      static const columnFieldName = 'field_name';
+      static const columnFieldType = 'field_type';
+      static const columnMinSize = 'min_size';
+      static const columnMaxSize = 'max_size';
+      static const columnSettingId = 'setting_id'; // FK para a tabela settings
+    */
 
     // Realiza a consulta agora com o profileId e settingId
     final resultFields = await db.rawQuery('''
@@ -360,7 +387,8 @@ class DBSettings {
         f.$columnFieldName AS field_name,
         f.$columnFieldType AS field_type,
         f.$columnMinSize AS min_size,
-        f.$columnMaxSize AS max_size
+        f.$columnMaxSize AS max_size,
+        f.$columnId
       FROM $tableFieldDataTypeSetting AS f
       INNER JOIN $tableSettings AS s 
         ON s.$columnId = f.$columnSettingId
@@ -394,6 +422,54 @@ class DBSettings {
     }
   }
 
+  /// Recupera todos os campos para o perfil. **********************************************************************
+  Future<List<Map<String, dynamic>>> getSettingsByProfileId(int profileId) async {
+    Database db = await instance.database;
+    final result = await db.rawQuery('''
+      SELECT s.* FROM $tableSettings AS s
+      JOIN $tableSettingsProfile AS p
+      ON s.$columnProfileId = p.$columnId
+      WHERE p.$columnId = ?
+    ''', [profileId]);
+
+    return result;
+  }
+
+  /// RETORNA OS DATATYPES do campo selecionado: unitizador... posição ************************************************
+  Future<List<Map<String, dynamic>>> getFieldDataTypeSettings(int profileId, int settingId) async {
+    Database db = await instance.database;
+    final result = await db.rawQuery('''
+      SELECT fds.* FROM $tableFieldDataTypeSetting AS fds
+      JOIN $tableSettings AS s
+      ON fds.$columnSettingId = s.$columnId
+      WHERE s.$columnProfileId = ? AND s.$columnId = ?
+    ''', [profileId, settingId]);
+
+    return result;
+  }
+
+  /// RETORNA as maskaras do campo selecionado: unitizador... posição ************************************************
+  Future<List<Map<String, dynamic>>> getMaskData(int settingId) async {
+    Database db = await instance.database;
+    final result = await db.rawQuery('''
+      SELECT m.* FROM $tableMask AS m
+      JOIN $tableFieldDataTypeSetting AS fds
+      ON m.$columnFieldDataTypeSettingId = fds.$columnId
+      WHERE fds.$columnSettingId = ?
+    ''', [settingId]);
+
+    return result;
+  }
+
+  Future<void> deleteFieldDataTypeSettingsByProfileId(int profileId) async {
+    Database db = await instance.database;
+    await db.delete(
+      tableSettings,
+      where: '$columnProfileId = ?',
+      whereArgs: [profileId],
+    );
+  }
+
   // retorna as mascaras de um compo e pervil
   Future<List<Map<String, dynamic>>> queryMasksByFieldAndProfile(
       String fieldName, String profile) async {
@@ -401,7 +477,7 @@ class DBSettings {
     try {
       // Obtém o profileId com base no nome do perfil
       final profileId = await getProfileIdByProfile(profile);
-      if (profileId == null || profileId == 0) {
+      if (profileId == 0) {
         return [];
       }
 

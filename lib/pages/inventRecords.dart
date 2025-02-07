@@ -315,8 +315,8 @@ Future<void> saveMoreRecords(BuildContext context) async {
     String  field_type;
     int     min_size;
     int     max_size;
-    int     settingId = (id+1);
     bool    st = true;
+    int     id_field = (id+1); /// *** partir daqui ***
 
         // Obtém o profileId com base no nome do perfil
     final profileId = await DBSettings.instance.getProfileIdByProfile(widget.selectedProfile);
@@ -361,7 +361,7 @@ Future<void> saveMoreRecords(BuildContext context) async {
       }
 
       /* VALIDAÇÕES DAS MÁSCARAS */
-      List<Map<String, dynamic>> result = await DBSettings.instance.queryMasksBySettingId(profileId); // mascaras para o campo
+      List<Map<String, dynamic>> result = await DBSettings.instance.queryMasksBySettingId(resultDT[0]['_id']); // mascaras para o campo
       if (result.isNotEmpty)
       {
         st = false;
