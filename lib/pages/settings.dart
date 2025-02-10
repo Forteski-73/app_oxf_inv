@@ -510,19 +510,22 @@ class ConfiguracoesScreenState extends State<SettingsPage> {
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
                             Expanded(
-                              child: Row(
-                                mainAxisAlignment: MainAxisAlignment.start, // Alinha o texto à esquerda
-                                children: [
-                                  const Icon(
-                                    Icons.more_vert, // Ícone de seta para a direita
-                                    size: 20, // Tamanho do ícone
-                                    color: Colors.black, // Cor do ícone
-                                  ),
-                                  Text(
-                                    campo['nome'], 
-                                    style: const TextStyle(fontSize: 16),
-                                  ),
-                                ],
+                              child: SingleChildScrollView( // Permite rolagem horizontal
+                                scrollDirection: Axis.horizontal, // Define a
+                                child: Row(
+                                  mainAxisAlignment: MainAxisAlignment.start, // Alinha o texto à esquerda
+                                  children: [
+                                    const Icon(
+                                      Icons.more_vert, // Ícone de seta para a direita
+                                      size: 20, // Tamanho do ícone
+                                      color: Colors.black, // Cor do ícone
+                                    ),
+                                    Text(
+                                      campo['nome'], 
+                                      style: const TextStyle(fontSize: 16),
+                                    ),
+                                  ],
+                                ),
                               ),
                             ),
                             Switch(

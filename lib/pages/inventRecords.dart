@@ -205,9 +205,16 @@ class InventoryPageState extends State<InventoryRecordsPage> {
             controllers[i].clear();
           }
         }*/
-        saveMoreRecords(context);
+        if (controllers[0].text.isNotEmpty && controllers[1].text.isEmpty) {
+          saveMoreRecords(context);
+        } else {
+          for (var i = 0; i < controllers.length; i++) { // limpa tudo
+              controllers[i].clear();
+          }
+          FocusScope.of(context).requestFocus(focusNodes[7]); // foco no item
+        }
 
-        createInventoryRecord(); createInventoryRecord(); // Prepara o próximo registro
+        createInventoryRecord(); // Prepara o próximo registro createInventoryRecord();
 
         setState(() {
           _isSaveButtonEnabled = false; // Desabilita até que os campos obrigatórios sejam preenchidos
@@ -249,7 +256,7 @@ Future<void> saveMoreRecords(BuildContext context) async {
             child: const Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Icon(Icons.done, color: Colors.white),
+                Icon(Icons.add, color: Colors.white),
                 SizedBox(width: 8), // Espaçamento entre ícone e texto
                 Text("NÃO", style: TextStyle(color: Colors.white, fontSize: 16), // Texto branco
                 ),
@@ -270,7 +277,7 @@ Future<void> saveMoreRecords(BuildContext context) async {
             child: const Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Icon(Icons.add, color: Colors.white), // Ícone
+                Icon(Icons.done, color: Colors.white), // Ícone
                 SizedBox(width: 8), // Espaçamento entre ícone e texto
                 Text(
                   "SIM",
@@ -321,7 +328,7 @@ Future<void> saveMoreRecords(BuildContext context) async {
         // Obtém o profileId com base no nome do perfil
     final profileId = await DBSettings.instance.getProfileIdByProfile(widget.selectedProfile);
 
-    List<Map<String, dynamic>> resultDT = await DBSettings.instance.queryFieldDataTypeSettingsBySettingId(profileId);
+    List<Map<String, dynamic>> resultDT = await DBSettings.instance.queryFieldDataTypeSettingsBySettingId(profileId, id_field);
 
     if (resultDT.isNotEmpty) {
       field_name = resultDT[0]['field_name'];
@@ -361,7 +368,7 @@ Future<void> saveMoreRecords(BuildContext context) async {
       }
 
       /* VALIDAÇÕES DAS MÁSCARAS */
-      List<Map<String, dynamic>> result = await DBSettings.instance.queryMasksBySettingId(resultDT[0]['_id']); // mascaras para o campo
+      List<Map<String, dynamic>> result = await DBSettings.instance.queryMasksBySettingId(profileId); // mascaras para o campo resultDT[0]['_id']
       if (result.isNotEmpty)
       {
         st = false;

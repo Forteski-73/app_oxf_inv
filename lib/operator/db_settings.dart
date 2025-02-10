@@ -351,7 +351,7 @@ class DBSettings {
     return result;
   }
 
-  Future<List<Map<String, dynamic>>> queryFieldDataTypeSettingsBySettingId(int profileId) async {
+  Future<List<Map<String, dynamic>>> queryFieldDataTypeSettingsBySettingId(int profileId, int idField) async {
     Database db = await instance.database;
 
     // Obtém o profileId com base no nome do perfil
@@ -392,8 +392,8 @@ class DBSettings {
       FROM $tableFieldDataTypeSetting AS f
       INNER JOIN $tableSettings AS s 
         ON s.$columnId = f.$columnSettingId
-      WHERE s.$columnProfileId = ?
-    ''', [profileId]);
+      WHERE s.$columnProfileId = ? AND s.$sequence = ?
+    ''', [profileId,idField]);
 
     // Se não retornar resultados, retornar uma lista vazia
     return resultFields;

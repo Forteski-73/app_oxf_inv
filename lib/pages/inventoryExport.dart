@@ -109,7 +109,7 @@ class _InventoryExportPage extends State<InventoryExportPage> {
 
         // Atualiza o nome do arquivo após carregar os dados
         if (_inventory.isNotEmpty) {
-          _fileNameController.text = '${_inventory[DBInventory.columnCode] ?? ''}.xlsx';
+          _fileNameController.text = '${_inventory[DBInventory.columnCode] ?? ''}';
         }
         _filePathController.text = '/Ox_imagens/';
         _fileHostController.text = 'oxserver.oxford.ind.br';
@@ -201,7 +201,7 @@ class _InventoryExportPage extends State<InventoryExportPage> {
   }
 
   Future<void> _sendFileNetwork(BuildContext context, Excel excel) async {
-    final String fileName = "${_fileNameController.text}.xlsx"; //_${DateTime.now().millisecondsSinceEpoch}
+    final String fileName = _fileNameController.text; //_${DateTime.now().millisecondsSinceEpoch}
 
     FTPConnect ftpConnect = FTPConnect(_fileHostController.text, user: _userController.text, pass: _passwordController.text);
 
