@@ -26,6 +26,7 @@ class DBInventoryExport {
   static const columnExportToFilePath       = 'exportToFilePath';
   static const columnEmail                  = 'email';
   static const columnFilePath               = 'filePath';
+  static const columnFileType               = 'FileType';
   static const columnHost                   = 'host';
   static const columnUser                   = 'user';
   static const columnPassword               = 'password';
@@ -90,6 +91,7 @@ class DBInventoryExport {
         $columnExportToFilePath         INTEGER,
         $columnEmail                    TEXT,
         $columnFilePath                 TEXT,
+        $columnFileType                 TEXT,
         $columnHost                     TEXT,
         $columnUser                     TEXT,
         $columnPassword                 TEXT 
@@ -115,6 +117,7 @@ class DBInventoryExport {
     bool exportToFilePath,
     String email,
     String filePath,
+    String fileType,
     String host,
     String user,
     String password
@@ -149,6 +152,7 @@ class DBInventoryExport {
             columnExportToFilePath:       exportToFilePath ? 1 : 0,
             columnEmail:                  email,
             columnFilePath:               filePath,
+            columnFileType:                fileType,
             columnHost:                   host,
             columnUser:                   user,
             columnPassword:               password
@@ -176,6 +180,7 @@ class DBInventoryExport {
             columnExportToFilePath:       exportToFilePath ? 1 : 0,
             columnEmail:                  email,
             columnFilePath:               filePath,
+            columnFileType:               fileType,
             columnHost:                   host,
             columnUser:                   user,
             columnPassword:               password
@@ -189,16 +194,18 @@ class DBInventoryExport {
   }
 
   Future<Map<String, dynamic>> loadExportSettings() async {
+
     try {
       final db = await database;
+      
+      //_deleteAllRecords(db);
+      //_deleteTable(db);
+      //_onCreate(db,1);
+      
       final result = await db.query(
         table,
         limit: 1,  // Sempre carregamos o primeiro registro (id = 1)
       );
-
-      //_deleteAllRecords(db);
-     // _deleteTable(db);
-      //_onCreate(db,1);
 
       Map<String, dynamic> settings = {};
       if (result.isNotEmpty) {
@@ -221,6 +228,7 @@ class DBInventoryExport {
           'exportToFilePath':       data[columnExportToFilePath]      == 1,
           'email':                  data[columnEmail].toString(),
           'filePath':               data[columnFilePath].toString(),
+          'fileType':               data[columnFileType].toString(),
           'host':                   data[columnHost].toString(),
           'user':                   data[columnUser].toString(),
           'password':               data[columnPassword].toString(),
@@ -235,6 +243,16 @@ class DBInventoryExport {
     }
   }
 
+  // Chama o método de deletar a tabela
+  Future<void> deleteTable() async {
+    try {
+      final db = await database;
+      await _deleteTable(db);  // Deleta a tabela 'export_settings'
+      print('Tabela deletada com sucesso.');
+    } catch (e) {
+      print('Erro ao deletar a tabela: $e');
+    }
+  }
 
   // Deserializar os campos selecionados
   Map<String, bool> _deserializeFields(String fieldsString) {

@@ -8,6 +8,9 @@ import 'package:mailer/smtp_server.dart';
 import 'package:app_oxf_inv/operator/db_inventory.dart';
 import 'package:app_oxf_inv/operator/db_inventoryExport.dart';
 import 'package:ftpconnect/ftpconnect.dart';
+import 'dart:typed_data';
+import 'package:url_launcher/url_launcher.dart';
+import 'package:flutter_email_sender/flutter_email_sender.dart';
 
 class InventoryExportPage extends StatefulWidget {
   final int inventoryId;
@@ -29,11 +32,16 @@ class _InventoryExportPage extends State<InventoryExportPage> {
   final TextEditingController _filePathController = TextEditingController();
   final TextEditingController _userController     = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
+  final TextEditingController _userTemp     = TextEditingController();
+  final TextEditingController _passwordTemp = TextEditingController();
+  String                      _fileFormat         = "TXT";
   bool                        _exportToEmail      = true;
   bool                        _exportToFilePath   = false;
   bool                        _isExporting        = false;
+  bool                        _isAuthorized       = false;
+  bool                        _dialogShown        = false; 
   late DBInventory            _dbInventory;
-  late DBInventoryExport  _dbInventoryExport;
+  late DBInventoryExport      _dbInventoryExport;
 
   @override
   void initState() {
@@ -54,17 +62,29 @@ class _InventoryExportPage extends State<InventoryExportPage> {
     });
   }
 
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (!_dialogShown) {
+      // Usando addPostFrameCallback para adiar a execução de _checkCredentials
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _checkCredentials();  // Exibe a caixa de diálogo
+      });
+      _dialogShown = true;  // Garantir que o diálogo seja exibido apenas uma vez
+    }
+  }
+
   Future<void> _loadExportSettings() async {
     final settings = await _dbInventoryExport.loadExportSettings();
 
     if (settings.isNotEmpty) {
       setState(() {
         _selectedFields.addAll(settings['selectedFields'] ?? {});
-        _fileNameController.text  = settings['fileName'] ?? '';
+        //_fileNameController.text  = settings['fileName'] ?? '';
         _exportToEmail            = settings['exportToEmail'] ?? true;
         _exportToFilePath         = settings['exportToFilePath'] ?? false;
         _emailController.text     = settings['email'] ?? '';
         _filePathController.text  = settings['filePath'] ?? '';
+        _fileFormat               = settings['fileType'] ?? '';
         _fileHostController.text  = settings['host'] ?? 'oxserver.oxford.ind.br';
         _userController.text      = settings['user'] ?? '';
         _passwordController.text  = settings['password'] ?? '';
@@ -140,54 +160,57 @@ class _InventoryExportPage extends State<InventoryExportPage> {
         _exportToFilePath,
         _emailController.text,
         _filePathController.text,
+        _fileFormat,
         _fileHostController.text,
         _userController.text,
         _passwordController.text,
       );
   }
 
-  Future<void> exportToExcel(BuildContext context) async {
+  Future<void> exportFile(BuildContext context) async {
     setState(() {
       _isExporting = true;
     });
     try {
       await _ExportSettings();
 
-      // Código de exportação existente...
+      // Obter os registros do banco de dados
       Database db = await DBInventory.instance.database;
-
       List<Map<String, dynamic>> inventoryRecords = await db.query(
         DBInventory.tableInventoryRecord,
         where: '${DBInventory.columnInventoryId} = ?',
         whereArgs: [widget.inventoryId],
       );
 
-      var excel = Excel.createExcel();
-      excel.rename('Sheet1', 'Inventário');
-      var sheet = excel['Inventário'];
-
-      // Colunas do cabeçalho e registros
+      // Definir os cabeçalhos
       List<String> selectedHeaders = _fields.where((field) => _selectedFields[field] == true).toList();
-      sheet.appendRow(selectedHeaders.map((field) => TextCellValue(field)).toList());
-      for (var record in inventoryRecords) {
-        List<CellValue?> row = [];
-        for (var field in selectedHeaders) {
-          var value = record[_mapFieldToColumnName(field)];
-          if (value is int) {
-            row.add(IntCellValue(value));
-          } else if (value != null) {
-            row.add(TextCellValue(value.toString()));
-          } else {
-            row.add(null);
-          }
-        }
-        sheet.appendRow(row);
+      List<String> lines = [];
+
+      // Adiciona o cabeçalho somente se o formato for CSV
+      if (_fileFormat == 'CSV') {
+        lines.add(selectedHeaders.join(_separator));  // Cabeçalho
       }
 
+      // Criar as linhas do arquivo
+      for (var record in inventoryRecords) {
+        List<String> row = [];
+        for (var field in selectedHeaders) {
+          var value = record[_mapFieldToColumnName(field)];
+          row.add(value != null ? value.toString() : "");
+        }
+        lines.add(row.join(_separator));
+      }
+
+      // Criar o conteúdo do arquivo
+      String fileContent = lines.join("\n");
+      Uint8List fileBytes = Uint8List.fromList(fileContent.codeUnits);
+
       if (_exportToEmail) {
-        await _sendEmailWithAttachment(context, excel.encode());
+        await _sendEmailWithAttachment(context, fileBytes, _fileFormat == 'CSV' ?
+          "${_fileNameController.text}.csv" : "${_fileNameController.text}.txt");
       } else {
-        await _sendFileNetwork(context, excel);
+        await _sendFileNetwork(context, fileBytes, _fileFormat == 'CSV' ? 
+          "${_fileNameController.text}.csv" : "${_fileNameController.text}.txt");
       }
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
@@ -200,19 +223,13 @@ class _InventoryExportPage extends State<InventoryExportPage> {
     }
   }
 
-  Future<void> _sendFileNetwork(BuildContext context, Excel excel) async {
-    final String fileName = _fileNameController.text; //_${DateTime.now().millisecondsSinceEpoch}
-
+  Future<void> _sendFileNetwork(BuildContext context, List<int> fileBytes, String fileName) async {
     FTPConnect ftpConnect = FTPConnect(_fileHostController.text, user: _userController.text, pass: _passwordController.text);
 
     try {
       // Conecta ao servidor FTP
       bool connected = await ftpConnect.connect();
       if (!connected) throw Exception("Falha ao conectar ao servidor FTP.");
-
-      // Gera os bytes do arquivo Excel
-      List<int>? fileBytes = excel.save();
-      if (fileBytes == null) throw Exception("Erro ao gerar o arquivo Excel.");
 
       // Cria arquivo temporário
       final directory = await getTemporaryDirectory();
@@ -229,7 +246,7 @@ class _InventoryExportPage extends State<InventoryExportPage> {
       if (!uploaded) throw Exception("Falha ao enviar o arquivo para o servidor.");
 
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-        content:Text("Arquivo exportado com sucesso para o servidor FTP."),
+        content: Text("Arquivo exportado com sucesso para o servidor FTP."),
       ));
 
       // Exclui o arquivo temporário
@@ -243,17 +260,87 @@ class _InventoryExportPage extends State<InventoryExportPage> {
     }
   }
 
-  Future<void> _sendEmailWithAttachment(BuildContext context, List<int>? excelFile) async {
-    if (excelFile == null) {
+  String? encodeQueryParameters(Map<String, String> params) {
+    return params.entries
+        .map((MapEntry<String, String> e) =>
+            '${Uri.encodeComponent(e.key)}=${Uri.encodeComponent(e.value)}')
+        .join('&');
+  }
+
+
+  Future<void> _sendEmail() async {
+    try {
+      // Criar um arquivo temporário para anexar (exemplo de .txt)
+      final Directory tempDir = await getTemporaryDirectory();
+      final File file = File('${tempDir.path}/example.txt');
+      await file.writeAsString('Este é um arquivo de exemplo.');
+
+      final Email email = Email(
+        recipients: ['dionesforteski@email.com'],
+        subject: 'Example Subject',
+        body: 'Olá, este é um e-mail enviado do meu app Flutter!',
+        attachmentPaths: [file.path], // Caminho do arquivo anexo
+        isHTML: false,
+      );
+
+      await FlutterEmailSender.send(email);
+    } catch (error) {
+      print('Erro ao enviar e-mail: $error');
+    }
+  }
+
+  Future<void> sendEmail() async {
+    
+    /* browser
+    
+    final Uri _url = Uri.parse('https://flutter.dev');
+
+    if (!await launchUrl(_url)) {
+      throw Exception('Could not launch $_url');
+    }*/
+
+    final Uri emailLaunchUri = Uri(
+      scheme: 'mailto',
+      path: 'dionesforteski@email.com',
+      query: encodeQueryParameters(<String, String>{
+        'subject': 'Example Subject & Symbols are allowed!',
+        'body': 'Olá, este é um e-mail enviado do meu app Flutter!',
+      }),
+    );
+
+  launchUrl(emailLaunchUri);
+
+    /*final Uri emailUri = Uri(
+      scheme: 'mailto',
+      path: 'dionesforteski@email.com',
+      queryParameters: {
+        'subject': 'Assunto do Email',
+        'body': 'Olá, este é um e-mail enviado do meu app Flutter!',
+      },
+    );
+
+    if (await canLaunchUrl(emailUri)) {
+      await launchUrl(emailUri, mode: LaunchMode.externalApplication);
+    } else {
+      print("Não foi possível abrir o aplicativo de e-mail.");
+    }*/
+  }
+
+  Future<void> _sendEmailWithAttachment(BuildContext context, List<int>? fileBytes, String fileName) async {
+
+    _sendEmail();
+  /*
+    if (fileBytes == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Erro ao gerar o arquivo Excel', style: TextStyle(fontSize: 18))));
+        const SnackBar(content: Text('Erro ao gerar o arquivo', style: TextStyle(fontSize: 18))),
+      );
       return;
     }
 
     final directory = await getTemporaryDirectory();
-    final filePath = '${directory.path}/${_fileNameController.text}';
+    final filePath = '${directory.path}/$fileName';
     final file = File(filePath);
-    await file.writeAsBytes(excelFile);
+    await file.writeAsBytes(fileBytes);
 
     // Configuração do servidor SMTP
     String username = 'ax@oxfordporcelanas.com.br';
@@ -272,18 +359,22 @@ class _InventoryExportPage extends State<InventoryExportPage> {
       ..from = Address(username, 'Diones Forteski')
       ..recipients.add(_emailController.text) // destinatário
       ..subject = 'Exportação de Inventário'
-      ..text = 'Segue o arquivo Excel com os dados do inventário.'
+      ..text = 'Segue o arquivo com os dados do inventário.'
       ..attachments.add(FileAttachment(file));
 
     try {
       final sendStatus = await send(message, smtpServer);
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('E-mail enviado com sucesso!', style: TextStyle(fontSize: 18))));
+        SnackBar(content: Text('E-mail enviado com sucesso!', style: TextStyle(fontSize: 18))),
+      );
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Erro ao enviar e-mail: $e', style: TextStyle(fontSize: 18))));
+        SnackBar(content: Text('Erro ao enviar e-mail: $e', style: TextStyle(fontSize: 18))),
+      );
       print('Erro ao enviar e-mail: $e');
     }
+  */
+
   }
 
   String _mapFieldToColumnName(String field) {
@@ -318,7 +409,7 @@ class _InventoryExportPage extends State<InventoryExportPage> {
             ),
             const SizedBox(height: 2),
             Text(
-              "Exportação de Dados: ${_inventory[DBInventory.columnId] ?? ''}",
+              "Exportar Inventário: ${_inventory[DBInventory.columnCode] ?? ''}",
               style: const TextStyle(color: Colors.white),
             ),
           ],
@@ -351,11 +442,12 @@ class _InventoryExportPage extends State<InventoryExportPage> {
                         return CheckboxListTile(
                           title: Text(field),
                           value: _selectedFields[field],
-                          onChanged: (bool? value) {
-                            setState(() {
-                              _selectedFields[field] = value ?? false;
-                            });
-                          },
+                          onChanged: _isAuthorized ? (bool? value) {
+                                  setState(() {
+                                    _selectedFields[field] = value ?? false;
+                                  });
+                                }
+                              : null, // Desabilita a interação se não autorizado
                           activeColor: Colors.black,
                           checkColor: Colors.white,
                           tileColor: Colors.white,
@@ -365,11 +457,78 @@ class _InventoryExportPage extends State<InventoryExportPage> {
                   ),
                 ),
               ),
+              const SizedBox(height: 8,),
+              Card(
+                elevation: 4,
+                margin: const EdgeInsets.all(8),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                color: Colors.white,
+                child: Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        "Arquivo",
+                        style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                      ),
+                      const SizedBox(height: 12),
+                      TextField(
+                        controller: _fileNameController,
+                        decoration: const InputDecoration(
+                          labelText: "Nome do Arquivo",
+                          border: OutlineInputBorder(),
+                        ),
+                        enabled: _isAuthorized,
+                      ),
+                      const SizedBox(height: 16),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                        children: [
+                          Expanded(
+                            child: RadioListTile<String>(
+                              title: const Text(".TXT"),
+                              value: "TXT",
+                              groupValue: _fileFormat,
+                              onChanged: _isAuthorized
+                                  ? (value) {
+                                      setState(() {
+                                        _fileFormat = value ?? "";
+                                      });
+                                    }
+                                  : null, // Desabilita a interação se não autorizado
+                            ),
+                          ),
+                          Expanded(
+                            child: RadioListTile<String>(
+                              title: const Text(".CSV"),
+                              value: "CSV",
+                              groupValue: _fileFormat,
+                              onChanged: _isAuthorized
+                                  ? (value) {
+                                      setState(() {
+                                        _fileFormat = value ?? "";
+                                      });
+                                    }
+                                  : null, // Desabilita a interação se não autorizado
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              ),
               const SizedBox(height: 8),
               Card(
-                margin: const EdgeInsets.all(16.0),
                 elevation: 4,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8.0)),
+                margin: const EdgeInsets.all(8),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
                 color: Colors.white,
                 child: Padding(
                   padding: const EdgeInsets.all(16.0),
@@ -384,47 +543,33 @@ class _InventoryExportPage extends State<InventoryExportPage> {
                       Row(
                         children: [
                           Expanded(
-                            child: TextField(
-                              controller: _fileNameController,
-                              decoration: const InputDecoration(
-                                labelText: 'Nome do Arquivo',
-                                border: OutlineInputBorder(
-                                  borderSide: BorderSide(color: Colors.black),
-                                ),
-                                filled: true,
-                                fillColor: Colors.white,
-                              ),
-                              style: const TextStyle(color: Colors.black),
-                            ),
-                          ),
-                        ],
-                      ),
-                      Row(
-                        children: [
-                          Expanded(
                             child: RadioListTile<String>(
                               title: const Text("E-Mail"),
                               value: "E-Mail",
                               groupValue: _exportToEmail ? "E-Mail" : "Rede",
-                              onChanged: (value) {
-                                setState(() {
-                                  _exportToEmail = true;
-                                  _exportToFilePath = false;
-                                });
-                              },
+                              onChanged: _isAuthorized
+                                  ? (value) {
+                                    setState(() {
+                                      _exportToEmail = true;
+                                      _exportToFilePath = false;
+                                      });
+                                    }
+                                  : null, // Desabilita a interação se não autorizado
                             ),
                           ),
+
                           Expanded(
                             child: RadioListTile<String>(
                               title: const Text("Rede"),
                               value: "Rede",
                               groupValue: _exportToEmail ? "E-Mail" : "Rede",
-                              onChanged: (value) {
-                                setState(() {
+                              onChanged: _isAuthorized
+                                  ? (value) {
+                                    setState(() {
                                   _exportToFilePath = true;
                                   _exportToEmail = false;
                                 });
-                              },
+                              }: null, 
                             ),
                           ),
                         ],
@@ -437,6 +582,7 @@ class _InventoryExportPage extends State<InventoryExportPage> {
                             labelText: "E-Mail",
                             border: OutlineInputBorder(),
                           ),
+                          enabled: _isAuthorized,
                         ),
                       ],
                       if (_exportToFilePath) ...[
@@ -447,6 +593,7 @@ class _InventoryExportPage extends State<InventoryExportPage> {
                             labelText: "Pasta",
                             border: OutlineInputBorder(),
                           ),
+                          enabled: _isAuthorized,
                         ),
                         const SizedBox(height: 8),
                         TextField(
@@ -455,6 +602,7 @@ class _InventoryExportPage extends State<InventoryExportPage> {
                             labelText: "Host",
                             border: OutlineInputBorder(),
                           ),
+                          enabled: _isAuthorized,
                         ),
                         const SizedBox(height: 8),
                         TextField(
@@ -463,6 +611,7 @@ class _InventoryExportPage extends State<InventoryExportPage> {
                             labelText: "Usuário",
                             border: OutlineInputBorder(),
                           ),
+                          enabled: _isAuthorized,
                         ),
                         const SizedBox(height: 8),
                         TextField(
@@ -472,6 +621,7 @@ class _InventoryExportPage extends State<InventoryExportPage> {
                             labelText: "Senha",
                             border: OutlineInputBorder(),
                           ),
+                          enabled: _isAuthorized,
                         ),
                       ],
                     ],
@@ -488,7 +638,7 @@ class _InventoryExportPage extends State<InventoryExportPage> {
           onPressed: _isExporting
               ? null 
               : () {
-                  exportToExcel(context);
+                  exportFile(context);
                 },
           style: ElevatedButton.styleFrom(
             backgroundColor: Colors.blue,
@@ -496,17 +646,111 @@ class _InventoryExportPage extends State<InventoryExportPage> {
             minimumSize: const Size(double.infinity, 50),
           ),
           child: _isExporting
-              ? Row(
+              ? const Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: const [
                     CircularProgressIndicator(color: Colors.white),
                     SizedBox(width: 10),
-                    Text('Exportando...', style: TextStyle(color: Colors.white)),
+                    Text('Exportando...', style: TextStyle(fontSize: 16, color: Colors.white),),
                   ],
                 )
-              : const Text('Exportar', style: TextStyle(color: Colors.white)),
+              : const Text('Exportar', style: TextStyle(fontSize: 16, color: Colors.white),),
         ),
       ),
+    );
+  }
+
+  void _checkCredentials() {
+    showDialog(
+      context: context,
+      barrierDismissible: false, // Não permite fechar a caixa sem preencher
+      builder: (context) {
+        return AlertDialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(8),
+          ),
+          title: const Text('Autenticação'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: _userTemp,
+                decoration: const InputDecoration(
+                  labelText: 'Usuário',
+                  border: OutlineInputBorder(),
+                ),
+              ),
+              const SizedBox(height: 10),
+              TextField(
+                controller: _passwordTemp,
+                obscureText: true,
+                decoration: const InputDecoration(
+                  labelText: 'Senha',
+                  border: OutlineInputBorder(),
+                ),
+              ),
+            ],
+          ),
+          actions: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Expanded(
+                  child: ElevatedButton(
+                    onPressed: () {
+                      // Verifica as credenciais informadas
+                      if (_userTemp.text == "admin" && _passwordTemp.text == "ti2025") {
+                        Navigator.of(context).pop();
+                        setState(() {
+                          _isAuthorized = true; // Permite interagir com os cards
+                        });
+                      } else {
+                        Navigator.of(context).pop();
+                        setState(() {
+                          _isAuthorized = false; // Desabilita os cards
+                        });
+                      }
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.blue,
+                      padding: const EdgeInsets.symmetric(vertical: 15),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                    ),
+                    child: const Text(
+                      'OK',
+                      style: TextStyle(fontSize: 16, color: Colors.white),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 8), 
+                Expanded(
+                  child: ElevatedButton(
+                    onPressed: () {
+                      Navigator.of(context).pop();
+                      setState(() {
+                        _isAuthorized = false; // Desabilita os cards
+                      });
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.grey,
+                      padding: const EdgeInsets.symmetric(vertical: 15),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                    ),
+                    child: const Text(
+                      'Pular',
+                      style: TextStyle(fontSize: 16, color: Colors.white),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        );
+      },
     );
   }
 }
