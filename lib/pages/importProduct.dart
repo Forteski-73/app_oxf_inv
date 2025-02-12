@@ -231,7 +231,7 @@ class _ImportProductPage extends State<ImportProduct> {
                 ),
               ),
               child: _isImporting
-                  ? Row(
+                  ? const Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: const [
                         CircularProgressIndicator(color: Colors.white),

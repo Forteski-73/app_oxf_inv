@@ -12,7 +12,7 @@
         android:label="Oxford ACEP"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher"
-        android:debuggable="true"> <!-- retirar após debugar o sqllite***********-->
+        > <!-- android:debuggable="true" retirar após debugar o sqllite***********-->
         <activity
             android:name=".MainActivity"
             android:exported="true"
