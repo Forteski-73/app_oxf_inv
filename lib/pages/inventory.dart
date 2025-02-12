@@ -129,15 +129,21 @@ class _InventoryPageState extends State<InventoryPage> {
     return st;
   }
 
+  String formatNumber(int number) {
+    return number.toString().padLeft(2, '0'); // Garante 2 dígitos
+  }
+
   Future<void> createInventory() async {
-    String currentDate = DateFormat('yyyyMMdd').format(DateTime.now());
-    String code    = 'INV-$currentDate';
-    String date    = DateFormat('dd/MM/yyyy').format(DateTime.now());
-    DateTime dt    = DateTime.now();
-    String hour    = dt.toIso8601String().split('T').last.split('.').first;
-    String name    = "";
-    String sector  = "";
-    String profile = "";
+    final DateTime now  = DateTime.now();
+    String currentDate  = DateFormat('yyyyMMdd').format(now);
+    String currentTime  = '${formatNumber(now.hour)}${formatNumber(now.minute)}${formatNumber(now.second)}';
+    String code         = 'INV-$currentDate$currentTime';
+    String date         = DateFormat('dd/MM/yyyy').format(now);
+    DateTime dt         = now;
+    String hour         = dt.toIso8601String().split('T').last.split('.').first;
+    String name         = "";
+    String sector       = "";
+    String profile      = "";
 
     Map<String, dynamic> inventoryRow = {
       DBInventory.columnCode: code,

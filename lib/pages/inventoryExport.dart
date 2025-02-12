@@ -206,7 +206,7 @@ class _InventoryExportPage extends State<InventoryExportPage> {
       Uint8List fileBytes = Uint8List.fromList(fileContent.codeUnits);
 
       if (_exportToEmail) {
-        await _sendEmailWithAttachment(context, fileBytes, _fileFormat == 'CSV' ?
+        await _sendFileEmail(context, fileBytes, _fileFormat == 'CSV' ?
           "${_fileNameController.text}.csv" : "${_fileNameController.text}.txt");
       } else {
         await _sendFileNetwork(context, fileBytes, _fileFormat == 'CSV' ? 
@@ -268,18 +268,20 @@ class _InventoryExportPage extends State<InventoryExportPage> {
   }
 
 
-  Future<void> _sendEmail() async {
+  Future<void> _sendFileEmail(BuildContext context, List<int> fileBytes, String fileName) async {
     try {
-      // Criar um arquivo temporário para anexar (exemplo de .txt)
-      final Directory tempDir = await getTemporaryDirectory();
-      final File file = File('${tempDir.path}/example.txt');
-      await file.writeAsString('Este é um arquivo de exemplo.');
+
+      // Cria arquivo temporário
+      final tempDir = await getTemporaryDirectory();
+      String filePath = "${tempDir.path}/$fileName";
+      File tempFile = File(filePath);
+      await tempFile.writeAsBytes(fileBytes);
 
       final Email email = Email(
-        recipients: ['dionesforteski@email.com'],
-        subject: 'Example Subject',
-        body: 'Olá, este é um e-mail enviado do meu app Flutter!',
-        attachmentPaths: [file.path], // Caminho do arquivo anexo
+        recipients: [_emailController.text],
+        subject: 'Inventário: ${_inventory[DBInventory.columnName]}',
+        body: 'Olá, Segue em anexo o arquivo do inventário: $fileName',
+        attachmentPaths: [tempFile.path],
         isHTML: false,
       );
 
@@ -289,47 +291,11 @@ class _InventoryExportPage extends State<InventoryExportPage> {
     }
   }
 
-  Future<void> sendEmail() async {
-    
-    /* browser
-    
-    final Uri _url = Uri.parse('https://flutter.dev');
 
-    if (!await launchUrl(_url)) {
-      throw Exception('Could not launch $_url');
-    }*/
+  /*Future<void> _sendEmailWithAttachment(BuildContext context, List<int>? fileBytes, String fileName) async {
 
-    final Uri emailLaunchUri = Uri(
-      scheme: 'mailto',
-      path: 'dionesforteski@email.com',
-      query: encodeQueryParameters(<String, String>{
-        'subject': 'Example Subject & Symbols are allowed!',
-        'body': 'Olá, este é um e-mail enviado do meu app Flutter!',
-      }),
-    );
-
-  launchUrl(emailLaunchUri);
-
-    /*final Uri emailUri = Uri(
-      scheme: 'mailto',
-      path: 'dionesforteski@email.com',
-      queryParameters: {
-        'subject': 'Assunto do Email',
-        'body': 'Olá, este é um e-mail enviado do meu app Flutter!',
-      },
-    );
-
-    if (await canLaunchUrl(emailUri)) {
-      await launchUrl(emailUri, mode: LaunchMode.externalApplication);
-    } else {
-      print("Não foi possível abrir o aplicativo de e-mail.");
-    }*/
-  }
-
-  Future<void> _sendEmailWithAttachment(BuildContext context, List<int>? fileBytes, String fileName) async {
-
-    _sendEmail();
-  /*
+    //_sendEmail();
+  
     if (fileBytes == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Erro ao gerar o arquivo', style: TextStyle(fontSize: 18))),
@@ -373,9 +339,7 @@ class _InventoryExportPage extends State<InventoryExportPage> {
       );
       print('Erro ao enviar e-mail: $e');
     }
-  */
-
-  }
+  }*/
 
   String _mapFieldToColumnName(String field) {
     switch (field) {
