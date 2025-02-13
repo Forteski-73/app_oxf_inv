@@ -230,7 +230,7 @@ class _InventoryHistoryDetailState extends State<InventoryHistoryDetail> {
       body: _isLoading // Exibir carregando.. até que os dados estejam prontos
           ? const Center(child: CircularProgressIndicator(color: Colors.white))
           : _inventory.isEmpty // Se o inventário estiver vazio após carregar
-              ? const Center(child: Text('Inventário não encontrado.')) // Mensagem caso não encontre dados
+              ? const Center(child: Text('Inventário não encontrado.'))
               : Stack(
                   children: [
                     SingleChildScrollView(
@@ -353,7 +353,7 @@ class _InventoryHistoryDetailState extends State<InventoryHistoryDetail> {
                     mainAxisSize: MainAxisSize.min, // Ajusta o tamanho para caber no conteúdo
                     children: [
                       Icon(Icons.open_in_browser, color: Colors.white, size: 30),
-                      SizedBox(width: 8), // Espaçamento entre ícone e texto
+                      SizedBox(width: 8),
                       Text("Exportar dados", style: TextStyle(color: Colors.white, fontSize: 16)),
                     ],
                   ),

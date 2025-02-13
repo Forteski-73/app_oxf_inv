@@ -2,12 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:app_oxf_inv/operator/db_settings.dart';
 
   class SettingsPage extends StatefulWidget {
-    final int profileId;  // Defina o profileId como uma propriedade do StatefulWidget
+    final int profileId;
 
-    const SettingsPage({super.key, required this.profileId}); // Construtor para receber o profileId
+    const SettingsPage({super.key, required this.profileId});
 
     @override
-    ConfiguracoesScreenState createState() => ConfiguracoesScreenState(); // Sem passar parâmetro
+    ConfiguracoesScreenState createState() => ConfiguracoesScreenState();
   }
 
 class ConfiguracoesScreenState extends State<SettingsPage> {
@@ -24,7 +24,7 @@ class ConfiguracoesScreenState extends State<SettingsPage> {
 
   Future<void> loadData() async {
     final dbHelper = DBSettings.instance;
-    List<Map<String, dynamic>> rows = await dbHelper.querySettingAllRows(widget.profileId);  // Acesse profileId com widget.profileId
+    List<Map<String, dynamic>> rows = await dbHelper.querySettingAllRows(widget.profileId); 
 
     if (!rows.isNotEmpty) {
       await _insertDefaultValues(widget.profileId);
@@ -52,19 +52,6 @@ class ConfiguracoesScreenState extends State<SettingsPage> {
       {"sequence": 10, "nome": "Qtde de Pilhas Completas", "exibir": 1, "obrigatorio": 0, "profile_id": profileId},
       {"sequence": 11, "nome": "Qtde de Itens Avulsos",    "exibir": 1, "obrigatorio": 0, "profile_id": profileId},
     ];
-    /*final List<Map<String, dynamic>> defaultValues = [
-      {"_id": 1, "nome": "Unitizador",  "exibir": 1, "obrigatorio": 0, "profile_id": profileId},
-      {"_id": 2, "nome": "Posição",     "exibir": 1, "obrigatorio": 0, "profile_id": profileId},
-      {"_id": 3, "nome": "Depósito",    "exibir": 1, "obrigatorio": 0, "profile_id": profileId},
-      {"_id": 4, "nome": "Bloco",       "exibir": 1, "obrigatorio": 0, "profile_id": profileId},
-      {"_id": 5, "nome": "Quadra",      "exibir": 1, "obrigatorio": 0, "profile_id": profileId},
-      {"_id": 6, "nome": "Lote",        "exibir": 1, "obrigatorio": 0, "profile_id": profileId},
-      {"_id": 7, "nome": "Andar",       "exibir": 1, "obrigatorio": 0, "profile_id": profileId},
-      {"_id": 8, "nome": "Código de Barras",          "exibir": 1, "obrigatorio": 0, "profile_id": profileId},
-      {"_id": 9, "nome": "Qtde Padrão da Pilha",      "exibir": 1, "obrigatorio": 0, "profile_id": profileId},
-      {"_id": 10, "nome": "Qtde de Pilhas Completas", "exibir": 1, "obrigatorio": 0, "profile_id": profileId},
-      {"_id": 11, "nome": "Qtde de Itens Avulsos",    "exibir": 1, "obrigatorio": 0, "profile_id": profileId},
-    ];*/
 
     for (var campo in defaultValues) {
       await dbHelper.insertSettings(campo); 
@@ -164,7 +151,7 @@ class ConfiguracoesScreenState extends State<SettingsPage> {
 
   Future<void> _showFieldDetailsDialog(BuildContext context, int perfilId, int settingId, String name) async {
     final dbHelper = DBSettings.instance;
-    //final fieldData = await dbHelper.queryFieldDataTypeSettingsBySettingId1(settingId);
+
     final fieldData = await dbHelper.getFieldDataTypeSettings(perfilId, settingId);
 
     Map<String, dynamic> field = {};
@@ -182,7 +169,6 @@ class ConfiguracoesScreenState extends State<SettingsPage> {
     }
 
     // Recuperar máscaras do banco de dados
-    //final maskList = field['_id'] != null ? await dbHelper.queryMasksBySettingId(field['_id']) : null;
     final maskList = field['_id'] != null ? await dbHelper.getMaskData(field['setting_id']) : null;
 
     // Inicializar as máscaras e seus controladores
@@ -210,7 +196,7 @@ class ConfiguracoesScreenState extends State<SettingsPage> {
               // Column para incluir a barra superior com título
               titlePadding: EdgeInsets.zero,  // Remover o padding da title
               title: Container(
-                color: Colors.black,  // Cor do fundo da "AppBar"
+                color: Colors.black,
                 padding: const EdgeInsets.all(16),
                 child: const Text('Configuração do Campo',
                   style: TextStyle(color: Colors.white, fontSize: 20),
@@ -308,7 +294,7 @@ class ConfiguracoesScreenState extends State<SettingsPage> {
                                       });
                                     },
                                     decoration: const InputDecoration(
-                                      border: InputBorder.none, //OutlineInputBorder(),
+                                      border: InputBorder.none,
                                       labelText: '',
                                     ),
                                   ),
@@ -378,7 +364,7 @@ class ConfiguracoesScreenState extends State<SettingsPage> {
                             ),
                           ),
                           onPressed: () {
-                            Navigator.of(context).pop(); // Fecha o popup
+                            Navigator.of(context).pop();
                           },
                           child: const Text(
                             'CANCELAR',
@@ -431,7 +417,7 @@ class ConfiguracoesScreenState extends State<SettingsPage> {
                           },
                           child: const Text(
                             'OK',
-                            style: TextStyle(color: Colors.white),  // Cor do texto
+                            style: TextStyle(color: Colors.white),
                           ),
                         ),
                       ),
@@ -504,7 +490,6 @@ class ConfiguracoesScreenState extends State<SettingsPage> {
                       return InkWell(
                         onTap: () {
                           _showFieldDetailsDialog(context, widget.profileId, campo['_id'], campo['nome']);
-                          //_showFieldDetailsDialog(context, campo['_id'], campo['nome']);
                         },
                         child: Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,

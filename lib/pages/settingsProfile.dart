@@ -297,4 +297,3 @@ Future<void> _UpdateSettingsProfileData(int profileId, String profileName) async
   }
 
 }
-
