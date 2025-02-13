@@ -62,14 +62,6 @@ class DBInventoryExport {
     }
   }
 
-  Future<void> _deleteAllRecords(Database db) async {
-    try {
-      await db.delete(table); // Deleta todos os registros da tabela
-    } catch (e) {
-      print('Erro ao deletar todos os registros: $e');
-    }
-  }
-
   Future _onCreate(Database db, int version) async {
     await db.execute(''' 
       CREATE TABLE IF NOT EXISTS $table (
@@ -125,10 +117,8 @@ class DBInventoryExport {
     try {
       final db = await database;
       
-      final existingRecords = await db.query( // Verifica se existe algum registro
-        table,
-        limit: 1,  // Limita para o primeiro registro
-      );
+      // Verifica se existe algum registro
+      final existingRecords = await db.query(table, limit: 1,); // Limita para o primeiro registro
 
       // Se a tabela estiver vazia, faz o insert
       if (existingRecords.isEmpty) {
@@ -202,10 +192,7 @@ class DBInventoryExport {
       //_deleteTable(db);
       //_onCreate(db,1);
       
-      final result = await db.query(
-        table,
-        limit: 1,  // Sempre carregamos o primeiro registro (id = 1)
-      );
+      final result = await db.query(table, limit: 1, );  // Sempre carregamos o primeiro registro (id = 1)
 
       Map<String, dynamic> settings = {};
       if (result.isNotEmpty) {
@@ -252,17 +239,5 @@ class DBInventoryExport {
     } catch (e) {
       print('Erro ao deletar a tabela: $e');
     }
-  }
-
-  // Deserializar os campos selecionados
-  Map<String, bool> _deserializeFields(String fieldsString) {
-    Map<String, bool> selectedFields = {};
-    final fields = fieldsString.split(',');
-
-    for (var field in fields) {
-      selectedFields[field] = true; // Por padrão, todos os campos serão selecionados
-    }
-
-    return selectedFields;
   }
 }

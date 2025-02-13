@@ -391,34 +391,7 @@ class _InventoryPageState extends State<InventoryPage> {
                                     ),
                                   ),
                                 ),
-                              )
-                                /*child: SizedBox(
-                                  height: 54, // Definindo uma altura maior para o DropdownButton
-                                  child: DropdownButtonHideUnderline( // Esconde a linha inferior corretamente
-                                    child: DropdownButton<String>(
-                                      style: const TextStyle(fontSize: 18, color: Colors.black),
-                                      value: _selectedProfile.isNotEmpty ? _selectedProfile : null,
-                                      labelText: 'Selecione um perfil de configuração',
-                                      //hint: const Text("Selecione um perfil de configuração"),
-                                      onChanged: (String? newValue) {
-                                        setState(() {
-                                          _selectedProfile = newValue ?? '';
-                                        });
-                                      },
-                                      items: _profileOptions.map((String profile) {
-                                        return DropdownMenuItem<String>(
-                                          value: profile,
-                                          child: Padding(
-                                            padding: const EdgeInsets.symmetric(vertical: 15), // Espaçamento vertical para centralizar
-                                            child: Text(profile),
-                                          ),
-                                        );
-                                      }).toList(),
-                                      isExpanded: true, // Largura máxima da tela
-                                    ),
-                                  ),
-                                ),*/
-                              
+                              )                              
                             ],
                           ),
                         ),
@@ -450,10 +423,7 @@ class _InventoryPageState extends State<InventoryPage> {
                       borderRadius: BorderRadius.circular(8),
                     ),
                   ),
-                  child: const Text(
-                    'INICIAR',
-                    style: TextStyle(fontSize: 16, color: Colors.white),
-                  ),
+                  child: const Text('INICIAR',style: TextStyle(fontSize: 16, color: Colors.white),),
                 ),
                 const SizedBox(height: 10),
                 ElevatedButton.icon(
@@ -466,9 +436,7 @@ class _InventoryPageState extends State<InventoryPage> {
                         }
                       : null,
                   icon: const Icon(Icons.barcode_reader, color: Colors.white),
-                  label: const Text('REGISTRAR ITENS',
-                    style: TextStyle(fontSize: 16, color: Colors.white),
-                  ),
+                  label: const Text('REGISTRAR ITENS', style: TextStyle(fontSize: 16, color: Colors.white),),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: updateControlls(0) ? Colors.blue : Colors.grey,
                     padding: const EdgeInsets.symmetric(vertical: 15),

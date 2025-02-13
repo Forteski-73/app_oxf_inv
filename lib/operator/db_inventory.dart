@@ -38,7 +38,6 @@ class DBInventory {
   static const columnNumberLooseItems     = 'number_loose_items';
   static const columnSubTotal             = 'total';
 
-  // Singleton
   DBInventory._privateConstructor();
   static final DBInventory instance = DBInventory._privateConstructor();
 
@@ -61,8 +60,8 @@ class DBInventory {
     );
   }
 
+  // Criação da tabela Status Options
   Future _onCreate(Database db, int version) async {
-    // Criação da tabela Status Options
     await db.execute('''
       CREATE TABLE $tableStatusOptions (
         $columnStatus TEXT PRIMARY KEY
@@ -113,14 +112,10 @@ class DBInventory {
   }
 
   Future<int> insertInventory(Map<String, dynamic> row) async {
-    //Database db = await instance.database;
-    //return await db.insert(tableInventory, row);
     Database db = await instance.database;
     String code = row[columnCode];
 
     int id = await db.insert(tableInventory, row);
-
-    // Concatenar o "_id" ao "code" após a inserção
     if (id > 0) {
       // Atualiza o código concatenando o "_id"
       String newCode = "$code-$id";
@@ -146,34 +141,28 @@ class DBInventory {
     return await db.update(tableInvent, row, where: '$columnId = ?', whereArgs: [id]);
   }
 
-  /*Future<List<Map<String, dynamic>>> queryAllInventory() async {
+  Future<List<Map<String, dynamic>>> queryAllInventory() async {
     Database db = await instance.database;
-    return await db.query(tableInventory);
-  }*/
-
-Future<List<Map<String, dynamic>>> queryAllInventory() async {
-  Database db = await instance.database;
-  return await db.query(
-    tableInventory,
-    orderBy: '_id DESC',
-  );
-}
+    return await db.query(
+      tableInventory,
+      orderBy: '_id DESC',
+    );
+  }
 
   Future<Map<String, dynamic>?> queryFirstInventoryByStatus() async {
-  Database db = await instance.database;
+    Database db = await instance.database;
 
-  List<Map<String, dynamic>> results = await db.query(
-    tableInventory,
-    where: '${DBInventory.columnStatus} = ? OR ${DBInventory.columnStatus} = ?',
-    whereArgs: ['NÃO INICIADO', 'EM ANDAMENTO'],
-    orderBy: '${DBInventory.columnId} ASC',
-    limit: 1, // Apenas o primeiro
-  );
+    List<Map<String, dynamic>> results = await db.query(
+      tableInventory,
+      where: '${DBInventory.columnStatus} = ? OR ${DBInventory.columnStatus} = ?',
+      whereArgs: ['NÃO INICIADO', 'EM ANDAMENTO'],
+      orderBy: '${DBInventory.columnId} ASC',
+      limit: 1, // Apenas o primeiro
+    );
 
-    // Retorna o primeiro registro, ou null caso não haja nenhum registro
     if (results.isNotEmpty) {
-    // Cria uma cópia mutável do primeiro item da lista
-    return Map<String, dynamic>.from(results.first);
+      // Cria uma cópia mutável do primeiro item da lista
+      return Map<String, dynamic>.from(results.first);
     }
     else {
       return null;
@@ -185,12 +174,6 @@ Future<List<Map<String, dynamic>>> queryAllInventory() async {
     return await db.delete(tableInventory, where: '$columnId = ?', whereArgs: [id]);
   }
 
-  // Métodos CRUD para Inventory Record
-  /*Future<int> insertInventoryRecord(Map<String, dynamic> row) async {
-    Database db = await instance.database;
-    return await db.insert(tableInventoryRecord, row);
-  }*/
-
   Future<int> insertInventoryRecord(Map<String, dynamic> row) async {
     Database db = await instance.database;
     int st = 0;
@@ -200,7 +183,7 @@ Future<List<Map<String, dynamic>>> queryAllInventory() async {
     {
       int inventoryId = row[columnInventoryId];
 
-      List<Map<String, dynamic>> inventoryResults = await db.query( // para o total já somado no Inventário
+      List<Map<String, dynamic>> inventoryResults = await db.query( // Pega o Inventário
         tableInventory,
         columns: [columnTotal],
         where: '$columnId = ?',
@@ -236,10 +219,6 @@ Future<List<Map<String, dynamic>>> queryAllInventory() async {
     return await db.query(tableInventoryRecord);
   }
 
-  /*Future<int> deleteInventoryRecord(int id) async {
-    Database db = await instance.database;
-    return await db.delete(tableInventoryRecord, where: '$columnId = ?', whereArgs: [id]);
-  }*/
   // deleta a contagem e subtrai do Total
   Future<int> deleteInventoryRecord(int id) async {
     Database db = await instance.database;
@@ -277,7 +256,7 @@ Future<List<Map<String, dynamic>>> queryAllInventory() async {
           whereArgs: [inventoryId],
         );
       }
-      // Deleta o registro na tabela inventory_record
+
       st = await db.delete(tableInventoryRecord, where: '$columnId = ?', whereArgs: [id]);
     }
     return st;
@@ -289,14 +268,12 @@ Future<List<Map<String, dynamic>>> queryAllInventory() async {
 
     // Iniciar uma transação para garantir consistência
     await db.transaction((txn) async {
-      // Excluir registros filhos da tabela inventory_record
       await txn.delete(
         tableInventoryRecord,
         where: '$columnInventoryId = ?',
         whereArgs: [inventoryId],
       );
 
-      // Excluir o registro da tabela inventory
       result = await txn.delete(
         tableInventory,
         where: '$columnId = ?',

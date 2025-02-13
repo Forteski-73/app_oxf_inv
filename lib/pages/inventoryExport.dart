@@ -1,15 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:excel/excel.dart';
 import 'dart:io';
 import 'package:path_provider/path_provider.dart';
 import 'package:sqflite/sqflite.dart';
-import 'package:mailer/mailer.dart';
-import 'package:mailer/smtp_server.dart';
 import 'package:app_oxf_inv/operator/db_inventory.dart';
 import 'package:app_oxf_inv/operator/db_inventoryExport.dart';
 import 'package:ftpconnect/ftpconnect.dart';
 import 'dart:typed_data';
-import 'package:url_launcher/url_launcher.dart';
 import 'package:flutter_email_sender/flutter_email_sender.dart';
 
 class InventoryExportPage extends StatefulWidget {
@@ -26,14 +22,14 @@ class _InventoryExportPage extends State<InventoryExportPage> {
     'Código de Barras', 'Qtde Padrão da Pilha', 'Qtde de Pilhas Completas', 'Qtde de Itens Avulsos', 'Total'];
   Map<String, bool>           _selectedFields     = {};
   Map<String, dynamic>        _inventory          = {};
-  String                      _separator          = ';';
+  final String                _separator          = ';';
   final TextEditingController _emailController    = TextEditingController();
   final TextEditingController _fileHostController = TextEditingController();
   final TextEditingController _filePathController = TextEditingController();
   final TextEditingController _userController     = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
-  final TextEditingController _userTemp     = TextEditingController();
-  final TextEditingController _passwordTemp = TextEditingController();
+  final TextEditingController _userTemp           = TextEditingController();
+  final TextEditingController _passwordTemp       = TextEditingController();
   String                      _fileFormat         = "TXT";
   bool                        _exportToEmail      = true;
   bool                        _exportToFilePath   = false;
@@ -69,7 +65,7 @@ class _InventoryExportPage extends State<InventoryExportPage> {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         _checkCredentials();  // Exibe a caixa de diálogo
       });
-      _dialogShown = true;  // Garantir que o diálogo seja exibido apenas uma vez
+      _dialogShown = true;  // Garante que o diálogo seja exibido apenas uma vez
     }
   }
 
@@ -79,7 +75,6 @@ class _InventoryExportPage extends State<InventoryExportPage> {
     if (settings.isNotEmpty) {
       setState(() {
         _selectedFields.addAll(settings['selectedFields'] ?? {});
-        //_fileNameController.text  = settings['fileName'] ?? '';
         _exportToEmail            = settings['exportToEmail'] ?? true;
         _exportToFilePath         = settings['exportToFilePath'] ?? false;
         _emailController.text     = settings['email'] ?? '';
@@ -89,8 +84,7 @@ class _InventoryExportPage extends State<InventoryExportPage> {
         _userController.text      = settings['user'] ?? '';
         _passwordController.text  = settings['password'] ?? '';
 
-        // Inicializa os checkboxs
-          _selectedFields = {
+        _selectedFields = {
           "Unitizador":               settings['unitizador'],
           "Posição":                  settings['posicao'],
           "Depósito":                 settings['deposito'],
@@ -174,7 +168,6 @@ class _InventoryExportPage extends State<InventoryExportPage> {
     try {
       await _ExportSettings();
 
-      // Obter os registros do banco de dados
       Database db = await DBInventory.instance.database;
       List<Map<String, dynamic>> inventoryRecords = await db.query(
         DBInventory.tableInventoryRecord,
@@ -188,10 +181,10 @@ class _InventoryExportPage extends State<InventoryExportPage> {
 
       // Adiciona o cabeçalho somente se o formato for CSV
       if (_fileFormat == 'CSV') {
-        lines.add(selectedHeaders.join(_separator));  // Cabeçalho
+        lines.add(selectedHeaders.join(_separator));
       }
 
-      // Criar as linhas do arquivo
+      // Cria as linhas do arquivo
       for (var record in inventoryRecords) {
         List<String> row = [];
         for (var field in selectedHeaders) {
@@ -201,7 +194,7 @@ class _InventoryExportPage extends State<InventoryExportPage> {
         lines.add(row.join(_separator));
       }
 
-      // Criar o conteúdo do arquivo
+      // Cria o conteúdo do arquivo
       String fileContent = lines.join("\n");
       Uint8List fileBytes = Uint8List.fromList(fileContent.codeUnits);
 
@@ -253,7 +246,7 @@ class _InventoryExportPage extends State<InventoryExportPage> {
       await tempFile.delete();
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: Text("Erro ao gravar na rede: $e"),
+        content: Text("Erro ao gravar na rede: $e", style: const TextStyle(fontSize: 18)),
       ));
     } finally {
       ftpConnect.disconnect();
@@ -287,59 +280,11 @@ class _InventoryExportPage extends State<InventoryExportPage> {
 
       await FlutterEmailSender.send(email);
     } catch (error) {
-      print('Erro ao enviar e-mail: $error');
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text('Erro ao enviar e-mail: $error', style: const TextStyle(fontSize: 18)),
+      ));
     }
   }
-
-
-  /*Future<void> _sendEmailWithAttachment(BuildContext context, List<int>? fileBytes, String fileName) async {
-
-    //_sendEmail();
-  
-    if (fileBytes == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Erro ao gerar o arquivo', style: TextStyle(fontSize: 18))),
-      );
-      return;
-    }
-
-    final directory = await getTemporaryDirectory();
-    final filePath = '${directory.path}/$fileName';
-    final file = File(filePath);
-    await file.writeAsBytes(fileBytes);
-
-    // Configuração do servidor SMTP
-    String username = 'ax@oxfordporcelanas.com.br';
-    String password = 'S3rvic0s.publ1c@c@0';
-
-    final smtpServer = SmtpServer(
-      'smtp.oxford.ind.br', // Servidor SMTP
-      username: username,
-      password: password,
-      port: 225,
-      ssl: false, // 'false' se não usar TLS/SSL, ou 'true' se sim
-      ignoreBadCertificate: true, // Ignora a validação do certificado
-    );
-
-    final message = Message()
-      ..from = Address(username, 'Diones Forteski')
-      ..recipients.add(_emailController.text) // destinatário
-      ..subject = 'Exportação de Inventário'
-      ..text = 'Segue o arquivo com os dados do inventário.'
-      ..attachments.add(FileAttachment(file));
-
-    try {
-      final sendStatus = await send(message, smtpServer);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('E-mail enviado com sucesso!', style: TextStyle(fontSize: 18))),
-      );
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Erro ao enviar e-mail: $e', style: TextStyle(fontSize: 18))),
-      );
-      print('Erro ao enviar e-mail: $e');
-    }
-  }*/
 
   String _mapFieldToColumnName(String field) {
     switch (field) {
@@ -367,13 +312,11 @@ class _InventoryExportPage extends State<InventoryExportPage> {
           mainAxisAlignment: MainAxisAlignment.start,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
-              'Aplicativo de Consulta de Estrutura de Produtos. ACEP',
+            const Text("Aplicativo de Consulta de Estrutura de Produtos. ACEP",
               style: TextStyle(color: Colors.white, fontSize: 12),
             ),
             const SizedBox(height: 2),
-            Text(
-              "Exportar Inventário: ${_inventory[DBInventory.columnCode] ?? ''}",
+            Text("Exportar Inventário: ${_inventory[DBInventory.columnCode] ?? ''}",
               style: const TextStyle(color: Colors.white),
             ),
           ],
@@ -435,8 +378,7 @@ class _InventoryExportPage extends State<InventoryExportPage> {
                     mainAxisSize: MainAxisSize.min,
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text(
-                        "Arquivo",
+                      const Text( "Arquivo",
                         style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                       ),
                       const SizedBox(height: 12),

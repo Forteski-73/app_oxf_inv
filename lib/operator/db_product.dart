@@ -7,7 +7,6 @@ class DBItems {
   static const _databaseVersion = 1;
   static const table = 'products';
 
-  // Definindo as colunas da tabela 'products'
   static const columnItemBarCode                  = 'ItemBarCode';
   static const columnProdBrandId                  = 'ProdBrandId';
   static const columnProdBrandDescriptionId       = 'ProdBrandDescriptionId';
@@ -22,7 +21,7 @@ class DBItems {
   static const columnProdFamilyId                 = 'ProdFamilyId';
   static const columnProdFamilyDescription        = 'ProdFamilyDescription';
 
-  // Instanciando o construtor DB
+  // Instancia o construtor DB
   DBItems._privateConstructor();
   static final DBItems instance = DBItems._privateConstructor();
 
@@ -42,7 +41,7 @@ class DBItems {
       path,
       version: _databaseVersion,
       onCreate: _onCreate,
-    ); // Abrindo/criando a tabela
+    ); // Abrindo ou criando a tabela
   }
 
   Future _onCreate(Database db, int version) async {
@@ -65,7 +64,6 @@ class DBItems {
     ''');
   }
 
-  // Inserir produto
   Future<int> insertProduct(Map<String, dynamic> product) async {
     Database db = await instance.database;
     return await db.insert(
@@ -75,14 +73,11 @@ class DBItems {
     );
   }
 
-  // Pegar todos os produtos
   Future<List<Map<String, dynamic>>> getAllProducts() async {
     Database db = await instance.database;
-    //return await db.query(table);
     return List<Map<String, dynamic>>.from(await db.query(table)); // Converte o resultado para uma lista mutável
   }
 
-  // Atualizar produto
   Future<int> updateProduct(Map<String, dynamic> product) async {
     Database db = await instance.database;
     return await db.update(
@@ -93,7 +88,6 @@ class DBItems {
     );
   }
 
-  // Deletar produto
   Future<int> deleteProduct(String itemId) async {
     Database db = await instance.database;
     return await db.delete(

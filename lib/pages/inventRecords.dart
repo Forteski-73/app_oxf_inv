@@ -42,13 +42,12 @@ class InventoryPageState extends State<InventoryRecordsPage> {
   void initState() {
     super.initState();
 
-    // Não podemos acessar o 'context' diretamente no initState, então vamos fazer isso depois que o widget for construído
+    // Não da para acessar o 'context' diretamente no initState, então vamos fazer isso depois que o widget for construído
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       // Acessa os argumentos da rota de forma segura
       widget.selectedProfile = ModalRoute.of(context)?.settings.arguments as String? ?? ''; 
       _settingsFuture = _loadSettings();
       
-      // Você pode fazer outras inicializações aqui
       await createInventoryRecord();
 
       // Garante que o estado será atualizado após as operações assíncronas
@@ -158,7 +157,6 @@ class InventoryPageState extends State<InventoryRecordsPage> {
   }
 
   int getValidInt(String? value) {
-    // Verifica se o valor é null ou vazio e retorna 0 pra não dar pau
     return (value == null || value.isEmpty) ? 0 : int.parse(value);
   }
 
@@ -189,7 +187,6 @@ class InventoryPageState extends State<InventoryRecordsPage> {
         "total":                  subTotal,
       };
 
-      // Inserção no banco
       st = await db.insertInventoryRecord(inventoryRecordRow);
 
       if (st > 0) {
@@ -200,11 +197,6 @@ class InventoryPageState extends State<InventoryRecordsPage> {
           const SnackBar(content: Text('Dados salvos com sucesso!', style: TextStyle(fontSize: 18))),
         );
 
-        /*for (var i = 0; i < controllers.length; i++) {
-          if (i > 6) {
-            controllers[i].clear();
-          }
-        }*/
         if (controllers[0].text.isNotEmpty && controllers[1].text.isEmpty) {
           saveMoreRecords(context);
         } else {
@@ -297,7 +289,7 @@ Future<void> saveMoreRecords(BuildContext context) async {
       }
       FocusScope.of(context).requestFocus(focusNodes[0]);
     } else {
-      for (var i = 0; i < controllers.length; i++) { // mantém Unitizador e Localização
+      for (var i = 0; i < controllers.length; i++) { // Mantém Unitizador e Localização
         if (i > 6) {
           controllers[i].clear();
         }
@@ -323,9 +315,9 @@ Future<void> saveMoreRecords(BuildContext context) async {
     int     min_size;
     int     max_size;
     bool    st = true;
-    int     id_field = (id+1); /// *** partir daqui ***
+    int     id_field = (id+1);
 
-        // Obtém o profileId com base no nome do perfil
+    // Obtém o profileId com base no nome do perfil
     final profileId = await DBSettings.instance.getProfileIdByProfile(widget.selectedProfile);
 
     List<Map<String, dynamic>> resultDT = await DBSettings.instance.queryFieldDataTypeSettingsBySettingId(profileId, id_field);
@@ -339,7 +331,6 @@ Future<void> saveMoreRecords(BuildContext context) async {
       // Validação do tipo de campo
       if (field_type == 'Numérico') {
         if (!RegExp(r'^\d+$').hasMatch(value)) {
-          // Exibir mensagem de erro: "O campo ${field_name} deve conter apenas números."
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text('O campo ${field_name} deve conter apenas números.'),
@@ -360,7 +351,7 @@ Future<void> saveMoreRecords(BuildContext context) async {
         
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('$msg'),
+            content: Text(msg),
           ),
         );
         st = false; // Interrompe a validação se o tamanho não estiver dentro dos limites
@@ -368,7 +359,7 @@ Future<void> saveMoreRecords(BuildContext context) async {
       }
 
       /* VALIDAÇÕES DAS MÁSCARAS */
-      List<Map<String, dynamic>> result = await DBSettings.instance.queryMasksBySettingId(profileId); // mascaras para o campo resultDT[0]['_id']
+      List<Map<String, dynamic>> result = await DBSettings.instance.queryMasksBySettingId(profileId);
       if (result.isNotEmpty)
       {
         st = false;
@@ -419,23 +410,6 @@ Future<void> saveMoreRecords(BuildContext context) async {
     }
     pattern.write(r'$');
     return pattern.toString();
-  }
-
-  bool _isSequenceValid(String value, String sequence) {
-    for (int i = 0; i < sequence.length; i++) {
-      if(i < value.length) {
-        if (value[i] != sequence[i]) {
-          return false;
-        }
-      }
-    }
-    return true; // barcode válido
-  }
-
-  void _clearField(int id) {
-    if(id == 8) {
-      controllers[7].text = "";
-    }
   }
 
   Widget _buildTextField({ 
@@ -497,18 +471,7 @@ Future<void> saveMoreRecords(BuildContext context) async {
           enabled: enabled,
           onChanged: (value) {
             _validateMandatoryFields(settings);
-            //_validateFields(value, id);
           },
-          //onEditingComplete: _onEditingComplete(controller.text, id);
-          //onEditingComplete: () async {
-            //_onEditingComplete(controller.text, id);
-           // bool isValid = await _validateFields(controller.text, id);
-            /*if (!isValid) {
-              setState(() {
-                controller.text = "";
-              });
-            }*/
-          //},
           keyboardType: TextInputType.number,
           decoration: InputDecoration(
             labelText: labelWithAsterisk,

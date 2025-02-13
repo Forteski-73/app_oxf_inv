@@ -186,7 +186,6 @@ class _ImportProductPage extends State<ImportProduct> {
         backgroundColor: Colors.black,
         iconTheme: const IconThemeData(color: Colors.white),
         actions: [
-          // Adicionando o ícone de "Informações"
           IconButton(
             icon: const Icon(Icons.info_outline),
             onPressed: _showInfoDialog,
