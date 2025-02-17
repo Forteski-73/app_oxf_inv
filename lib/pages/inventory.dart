@@ -466,10 +466,10 @@ class _InventoryPageState extends State<InventoryPage> {
                 const SizedBox(height: 10),
                 ElevatedButton(
                   onPressed: updateControlls(3)
-                      ? () {
-                          Navigator.pushReplacementNamed(context, '/management',);
-                        }
-                      : null,
+                    ? () {
+                        Navigator.pushReplacementNamed(context, '/management',);
+                      }
+                    : null,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: updateControlls(3) ? Colors.blue : Colors.grey,
                     padding: const EdgeInsets.symmetric(vertical: 15),

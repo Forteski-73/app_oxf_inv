@@ -28,6 +28,9 @@ class _SearchProductState extends State<SearchProduct> {
 
   /// Carregar todos os produtos
   Future<void> _loadProducts() async {
+    
+    //await DBItems.instance.deleteAllProducts();
+
     try {
       final products = await DBItems.instance.getAllProducts();
       setState(() {
@@ -40,10 +43,28 @@ class _SearchProductState extends State<SearchProduct> {
   }
 
   void _filterProducts(String query) {
+    if (query.length < 3) return; // ignora pesquisas com menos de 3 caracteres
+
     setState(() {
       _filteredProducts = _allProducts.where((product) {
+        // Expressão regular para buscar apenas do início
+        final regex = RegExp('^${RegExp.escape(query)}', caseSensitive: false);
+
         // Expressão regular
-        final regex = RegExp(query, caseSensitive: false);
+        //final regex = RegExp(query, caseSensitive: false);
+
+              // Obtendo os valores para comparação
+        /*String itemBarCode = product['ItemBarCode'].toString();
+        String itemID = product['ItemID'].toString();
+        String name = product['Name'].toString();
+
+        // Imprimindo o que está sendo comparado
+        print('Comparando "$query" com:');
+        print('- ItemBarCode: $itemBarCode → ${regex.hasMatch(itemBarCode)}');
+        print('- ItemID: $itemID → ${regex.hasMatch(itemID)}');
+        print('- Name: $name → ${regex.hasMatch(name)}');
+        print('----------------------------');*/
+
 
         return regex.hasMatch(product['ItemBarCode'].toString()) ||
               regex.hasMatch(product['ItemID'].toString()) ||

@@ -79,6 +79,7 @@ class _InventorySearchPage extends State<InventorySearchPage> {
             DBItems.columnItemNetWeight:                data['ItemNetWeight'],
             DBItems.columnProdFamilyId:                 data['ProdFamilyId'],
             DBItems.columnProdFamilyDescription:        data['ProdFamilyDescription'],
+            //DBItems.columnImageUrl:                     data['ImageUrl'],
           };
 
           // Salvar o produto no banco
@@ -186,8 +187,9 @@ class _InventorySearchPage extends State<InventorySearchPage> {
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(8),
                   ),
-                  elevation: 4,  // Sombra para o card
+                  elevation: 4, // Sombra para o card
                   child: ListTile(
+                    contentPadding: const EdgeInsets.all(8.0),
                     title: SingleChildScrollView(
                       scrollDirection: Axis.horizontal,
                       child: Text(
@@ -198,10 +200,27 @@ class _InventorySearchPage extends State<InventorySearchPage> {
                     subtitle: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        _alignRow('Código de Barras:',  product['ItemBarCode']),
-                        _alignRow('Item:',              product['ItemID']),
-                        _alignRow('Linha:',             '${product['ProdLinesId'] ?? ''} - ${product['ProdLinesDescriptionId'] ?? ''}'),
-                        _alignRow('Decoração:',         product['ProdDecorationDescriptionId'] ?? ''),
+                        // Adicionando a imagem antes das informações do produto
+                        //if (product['ImageUrl'] != null && product['ImageUrl'].isNotEmpty)
+                          Padding(
+                            padding: const EdgeInsets.only(bottom: 8.0),
+                            child: ClipRRect(
+                              borderRadius: BorderRadius.circular(8),
+                              child: Image.network(
+                                product['ImageUrl'],
+                                height: 100,
+                                width: double.infinity,
+                                fit: BoxFit.cover,
+                                errorBuilder: (context, error, stackTrace) {
+                                  return const Icon(Icons.broken_image, size: 100, color: Colors.grey);
+                                },
+                              ),
+                            ),
+                          ),
+                        _alignRow('Código de Barras:', product['ItemBarCode']),
+                        _alignRow('Item:', product['ItemID']),
+                        _alignRow('Linha:', '${product['ProdLinesId'] ?? ''} - ${product['ProdLinesDescriptionId'] ?? ''}'),
+                        _alignRow('Decoração:', product['ProdDecorationDescriptionId'] ?? ''),
                       ],
                     ),
                     onTap: () {
@@ -213,7 +232,8 @@ class _InventorySearchPage extends State<InventorySearchPage> {
                 );
               },
             ),
-          ),
+          )
+
         ],
       ),
       bottomNavigationBar: Container(
