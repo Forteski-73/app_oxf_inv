@@ -2,21 +2,24 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:app_oxf_inv/operator/db_product.dart';
+import '../models/product.dart';
+import 'productDetail.dart';
 
-class InventorySearchPage extends StatefulWidget {
-  const InventorySearchPage({super.key});
+class ProductSearchPage extends StatefulWidget {
+  const ProductSearchPage({super.key});
 
   @override
-  _InventorySearchPage createState() => _InventorySearchPage();
+  _ProductSearchPage createState() => _ProductSearchPage();
 }
 
-class _InventorySearchPage extends State<InventorySearchPage> {
+class _ProductSearchPage extends State<ProductSearchPage> {
   final TextEditingController _searchController = TextEditingController();
   List<Map<String, dynamic>> _allProducts       = [];
   List<Map<String, dynamic>> _filteredProducts  = [];
   final String _apiUrl  = "http://wsintegrador.oxfordporcelanas.com.br:90/api/produtoEstrutura/";
   //final String _apiUrl  = "http://wsintegradordev.oxfordporcelanas.com.br:92/v1/produtos/GetAPIProdutos?familia=0002&marca=oxford&linha=FLAMINGO&decoracao=FLAMINGO&situacao=FORA&ordem=0&pagina=0&qtpagina=1";
   final String _token   = "4d24e4ff-85d62cca-d0cad84f-440e706e";
+  bool _isLoading = true;
 
   @override
   void initState() {
@@ -27,12 +30,16 @@ class _InventorySearchPage extends State<InventorySearchPage> {
   /// Carregar todos os produtos
   Future<void> _loadProducts() async {
     try {
-      final products = await DBItems.instance.getAllProducts();
+      final products = await DBItems.instance.getAllProducts1();
       setState(() {
         _allProducts = products;
-        _filteredProducts = products; // Exibe todos os produtos.
+        _filteredProducts = products;
+        _isLoading = false;
       });
     } catch (e) {
+      setState(() {
+        _isLoading = false; // Caso haja erro, também para o carregamento
+      });
       _showError('Erro ao carregar produtos do banco de dados: $e');
     }
   }
@@ -177,63 +184,157 @@ class _InventorySearchPage extends State<InventorySearchPage> {
               ),
             ),
           ),
-          Expanded(
-            child: ListView.builder(
-              itemCount: _filteredProducts.length,
-              itemBuilder: (context, index) {
-                final product = _filteredProducts[index];
-                return Card(
-                  margin: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 16.0),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  elevation: 4, // Sombra para o card
-                  child: ListTile(
-                    contentPadding: const EdgeInsets.all(8.0),
-                    title: SingleChildScrollView(
-                      scrollDirection: Axis.horizontal,
-                      child: Text(
-                        product['Name'],
-                        style: const TextStyle(fontWeight: FontWeight.bold),
-                      ),
+
+          _isLoading
+          ? const Expanded(
+              child: Center(
+                child: CircularProgressIndicator(
+                  valueColor: AlwaysStoppedAnimation<Color>(Colors.black),
+                ),
+              ),
+            )
+          : Expanded(
+              child: ListView.builder(
+                itemCount: _filteredProducts.length,
+                itemBuilder: (context, index) {
+                  final product = _filteredProducts[index];
+                  return Card(
+                    margin: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 16.0),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
                     ),
-                    subtitle: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        // Adicionando a imagem antes das informações do produto
-                        //if (product['ImageUrl'] != null && product['ImageUrl'].isNotEmpty)
-                          Padding(
-                            padding: const EdgeInsets.only(bottom: 8.0),
-                            child: ClipRRect(
-                              borderRadius: BorderRadius.circular(8),
-                              child: Image.network(
-                                product['ImageUrl'],
-                                height: 100,
-                                width: double.infinity,
-                                fit: BoxFit.cover,
-                                errorBuilder: (context, error, stackTrace) {
-                                  return const Icon(Icons.broken_image, size: 100, color: Colors.grey);
-                                },
-                              ),
+                    elevation: 4,
+                    child: ListTile(
+                      contentPadding: const EdgeInsets.all(8.0),
+                      title: SingleChildScrollView(
+                        scrollDirection: Axis.horizontal,
+                        child: Text(
+                          product['Name'],
+                          style: const TextStyle(fontWeight: FontWeight.bold),
+                        ),
+                      ),
+                      subtitle: Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          ClipRRect(
+                            borderRadius: BorderRadius.circular(8),
+                            child: product['path'] != null && product['path'].isNotEmpty
+                                ? Image.network(
+                                    product['path'],
+                                    height: 100,
+                                    width: 100,
+                                    fit: BoxFit.cover,
+                                    errorBuilder: (context, error, stackTrace) {
+                                      return const Icon(Icons.broken_image, size: 100, color: Colors.grey);
+                                    },
+                                  )
+                                : const Icon(Icons.broken_image, size: 100, color: Colors.grey),
+                          ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Row(
+                                  children: [
+                                    const SizedBox(
+                                      width: 110,
+                                      child: Text(
+                                        'Cód. de Barras:',
+                                        style: TextStyle(fontWeight: FontWeight.bold),
+                                      ),
+                                    ),
+                                    Expanded(
+                                      child: Text(
+                                        product['ItemBarCode'] ?? '',
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                Row(
+                                  children: [
+                                    const SizedBox(
+                                      width: 110,
+                                      child: Text(
+                                        'Item:',
+                                        style: TextStyle(fontWeight: FontWeight.bold),
+                                      ),
+                                    ),
+                                    Expanded(
+                                      child: Text(
+                                        product['ItemID'] ?? '',
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                Row(
+                                  children: [
+                                    const SizedBox(
+                                      width: 110,
+                                      child: Text(
+                                        'Linha:',
+                                        style: TextStyle(fontWeight: FontWeight.bold),
+                                      ),
+                                    ),
+                                    Expanded(
+                                      child: Text(
+                                        '${product['ProdLinesId'] ?? ''} - ${product['ProdLinesDescriptionId'] ?? ''}',
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                Row(
+                                  children: [
+                                    const SizedBox(
+                                      width: 110,
+                                      child: Text(
+                                        'Decoração:',
+                                        style: TextStyle(fontWeight: FontWeight.bold),
+                                      ),
+                                    ),
+                                    Expanded(
+                                      child: Text(
+                                        product['ProdDecorationDescriptionId'] ?? '',
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ],
                             ),
                           ),
-                        _alignRow('Código de Barras:', product['ItemBarCode']),
-                        _alignRow('Item:', product['ItemID']),
-                        _alignRow('Linha:', '${product['ProdLinesId'] ?? ''} - ${product['ProdLinesDescriptionId'] ?? ''}'),
-                        _alignRow('Decoração:', product['ProdDecorationDescriptionId'] ?? ''),
-                      ],
-                    ),
-                    onTap: () {
-                      // Retorna o produto selecionado para a página requisitante
-                      //widget.onProductSelected(product['ItemBarCode']);
-                      //Navigator.pop(context);
-                    },
-                  ),
-                );
-              },
-            ),
-          )
+                        ],
+                      ),
+                      onTap: () {
+                        final productObj = Product(
+                          itemBarCode: product['ItemBarCode'],
+                          itemId: product['ItemID'],
+                          name: product['Name'],
+                          prodLinesId: product['ProdLinesId'],
+                          prodLinesDescriptionId: product['ProdLinesDescriptionId'],
+                          prodDecorationDescriptionId: product['ProdDecorationDescriptionId'],
+                          unitVolumeML: product['UnitVolumeML'],
+                          itemNetWeight: product['ItemNetWeight'],
+                          prodFamilyId: product['ProdFamilyId'],
+                          prodFamilyDescription: product['ProdFamilyDescription'],
+                          prodBrandDescriptionId: product['ProdBrandDescriptionId'],
+                        );
 
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => ProductDetailsPage(product: productObj),
+                          ),
+                        );
+                      },
+                    ),
+                  );
+                },
+              ),
+            ),
         ],
       ),
       bottomNavigationBar: Container(

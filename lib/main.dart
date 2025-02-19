@@ -3,8 +3,10 @@ import 'package:flutter/material.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 import 'pages/importProduct.dart';
 import 'pages/management.dart';
-import 'pages/inventorySearch.dart';
-import 'pages/settings.dart';
+import 'pages/productSearch.dart';
+import 'pages/productDetail.dart';
+import 'pages/productImages.dart';
+//import 'pages/settings.dart';
 import 'pages/SettingsProfile.dart';
 import 'pages/InventoryHistory.dart';
 import 'pages/InventRecordsHistory.dart';
@@ -13,6 +15,7 @@ import 'menu/menu.dart';
 import 'pages/home.dart';
 import 'pages/inventory.dart';
 import 'pages/inventRecords.dart';
+import 'models/product.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -42,14 +45,24 @@ class MyApp extends StatelessWidget {
         '/inventoryExport': (context) => const InventoryHistory(),    // Rota para Exportação de Dados
         '/importProduct': (context) => ImportProduct(),               // Rota para Importação de Produtos
         '/sync': (context) => const SyncPage(),                       // Rota para Sincronização
-        '/inventorySearch': (context) => const InventorySearchPage(), // Rota para Pesquisar Produtos
-        //'/settings': (context) => const SettingsPage(),               // Rota para Configurações
-        '/settingsProfile': (context) => const SettingsProfilePage(),               // Rota para Configurações
+        '/productSearch': (context) => const ProductSearchPage(),     // Rota para Pesquisar Produtos
+        //'/ProductDetails': (context) => const ProductDetailsPage(),   // Rota para Pesquisar Produtos
+        '/ProductImages': (context) {
+          //final Product product = ModalRoute.of(context)?.settings.arguments as Product;
+          Product product = Product();
+          return ProductImagesPage(product: product); // Passe o produto para o construtor
+        },
+        '/productDetails': (context) {                        // Rota para Consultar Detalhes do Inventário
+          Product product = Product();
+          return ProductDetailsPage(product: product); // Passe o produto para o construtor
+        },
+        //'/settings': (context) => const SettingsPage(),             // Rota para Configurações
+        '/settingsProfile': (context) => const SettingsProfilePage(), // Rota para Configurações
         '/inventory': (context) => const InventoryPage(),             // Rota para Consultar Inventários
         '/inventoryHistory': (context) => const InventoryHistory(),   // Rota para Consultar Histórico
         '/inventoryHistoryDetail': (context) {                        // Rota para Consultar Detalhes do Inventário
           final int inventoryId = ModalRoute.of(context)?.settings.arguments as int;  // Recuperar o argumento passado na navegação
-          return InventoryHistoryDetail(inventoryId: inventoryId); // Passar o argumento para o construtor da página
+          return InventoryHistoryDetail(inventoryId: inventoryId);  // Passar o argumento para o construtor da página
         },
         '/inventoryRecord': (context) => InventoryRecordsPage(),
       },

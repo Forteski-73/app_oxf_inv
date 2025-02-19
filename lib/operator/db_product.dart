@@ -59,6 +59,10 @@ class DBItems {
   }
 
   Future _onCreate(Database db, int version) async {
+    //await db.execute('''DROP TABLE IF EXISTS $tableProductTags;''');
+    //await db.execute('''DROP TABLE IF EXISTS $tableProductImages;''');
+    //await db.execute('''DROP TABLE IF EXISTS $tableProducts;''');
+
     // Criando a tabela de produtos
     await db.execute('''
       CREATE TABLE $tableProducts (
@@ -82,7 +86,7 @@ class DBItems {
     await db.execute('''
       CREATE TABLE $tableProductImages (
         $columnImageId           INTEGER PRIMARY KEY AUTOINCREMENT,
-        $columnImagePath         TEXT,
+        $columnImagePath         TEXT UNIQUE,
         $columnImageSequence     INTEGER,
         $columnProductId         TEXT,
         FOREIGN KEY ($columnProductId) REFERENCES $tableProducts($columnItemId) ON DELETE CASCADE
@@ -93,7 +97,7 @@ class DBItems {
     await db.execute('''
       CREATE TABLE $tableProductTags (
         $columnTagId        INTEGER PRIMARY KEY AUTOINCREMENT,
-        $columnTag          TEXT,
+        $columnTag          TEXT UNIQUE,
         $columnTagProductId TEXT,
         FOREIGN KEY ($columnTagProductId) REFERENCES $tableProducts($columnItemId) ON DELETE CASCADE
       );
@@ -114,6 +118,21 @@ class DBItems {
     Database db = await instance.database;
     return List<Map<String, dynamic>>.from(await db.query(tableProducts));
   }
+
+Future<List<Map<String, dynamic>>> getAllProducts1() async {
+  Database db = await instance.database;
+  
+  // Consulta que retorna todos os produtos junto com o caminho da imagem da sequência 1
+  final List<Map<String, dynamic>> products = await db.rawQuery('''
+    SELECT p.*, COALESCE(i.$columnImagePath, '') AS $columnImagePath
+    FROM $tableProducts p
+    LEFT JOIN $tableProductImages i 
+      ON p.$columnItemId = i.$columnProductId 
+      AND i.$columnImageSequence = 1
+  ''');
+  
+  return products;
+}
 
   Future<int> updateProduct(Map<String, dynamic> product) async {
     Database db = await instance.database;
@@ -149,6 +168,25 @@ class DBItems {
     );
   }
 
+  Future<List<Map<String, dynamic>>> getProductTags(String productId) async {
+    Database db = await instance.database;
+    return List<Map<String, dynamic>>.from(await db.query(
+      tableProductTags,
+      where: '$columnProductId = ?',
+      whereArgs: [productId],
+    ));
+  }
+
+  Future<int> insertProductTag(Map<String, dynamic> tag) async {
+    
+    Database db = await instance.database;
+    return await db.insert(
+      tableProductTags,
+      tag,
+      conflictAlgorithm: ConflictAlgorithm.replace,  // Se já existir substitui
+    );
+  }
+
   Future<List<Map<String, dynamic>>> getProductImages(String productId) async {
     Database db = await instance.database;
     return List<Map<String, dynamic>>.from(await db.query(
@@ -180,9 +218,41 @@ class DBItems {
   Future<int> deleteProductImagesByProduct(String productId) async {
     Database db = await instance.database;
     return await db.delete(
+      tableProductTags,
+      where: '$columnProductId = ?',
+      whereArgs: [productId],
+    );
+  }
+
+    Future<int> deleteProductTagsByProduct(String productId) async {
+    Database db = await instance.database;
+    return await db.delete(
       tableProductImages,
       where: '$columnProductId = ?',
       whereArgs: [productId],
     );
   }
+
+  Future<void> salvarImagens(int sequence, String productId, String path) async {
+
+        // Insere o caminho da imagem e o índice na tabela de imagens
+        await insertProductImage({
+          columnImagePath: path,
+          columnImageSequence: sequence, // O índice da imagem
+          columnProductId: productId, // ID do produto
+        });
+      
+
+  }
+
+Future<void> updateImageSequence(String imagePath, int newSequence) async {
+  Database db = await instance.database;
+  await db.update(
+    tableProductImages,
+    {DBItems.columnImageSequence: newSequence},
+    where: '${DBItems.columnImagePath} = ?',
+    whereArgs: [imagePath],
+  );
+}
+
 }
