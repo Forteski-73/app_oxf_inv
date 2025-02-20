@@ -193,6 +193,7 @@ Future<List<Map<String, dynamic>>> getAllProducts1() async {
       tableProductImages,
       where: '$columnProductId = ?',
       whereArgs: [productId],
+      orderBy: '$columnImageSequence ASC',
     ));
   }
 

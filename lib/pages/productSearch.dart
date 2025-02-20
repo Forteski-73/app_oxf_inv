@@ -4,6 +4,7 @@ import 'package:http/http.dart' as http;
 import 'package:app_oxf_inv/operator/db_product.dart';
 import '../models/product.dart';
 import 'productDetail.dart';
+import 'dart:io';
 
 class ProductSearchPage extends StatefulWidget {
   const ProductSearchPage({super.key});
@@ -143,6 +144,12 @@ class _ProductSearchPage extends State<ProductSearchPage> {
     );
   }
 
+  /*@override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    setState(() {}); // Recarrega os dados ao voltar
+  }*/
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -205,7 +212,7 @@ class _ProductSearchPage extends State<ProductSearchPage> {
                     ),
                     elevation: 4,
                     child: ListTile(
-                      contentPadding: const EdgeInsets.all(8.0),
+                      contentPadding: const EdgeInsets.only(left: 8.0, right: 8.0, bottom: 8.0),
                       title: SingleChildScrollView(
                         scrollDirection: Axis.horizontal,
                         child: Text(
@@ -216,6 +223,32 @@ class _ProductSearchPage extends State<ProductSearchPage> {
                       subtitle: Row(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
+                          ClipRRect(
+                            borderRadius: BorderRadius.circular(8),
+                            child: product['path'] != null && product['path'].isNotEmpty
+                                ? product['path'].startsWith('http')
+                                    ? Image.network(
+                                        product['path'],
+                                        height: 100,
+                                        width: 100,
+                                        fit: BoxFit.cover,
+                                        errorBuilder: (context, error, stackTrace) {
+                                          return const Icon(Icons.broken_image, size: 100, color: Colors.grey);
+                                        },
+                                      )
+                                    : Image.file(
+                                        File(product['path']),
+                                        height: 100,
+                                        width: 100,
+                                        fit: BoxFit.cover,
+                                        errorBuilder: (context, error, stackTrace) {
+                                          return const Icon(Icons.broken_image, size: 100, color: Colors.grey);
+                                        },
+                                      )
+                                : const Icon(Icons.broken_image, size: 100, color: Colors.grey),
+                          ),
+                          /*
+                          ***************USAR ESSE QUANDO O CAMINHO DA IMAGEM FOR HTTP OU HTTPS .... IMAGEM DE SERVER WEB ******************
                           ClipRRect(
                             borderRadius: BorderRadius.circular(8),
                             child: product['path'] != null && product['path'].isNotEmpty
@@ -230,6 +263,7 @@ class _ProductSearchPage extends State<ProductSearchPage> {
                                   )
                                 : const Icon(Icons.broken_image, size: 100, color: Colors.grey),
                           ),
+                          */
                           const SizedBox(width: 8),
                           Expanded(
                             child: Column(
@@ -308,7 +342,7 @@ class _ProductSearchPage extends State<ProductSearchPage> {
                           ),
                         ],
                       ),
-                      onTap: () {
+                      onTap: () async {
                         final productObj = Product(
                           itemBarCode: product['ItemBarCode'],
                           itemId: product['ItemID'],
@@ -322,13 +356,26 @@ class _ProductSearchPage extends State<ProductSearchPage> {
                           prodFamilyDescription: product['ProdFamilyDescription'],
                           prodBrandDescriptionId: product['ProdBrandDescriptionId'],
                         );
-
-                        Navigator.push(
+                        
+                        final updatedProduct = await Navigator.push(
                           context,
                           MaterialPageRoute(
                             builder: (context) => ProductDetailsPage(product: productObj),
                           ),
                         );
+
+                        if (updatedProduct != null) {
+                          setState(() {
+                            // Encontra o índice do produto na lista
+                            int index = _filteredProducts.indexWhere((p) => p['ItemID'] == product['ItemID']);
+                            if (index != -1) {
+                              setState(() {
+                                _filteredProducts = List.from(_filteredProducts); // Copia o objeto pra não ficar dando pau de ReadOnly
+                                _filteredProducts[index] = Map.from(_filteredProducts[index])..['path'] = updatedProduct.path;
+                              });
+                            }
+                          });
+                        }
                       },
                     ),
                   );

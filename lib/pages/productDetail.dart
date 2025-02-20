@@ -1,9 +1,6 @@
 import 'package:flutter/material.dart';
 import '../models/product.dart';
-import 'package:image_picker/image_picker.dart';
 import 'dart:io';
-import 'package:path_provider/path_provider.dart';
-import 'package:reorderables/reorderables.dart';
 import 'package:app_oxf_inv/operator/db_product.dart';
 import 'productImages.dart';
 
@@ -43,6 +40,7 @@ class _ProductDetailsPageState extends State<ProductDetailsPage> {
         // Exibe a primeira imagem, se houver
         if (imagens.isNotEmpty) {
           imagePath = imagens[0].path;
+          widget.product.setPath(imagePath.toString());
         }
       });
     } catch (e) {
@@ -60,17 +58,25 @@ class _ProductDetailsPageState extends State<ProductDetailsPage> {
           mainAxisAlignment: MainAxisAlignment.start,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Aplicativo de Consulta de Estrutura de Produtos. ACEP',
+            Text(
+              'Aplicativo de Consulta de Estrutura de Produtos. ACEP',
               style: TextStyle(color: Colors.white, fontSize: 12),
             ),
             SizedBox(height: 2),
-            Text('Estrutura do Produto',
+            Text(
+              'Estrutura do Produto',
               style: TextStyle(color: Colors.white, fontSize: 20),
             ),
           ],
         ),
         backgroundColor: Colors.black,
         iconTheme: const IconThemeData(color: Colors.white),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () {
+            Navigator.pop(context, widget.product); // Retorna o produto atualizado ao voltar
+          },
+        ),
       ),
       body: SingleChildScrollView(
         child: Padding(

@@ -62,13 +62,13 @@ class _ProductImagesPageState extends State<ProductImagesPage> {
 
       // Salvar as imagens no diretório temporário e no banco de dados
       for (int i = 0; i < imagens.length; i++) {
-        final file = imagens[i];
-        final path = '${directory.path}/imagem_${i + 1}.jpg';
-        await file.copy(path);
+        //final file = imagens[i];
+        //final path = '${directory.path}/imagem_${i + 1}.jpg';
+        //await file.copy(path);
 
         // Inserir a imagem na tabela com a sequência correta
         await DBItems.instance.insertProductImage({
-          DBItems.columnImagePath: path,
+          DBItems.columnImagePath: imagens[i].path,
           DBItems.columnImageSequence: i + 1, // A sequência é 1-based
           DBItems.columnProductId: widget.product.itemId,
         });

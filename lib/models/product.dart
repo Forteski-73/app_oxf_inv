@@ -8,6 +8,7 @@ class Product {
   final String prodDecorationDescriptionId;
   final String itemId;
   final String name;
+        String path;
   final double unitVolumeML;
   final double itemNetWeight;
   final String prodFamilyId;
@@ -24,6 +25,7 @@ class Product {
     this.prodDecorationDescriptionId = "",
     this.itemId = "",
     this.name = "",
+    this.path = "",
     this.unitVolumeML = 0.0,
     this.itemNetWeight = 0.0,
     this.prodFamilyId = "",
@@ -42,6 +44,7 @@ class Product {
       'ProdDecorationDescriptionId': prodDecorationDescriptionId,
       'ItemID': itemId,
       'Name': name,
+      'path': path,
       'UnitVolumeML': unitVolumeML,
       'ItemNetWeight': itemNetWeight,
       'ProdFamilyId': prodFamilyId,
@@ -61,10 +64,16 @@ class Product {
       prodDecorationDescriptionId: map['ProdDecorationDescriptionId'] ?? '',
       itemId: map['ItemID'] ?? '',
       name: map['Name'] ?? '',
+      path: map['path'] ?? '',
       unitVolumeML: map['UnitVolumeML']?.toDouble() ?? 0.0,
       itemNetWeight: map['ItemNetWeight']?.toDouble() ?? 0.0,
       prodFamilyId: map['ProdFamilyId'] ?? '',
       prodFamilyDescription: map['ProdFamilyDescription'] ?? '',
     );
   }
+
+  void setPath(String newPath) {
+    path = newPath;
+  }
+
 }
