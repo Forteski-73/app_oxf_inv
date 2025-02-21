@@ -16,6 +16,7 @@ class _SearchProductState extends State<SearchProduct> {
   final TextEditingController _searchController = TextEditingController();
   List<Map<String, dynamic>> _allProducts       = [];
   List<Map<String, dynamic>> _filteredProducts  = [];
+  bool isLoading = false;
   final String _apiUrl  = "http://wsintegrador.oxfordporcelanas.com.br:90/api/produtoEstrutura/";
   //final String _apiUrl  = "http://wsintegradordev.oxfordporcelanas.com.br:92/v1/produtos/GetAPIProdutos?familia=0002&marca=oxford&linha=FLAMINGO&decoracao=FLAMINGO&situacao=FORA&ordem=0&pagina=0&qtpagina=1";
   final String _token   = "4d24e4ff-85d62cca-d0cad84f-440e706e";
@@ -30,14 +31,21 @@ class _SearchProductState extends State<SearchProduct> {
   Future<void> _loadProducts() async {
     
     //await DBItems.instance.deleteAllProducts();
+    setState(() {
+      isLoading = true; // Inicia o carregamento
+    });
 
     try {
       final products = await DBItems.instance.getAllProducts();
       setState(() {
         _allProducts = products;
         _filteredProducts = products; // Exibe todos os produtos.
+        isLoading = false;
       });
     } catch (e) {
+      setState(() {
+        isLoading = false;
+      });
       _showError('Erro ao carregar produtos do banco de dados: $e');
     }
   }
@@ -177,65 +185,75 @@ class _SearchProductState extends State<SearchProduct> {
         backgroundColor: Colors.black,
         iconTheme: const IconThemeData(color: Colors.white),
       ),
-      body: Column(
+      body: Stack(
         children: [
-          Padding(
-            padding: const EdgeInsets.all(8.0),
-            child: TextField(
-              controller: _searchController,
-              onChanged: (value) {
-                _filterProducts(value);
-              },
-              decoration: InputDecoration(
-                labelText: 'Pesquisar',
-                border: const OutlineInputBorder(),
-                prefixIcon: InkWell(
-                  onTap: () {
-                    _searchProduct(_searchController.text);
+          Column(
+            children: [
+              Padding(
+                padding: const EdgeInsets.all(8.0),
+                child: TextField(
+                  controller: _searchController,
+                  onChanged: (value) {
+                    _filterProducts(value);
                   },
-                  child: const Icon(Icons.search),
+                  decoration: InputDecoration(
+                    labelText: 'Pesquisar',
+                    border: const OutlineInputBorder(),
+                    prefixIcon: InkWell(
+                      onTap: () {
+                        _searchProduct(_searchController.text);
+                      },
+                      child: const Icon(Icons.search),
+                    ),
+                  ),
                 ),
               ),
-            ),
-          ),
-          Expanded(
-            child: ListView.builder(
-              itemCount: _filteredProducts.length,
-              itemBuilder: (context, index) {
-                final product = _filteredProducts[index];
-                return Card(
-                  margin: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 16.0),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  elevation: 4,  // Sombra para o card
-                  child: ListTile(
-                    title: SingleChildScrollView(
-                      scrollDirection: Axis.horizontal,
-                      child: Text(
-                        product['Name'],
-                        style: const TextStyle(fontWeight: FontWeight.bold),
+              Expanded(
+                child: ListView.builder(
+                  itemCount: _filteredProducts.length,
+                  itemBuilder: (context, index) {
+                    final product = _filteredProducts[index];
+                    return Card(
+                      margin: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 16.0),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
                       ),
-                    ),
-                    subtitle: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        _alignRow('Código de Barras:',  product['ItemBarCode']),
-                        _alignRow('Item:',              product['ItemID']),
-                        _alignRow('Linha:',             '${product['ProdLinesId'] ?? ''} - ${product['ProdLinesDescriptionId'] ?? ''}'),
-                        _alignRow('Decoração:',         product['ProdDecorationDescriptionId'] ?? ''),
-                      ],
-                    ),
-                    onTap: () {
-                      // Retorna o produto selecionado para a página requisitante
-                      widget.onProductSelected(product['ItemBarCode']);
-                      Navigator.pop(context);
-                    },
-                  ),
-                );
-              },
-            ),
+                      elevation: 4,  // Sombra para o card
+                      child: ListTile(
+                        title: SingleChildScrollView(
+                          scrollDirection: Axis.horizontal,
+                          child: Text(
+                            product['Name'],
+                            style: const TextStyle(fontWeight: FontWeight.bold),
+                          ),
+                        ),
+                        subtitle: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            _alignRow('Código de Barras:',  product['ItemBarCode']),
+                            _alignRow('Item:',              product['ItemID']),
+                            _alignRow('Linha:',             '${product['ProdLinesId'] ?? ''} - ${product['ProdLinesDescriptionId'] ?? ''}'),
+                            _alignRow('Decoração:',         product['ProdDecorationDescriptionId'] ?? ''),
+                          ],
+                        ),
+                        onTap: () {
+                          // Retorna o produto selecionado para a página requisitante
+                          widget.onProductSelected(product['ItemBarCode']);
+                          Navigator.pop(context);
+                        },
+                      ),
+                    );
+                  },
+                ),
+              ),
+            ],
           ),
+          if (isLoading)
+            const Center(
+              child: CircularProgressIndicator(
+                color: Colors.black,
+              ),
+            ),
         ],
       ),
       bottomNavigationBar: Container(
@@ -251,4 +269,5 @@ class _SearchProductState extends State<SearchProduct> {
       ),
     );
   }
+
 }

@@ -140,27 +140,57 @@ class _ProductImagesPageState extends State<ProductImagesPage> {
     }
   }
 
+  void _showInfoDialog() {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text("Informações"),
+          content: const Text(
+            "Oxford Porcelanas \n\n"
+            "Versão: 1.0\n",
+          ),
+          actions: <Widget>[
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+              child: const Text("Fechar", style: TextStyle(color: Colors.black)),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-      title: const Column(
-        mainAxisAlignment: MainAxisAlignment.start,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text('Aplicativo de Consulta de Estrutura de Produtos. ACEP',
-            style: TextStyle(color: Colors.white,fontSize: 12,),
-          ),
-          SizedBox(height: 2),
-          Text('Editar Produto',
-            style: TextStyle(color: Colors.white, fontSize: 20, ),
+        title: const Column(
+          mainAxisAlignment: MainAxisAlignment.start,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('Aplicativo de Consulta de Estrutura de Produtos. ACEP',
+              style: TextStyle(color: Colors.white, fontSize: 12),
+            ),
+            SizedBox(height: 2),
+            Text('Editar Produto',
+              style: TextStyle(color: Colors.white, fontSize: 20),
+            ),
+          ],
+        ),
+        backgroundColor: Colors.black,
+        iconTheme: const IconThemeData(color: Colors.white),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.info_outline),
+            onPressed: _showInfoDialog,
+            tooltip: 'Informações',
           ),
         ],
       ),
-      backgroundColor: Colors.black,
-      iconTheme: const IconThemeData(color: Colors.white),
-      ),
-      body: SingleChildScrollView(  
+      body: SingleChildScrollView(
         child: Padding(
           padding: const EdgeInsets.all(16.0),
           child: Column(
@@ -179,7 +209,7 @@ class _ProductImagesPageState extends State<ProductImagesPage> {
                           const Text(
                             'CÓDIGO: ', style: TextStyle(fontWeight: FontWeight.bold),
                           ),
-                          Text(widget.product.itemId, style: const TextStyle(fontSize: 15),),
+                          Text(widget.product.itemId, style: const TextStyle(fontSize: 15)),
                         ],
                       ),
                       Wrap(
@@ -250,8 +280,8 @@ class _ProductImagesPageState extends State<ProductImagesPage> {
                         spacing: 8,
                         children: tag.map((caract) {
                           return Chip(
-                            label: Text(caract, style: const TextStyle(fontSize: 16,)),
-                            deleteIcon: const Icon(Icons.highlight_off_outlined, color: Colors.red, size: 20,),
+                            label: Text(caract, style: const TextStyle(fontSize: 16)),
+                            deleteIcon: const Icon(Icons.highlight_off_outlined, color: Colors.red, size: 20),
                             onDeleted: () {
                               setState(() {
                                 tag.remove(caract);
@@ -271,7 +301,7 @@ class _ProductImagesPageState extends State<ProductImagesPage> {
                 children: [
                   Container(
                     width: double.infinity,
-                    constraints: const BoxConstraints(minHeight: 80), 
+                    constraints: const BoxConstraints(minHeight: 80),
                     child: Card(
                       elevation: 2,
                       child: Padding(
@@ -286,62 +316,61 @@ class _ProductImagesPageState extends State<ProductImagesPage> {
                             SizedBox(
                               width: double.infinity, // Faz a ReorderableWrap ocupar toda a largura
                               child: ReorderableWrap(
-  onReorder: (oldIndex, newIndex) {
-    setState(() {
-      // Atualiza a lista de imagens para refletir a nova ordem
-      final imagem = imagens.removeAt(oldIndex); // Remove a imagem da posição antiga
-      imagens.insert(newIndex, imagem); // Insere a imagem na nova posição
-    });
-  },
-  scrollDirection: Axis.horizontal,
-  children: List.generate(imagens.length, (index) {
-    File imagem = imagens[index];
-    bool isSelected = isZoomed && zoomedIndex == index;
+                                onReorder: (oldIndex, newIndex) {
+                                  setState(() {
+                                    // Atualiza a lista de imagens para refletir a nova ordem
+                                    final imagem = imagens.removeAt(oldIndex); // Remove a imagem da posição antiga
+                                    imagens.insert(newIndex, imagem); // Insere a imagem na nova posição
+                                  });
+                                },
+                                scrollDirection: Axis.horizontal,
+                                children: List.generate(imagens.length, (index) {
+                                  File imagem = imagens[index];
+                                  bool isSelected = isZoomed && zoomedIndex == index;
 
-    return Stack(
-      key: ValueKey(index),
-      children: [
-        GestureDetector(
-          onTap: () {
-            setState(() {
-              if (isSelected) {
-                isZoomed = false;
-                zoomedIndex = -1;
-              } else {
-                isZoomed = true;
-                zoomedIndex = index;
-              }
-            });
-          },
-          child: AnimatedContainer(
-            duration: const Duration(milliseconds: 300),
-            margin: const EdgeInsets.all(4),
-            width: isSelected ? 250 : 80,
-            height: isSelected ? 250 : 80,
-            decoration: BoxDecoration(
-              border: Border.all(
-                color: imagemPrincipalIndex == index ? Colors.orange : Colors.grey,
-                width: 2,
-              ),
-              image: DecorationImage(
-                image: FileImage(imagem),
-                fit: BoxFit.cover,
-              ),
-            ),
-          ),
-        ),
-        Positioned(
-          right: 0,
-          child: GestureDetector(
-            onTap: () => removerImagem(index),
-            child: const Icon(Icons.cancel, color: Colors.red),
-          ),
-        ),
-      ],
-    );
-  }),
-)
-
+                                  return Stack(
+                                    key: ValueKey(index),
+                                    children: [
+                                      GestureDetector(
+                                        onTap: () {
+                                          setState(() {
+                                            if (isSelected) {
+                                              isZoomed = false;
+                                              zoomedIndex = -1;
+                                            } else {
+                                              isZoomed = true;
+                                              zoomedIndex = index;
+                                            }
+                                          });
+                                        },
+                                        child: AnimatedContainer(
+                                          duration: const Duration(milliseconds: 300),
+                                          margin: const EdgeInsets.all(4),
+                                          width: isSelected ? 250 : 80,
+                                          height: isSelected ? 250 : 80,
+                                          decoration: BoxDecoration(
+                                            border: Border.all(
+                                              color: imagemPrincipalIndex == index ? Colors.orange : Colors.grey,
+                                              width: 2,
+                                            ),
+                                            image: DecorationImage(
+                                              image: FileImage(imagem),
+                                              fit: BoxFit.cover,
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                      Positioned(
+                                        right: 0,
+                                        child: GestureDetector(
+                                          onTap: () => removerImagem(index),
+                                          child: const Icon(Icons.cancel, color: Colors.red),
+                                        ),
+                                      ),
+                                    ],
+                                  );
+                                }),
+                              ),
                             ),
                           ],
                         ),
@@ -360,22 +389,25 @@ class _ProductImagesPageState extends State<ProductImagesPage> {
               ),
               const SizedBox(height: 20),
               // Botão para salvar alterações com o ícone
-              ElevatedButton(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.black,
-                  padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 12),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.black,
+                    padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 12),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
                   ),
-                ),
-                onPressed: saveTagsImages,
-                child: const Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(Icons.save, color: Colors.white, size: 25),
-                    SizedBox(width: 8),  // Espaçamento entre o ícone e o texto
-                    Text('Salvar', style: TextStyle(color: Colors.white, fontSize: 16)),
-                  ],
+                  onPressed: saveTagsImages,
+                  child: const Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(Icons.save, color: Colors.white, size: 25),
+                      SizedBox(width: 8),  // Espaçamento entre o ícone e o texto
+                      Text('Salvar', style: TextStyle(color: Colors.white, fontSize: 16)),
+                    ],
+                  ),
                 ),
               ),
             ],
@@ -384,11 +416,18 @@ class _ProductImagesPageState extends State<ProductImagesPage> {
       ),
       bottomNavigationBar: BottomAppBar(
         color: Colors.white,
+        shape: const CircularNotchedRectangle(),
+        height: 64, // Altura
         child: IconButton(
           icon: const Icon(Icons.home, size: 30),
-          onPressed: () {},
+          padding: EdgeInsets.zero,
+          constraints: const BoxConstraints(), // Remove restrições de tamanho extra
+          onPressed: () {
+            Navigator.pushNamed(context, '/');
+          },
         ),
       ),
     );
   }
+
 }

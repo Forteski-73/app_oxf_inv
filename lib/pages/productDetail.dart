@@ -3,6 +3,7 @@ import '../models/product.dart';
 import 'dart:io';
 import 'package:app_oxf_inv/operator/db_product.dart';
 import 'productImages.dart';
+import 'package:smooth_page_indicator/smooth_page_indicator.dart';
 
 class ProductDetailsPage extends StatefulWidget {
   final Product product;
@@ -14,6 +15,7 @@ class ProductDetailsPage extends StatefulWidget {
 }
 
 class _ProductDetailsPageState extends State<ProductDetailsPage> {
+  final PageController _pageController = PageController();
   String? imagePath;
   List<File> imagens = [];
 
@@ -50,6 +52,30 @@ class _ProductDetailsPageState extends State<ProductDetailsPage> {
     }
   }
 
+  // Função para exibir a popup de informações
+  void _showInfoDialog() {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text("Informações"),
+          content: const Text(
+            "Oxford Porcelanas \n\n"
+            "Versão: 1.0\n",
+          ),
+          actions: <Widget>[
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+              child: const Text("Fechar", style: TextStyle(color: Colors.black)),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -58,25 +84,24 @@ class _ProductDetailsPageState extends State<ProductDetailsPage> {
           mainAxisAlignment: MainAxisAlignment.start,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              'Aplicativo de Consulta de Estrutura de Produtos. ACEP',
-              style: TextStyle(color: Colors.white, fontSize: 12),
+            Text('Aplicativo de Consulta de Estrutura de Produtos. ACEP',
+              style: TextStyle(color: Colors.white,fontSize: 12,),
             ),
             SizedBox(height: 2),
-            Text(
-              'Estrutura do Produto',
-              style: TextStyle(color: Colors.white, fontSize: 20),
+            Text('Estrutura do Produto',
+              style: TextStyle(color: Colors.white, fontSize: 20, ),
             ),
           ],
         ),
         backgroundColor: Colors.black,
         iconTheme: const IconThemeData(color: Colors.white),
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
-          onPressed: () {
-            Navigator.pop(context, widget.product); // Retorna o produto atualizado ao voltar
-          },
-        ),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.info_outline),
+            onPressed: _showInfoDialog,
+            tooltip: 'Informações',
+          ),
+        ],
       ),
       body: SingleChildScrollView(
         child: Padding(
@@ -85,56 +110,78 @@ class _ProductDetailsPageState extends State<ProductDetailsPage> {
             children: [
               Stack(
                 children: [
-                  Container(
-                    width: double.infinity,
-                    constraints: const BoxConstraints(minHeight: 250),
-                    child: Card(
-                      elevation: 2,
-                      child: Padding(
-                        padding: const EdgeInsets.all(8.0),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            const Text(
-                              'Imagens do Produto',
-                              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+Container(
+  width: double.infinity,
+  constraints: const BoxConstraints(minHeight: 250),
+  child: Card(
+    elevation: 2,
+    child: Padding(
+      padding: const EdgeInsets.all(8.0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'Imagens do Produto',
+            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+          ),
+          const SizedBox(height: 8),
+          // Carregamento das imagens em um PageView com Stack
+          imagens.isNotEmpty
+              ? SizedBox(
+                  height: 260, // Define a altura do carousel
+                  child: Stack(
+                    children: [
+                      // O PageView com as imagens
+                      PageView.builder(
+                        controller: _pageController,  // Controller do PageView
+                        itemCount: imagens.length,
+                        itemBuilder: (context, index) {
+                          return Image.file(
+                            imagens[index],
+                            fit: BoxFit.cover,
+                            errorBuilder: (context, error, stackTrace) {
+                              return const Center(
+                                child: Icon(
+                                  Icons.image_not_supported,
+                                  size: 50,
+                                  color: Colors.grey,
+                                ),
+                              );
+                            },
+                          );
+                        },
+                      ),
+                      // As bolinhas de navegação no rodapé (sobre a imagem)
+                      Positioned(
+                        bottom: 10, // Distância do rodapé
+                        left: 0,
+                        right: 0,
+                        child: Center(
+                          child: SmoothPageIndicator(
+                            controller: _pageController,  // Controller do PageView
+                            count: imagens.length,
+                            effect: const WormEffect(
+                              dotColor: Colors.grey, // Cor das bolinhas inativas
+                              activeDotColor: Colors.blueAccent, // Cor da bolinha ativa
                             ),
-                            const SizedBox(height: 8),
-                            // Carregamento das imagens em um PageView
-                            imagens.isNotEmpty
-                                ? SizedBox(
-                                    height: 250, // Define a altura do carousel
-                                    child: PageView.builder(
-                                      itemCount: imagens.length,
-                                      itemBuilder: (context, index) {
-                                        return Image.file(
-                                          imagens[index],
-                                          fit: BoxFit.cover,
-                                          errorBuilder: (context, error, stackTrace) {
-                                            return const Center(
-                                              child: Icon(
-                                                Icons.image_not_supported,
-                                                size: 50,
-                                                color: Colors.grey,
-                                              ),
-                                            );
-                                          },
-                                        );
-                                      },
-                                    ),
-                                  )
-                                : const Center(
-                                    child: Icon(
-                                      Icons.image_not_supported,
-                                      size: 50,
-                                      color: Colors.grey,
-                                    ),
-                                  ),
-                          ],
+                          ),
                         ),
                       ),
-                    ),
+                    ],
                   ),
+                )
+              : const Center(
+                  child: Icon(
+                    Icons.image_not_supported,
+                    size: 50,
+                    color: Colors.grey,
+                  ),
+                ),
+        ],
+      ),
+    ),
+  ),
+),
 
                   // Ícone de edição posicionado no topo direito, sobre o PageView
                   Positioned(
@@ -156,13 +203,13 @@ class _ProductDetailsPageState extends State<ProductDetailsPage> {
                         margin: const EdgeInsets.all(8),
                         decoration: const BoxDecoration(
                           shape: BoxShape.circle,
-                          color: Colors.black54,
+                          color: Colors.blueAccent, // black54
                         ),
                         padding: const EdgeInsets.all(6),
                         child: const Icon(
                           Icons.edit,
                           color: Colors.white,
-                          size: 30,
+                          size: 32,
                         ),
                       ),
                     ),
@@ -201,6 +248,19 @@ class _ProductDetailsPageState extends State<ProductDetailsPage> {
               ]),
             ],
           ),
+        ),
+      ),
+      bottomNavigationBar: BottomAppBar(
+        color: Colors.white,
+        shape: const CircularNotchedRectangle(),
+        height: 64, // Altura
+        child: IconButton(
+          icon: const Icon(Icons.home, size: 30),
+          padding: EdgeInsets.zero,
+          constraints: const BoxConstraints(), // Remove restrições de tamanho extra
+          onPressed: () {
+            Navigator.pushNamed(context, '/');
+          },
         ),
       ),
     );

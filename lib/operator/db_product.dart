@@ -246,14 +246,27 @@ Future<List<Map<String, dynamic>>> getAllProducts1() async {
 
   }
 
-Future<void> updateImageSequence(String imagePath, int newSequence) async {
-  Database db = await instance.database;
-  await db.update(
-    tableProductImages,
-    {DBItems.columnImageSequence: newSequence},
-    where: '${DBItems.columnImagePath} = ?',
-    whereArgs: [imagePath],
-  );
-}
+  Future<void> updateImageSequence(String imagePath, int newSequence) async {
+    Database db = await instance.database;
+    await db.update(
+      tableProductImages,
+      {DBItems.columnImageSequence: newSequence},
+      where: '${DBItems.columnImagePath} = ?',
+      whereArgs: [imagePath],
+    );
+  }
+
+  Future<Map<String, dynamic>> getProductDetails(String productId) async {
+    Database db = await instance.database;
+
+    // Consulta para obter os detalhes do produto com base no itemId
+    final List<Map<String, dynamic>> productDetails = await db.query(
+      tableProducts,
+      where: '$columnItemId = ?',
+      whereArgs: [productId],
+    );
+      return productDetails.first;
+    
+  }
 
 }
