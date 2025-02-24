@@ -297,96 +297,118 @@ class _ProductImagesPageState extends State<ProductImagesPage> {
               const SizedBox(height: 16),
 
               // Card para as imagens
-              Stack(
-                children: [
-                  Container(
-                    width: double.infinity,
-                    constraints: const BoxConstraints(minHeight: 80),
-                    child: Card(
-                      elevation: 2,
-                      child: Padding(
-                        padding: const EdgeInsets.all(8.0),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            const Text(
-                              'Imagens',
-                              style: TextStyle(fontWeight: FontWeight.bold),
-                            ),
-                            SizedBox(
-                              width: double.infinity, // Faz a ReorderableWrap ocupar toda a largura
-                              child: ReorderableWrap(
-                                onReorder: (oldIndex, newIndex) {
-                                  setState(() {
-                                    // Atualiza a lista de imagens para refletir a nova ordem
-                                    final imagem = imagens.removeAt(oldIndex); // Remove a imagem da posição antiga
-                                    imagens.insert(newIndex, imagem); // Insere a imagem na nova posição
-                                  });
-                                },
-                                scrollDirection: Axis.horizontal,
-                                children: List.generate(imagens.length, (index) {
-                                  File imagem = imagens[index];
-                                  bool isSelected = isZoomed && zoomedIndex == index;
+// Card para as imagens
+Stack(
+  children: [
+    Container(
+      width: double.infinity,
+      constraints: const BoxConstraints(minHeight: 80),
+      child: Card(
+        elevation: 2,
+        child: Padding(
+          padding: const EdgeInsets.all(8.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'Imagens',
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
+              SizedBox(
+                width: double.infinity, // Faz a ReorderableWrap ocupar toda a largura
+                child: ReorderableWrap(
+                  onReorder: (oldIndex, newIndex) {
+                    setState(() {
+                      // Atualiza a lista de imagens para refletir a nova ordem
+                      final imagem = imagens.removeAt(oldIndex);
+                      imagens.insert(newIndex, imagem);
+                    });
+                  },
+                  scrollDirection: Axis.horizontal,
+                  children: List.generate(imagens.length, (index) {
+                    File imagem = imagens[index];
+                    bool isSelected = isZoomed && zoomedIndex == index;
 
-                                  return Stack(
-                                    key: ValueKey(index),
-                                    children: [
-                                      GestureDetector(
-                                        onTap: () {
-                                          setState(() {
-                                            if (isSelected) {
-                                              isZoomed = false;
-                                              zoomedIndex = -1;
-                                            } else {
-                                              isZoomed = true;
-                                              zoomedIndex = index;
-                                            }
-                                          });
-                                        },
-                                        child: AnimatedContainer(
-                                          duration: const Duration(milliseconds: 300),
-                                          margin: const EdgeInsets.all(4),
-                                          width: isSelected ? 250 : 80,
-                                          height: isSelected ? 250 : 80,
-                                          decoration: BoxDecoration(
-                                            border: Border.all(
-                                              color: imagemPrincipalIndex == index ? Colors.orange : Colors.grey,
-                                              width: 2,
-                                            ),
-                                            image: DecorationImage(
-                                              image: FileImage(imagem),
-                                              fit: BoxFit.cover,
-                                            ),
-                                          ),
-                                        ),
-                                      ),
-                                      Positioned(
-                                        right: 0,
-                                        child: GestureDetector(
-                                          onTap: () => removerImagem(index),
-                                          child: const Icon(Icons.cancel, color: Colors.red),
-                                        ),
-                                      ),
-                                    ],
-                                  );
-                                }),
+                    return Stack(
+                      key: ValueKey(index),
+                      children: [
+                        GestureDetector(
+                          onTap: () {
+                            setState(() {
+                              if (isSelected) {
+                                isZoomed = false;
+                                zoomedIndex = -1;
+                              } else {
+                                isZoomed = true;
+                                zoomedIndex = index;
+                              }
+                            });
+                          },
+                          child: AnimatedContainer(
+                            duration: const Duration(milliseconds: 300),
+                            margin: const EdgeInsets.all(4),
+                            width: isSelected ? 250 : 80,
+                            height: isSelected ? 250 : 80,
+                            decoration: BoxDecoration(
+                              border: Border.all(
+                                color: index == 0 ? Colors.amber : 
+                                       (imagemPrincipalIndex == index ? Colors.orange : Colors.grey),
+                                width: 3,
+                              ),
+                              image: DecorationImage(
+                                image: FileImage(imagem),
+                                fit: BoxFit.cover,
                               ),
                             ),
-                          ],
+                          ),
                         ),
-                      ),
-                    ),
-                  ),
-                  Positioned(
-                    bottom: 1,
-                    right: 2,
-                    child: IconButton(
-                      icon: const Icon(Icons.add_a_photo, size: 50, color: Colors.black),
-                      onPressed: selecionarImagem,
-                    ),
-                  ),
-                ],
+                        // Ícone de estrela na primeira imagem
+                        if (index == 0)
+                          Positioned(
+                            bottom: 4,
+                            left: 4,
+                            child: Container(
+                              decoration: BoxDecoration(
+                                color: Colors.black54,
+                                shape: BoxShape.circle,
+                              ),
+                              padding: const EdgeInsets.all(4),
+                              child: const Icon(
+                                Icons.star,
+                                color: Colors.amber,
+                                size: 18,
+                              ),
+                            ),
+                          ),
+                        Positioned(
+                          right: 0,
+                          child: GestureDetector(
+                            onTap: () => removerImagem(index),
+                            child: const Icon(Icons.cancel, color: Colors.red),
+                          ),
+                        ),
+                      ],
+                    );
+                  }),
+                ),
               ),
+            ],
+          ),
+        ),
+      ),
+    ),
+    Positioned(
+      bottom: 1,
+      right: 2,
+      child: IconButton(
+        icon: const Icon(Icons.add_a_photo, size: 50, color: Colors.black),
+        onPressed: selecionarImagem,
+      ),
+    ),
+  ],
+),
+
+
               const SizedBox(height: 20),
               // Botão para salvar alterações com o ícone
               SizedBox(
