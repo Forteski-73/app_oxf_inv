@@ -23,6 +23,14 @@ class DBItems {
   static const columnItemNetWeight                = 'ItemNetWeight';
   static const columnProdFamilyId                 = 'ProdFamilyId';
   static const columnProdFamilyDescription        = 'ProdFamilyDescription';
+  
+  static const columnGrossWeight                  = 'GrossWeight';
+  static const columnTaraWeight                   = 'TaraWeight';
+  static const columnGrossDepth                   = 'GrossDepth';
+  static const columnGrossWidth                   = 'GrossWidth';
+  static const columnGrossHeight                  = 'GrossHeight';
+  static const columnNrOfItems                    = 'NrOfItems';
+  static const columnTaxFiscalClassification      = 'TaxFiscalClassification';
 
     // Campos da tabela product_images
   static const columnImageId           = '_id';
@@ -78,9 +86,26 @@ class DBItems {
         $columnUnitVolumeML                 REAL,
         $columnItemNetWeight                REAL,
         $columnProdFamilyId                 TEXT,
-        $columnProdFamilyDescription        TEXT
+        $columnProdFamilyDescription        TEXT,
+
+        $columnGrossWeight                  REAL,
+        $columnTaraWeight                   REAL,
+        $columnGrossDepth                   REAL,
+        $columnGrossWidth                   REAL,
+        $columnGrossHeight                  REAL,
+        $columnNrOfItems                    REAL,
+        $columnTaxFiscalClassification      TEXT
       );
     ''');
+
+    await db.execute('CREATE INDEX idx_prod_brand_id ON $tableProducts ($columnProdBrandId);');
+    await db.execute('CREATE INDEX idx_prod_brand_desc_id ON $tableProducts ($columnProdBrandDescriptionId);');
+    await db.execute('CREATE INDEX idx_prod_lines_id ON $tableProducts ($columnProdLinesId);');
+    await db.execute('CREATE INDEX idx_prod_lines_desc_id ON $tableProducts ($columnProdLinesDescriptionId);');
+    await db.execute('CREATE INDEX idx_prod_decoration_id ON $tableProducts ($columnProdDecorationId);');
+    await db.execute('CREATE INDEX idx_prod_decoration_desc_id ON $tableProducts ($columnProdDecorationDescriptionId);');
+    await db.execute('CREATE INDEX idx_prod_family_id ON $tableProducts ($columnProdFamilyId);');
+    await db.execute('CREATE INDEX idx_prod_family_desc ON $tableProducts ($columnProdFamilyDescription);');
 
     // Criando a tabela de imagens de produto
     await db.execute('''
@@ -92,6 +117,7 @@ class DBItems {
         FOREIGN KEY ($columnProductId) REFERENCES $tableProducts($columnItemId) ON DELETE CASCADE
       );
     ''');
+    await db.execute('CREATE INDEX idx_product_images_product_id ON $tableProductImages ($columnProductId);');
 
     // Criando a tabela de tags do produto
     await db.execute('''
@@ -102,6 +128,8 @@ class DBItems {
         FOREIGN KEY ($columnTagProductId) REFERENCES $tableProducts($columnItemId) ON DELETE CASCADE
       );
     ''');
+    await db.execute('CREATE INDEX idx_product_tags_product_id ON $tableProductTags ($columnTagProductId);');
+
   }
 
   // Métodos para a tabela de produtos (já existentes)

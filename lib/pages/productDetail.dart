@@ -80,16 +80,17 @@ class _ProductDetailsPageState extends State<ProductDetailsPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Column(
-          mainAxisAlignment: MainAxisAlignment.start,
+        title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Aplicativo de Consulta de Estrutura de Produtos. ACEP',
-              style: TextStyle(color: Colors.white,fontSize: 12,),
+            const Text(
+              'Aplicativo de Consulta de Estrutura de Produtos. ACEP',
+              style: TextStyle(color: Colors.white, fontSize: 12),
             ),
             SizedBox(height: 2),
-            Text('Estrutura do Produto',
-              style: TextStyle(color: Colors.white, fontSize: 20, ),
+            Text(
+              'Estrutura do Produto ${widget.product.itemId}', // Use widget.product dentro do build
+              style: TextStyle(color: Colors.white, fontSize: 20),
             ),
           ],
         ),
@@ -216,36 +217,103 @@ Container(
                   ),
                 ],
               ),
-              buildExpansionTile("Informações do Produto", [
-                textRow("Código", "139600"),
-                textRow("Descrição", "PRATO RASO 26CM - JARDIM SECRETO - A02D-5953"),
+              FutureBuilder<Map<String, dynamic>>(
+                future: DBItems.instance.getProductDetails(widget.product.itemId), // Recupere os detalhes do produto
+                builder: (context, snapshot) {
+                  if (snapshot.connectionState == ConnectionState.waiting) {
+                    return const CircularProgressIndicator(); // Exibe o carregando enquanto aguarda a resposta
+                  } else if (snapshot.hasError) {
+                    return Text('Erro: ${snapshot.error}');
+                  } else if (!snapshot.hasData) {
+                    return const Text('Produto não encontrado');
+                  } else {
+                    final product = snapshot.data!;
+
+                    return Column(
+                      children: [
+                        buildExpansionTile("Informações do Produto", [
+                          textRow("Código",     product[DBItems.columnItemId]),
+                          textRow("Descrição",  product[DBItems.columnName] ?? ''),
+                        ]),
+                        buildExpansionTile("Dimensões e Peso", [
+                          textRow("Peso Bruto",       "${product[DBItems.columnGrossWeight]   ?? ''} kg"),
+                          textRow("Peso Líquido",     "${product[DBItems.columnItemNetWeight] ?? ''} kg"),
+                          textRow("Tara",             "${product[DBItems.columnTaraWeight]    ?? ''} kg"),
+                          textRow("Profundidade",     "${product[DBItems.columnGrossDepth]    ?? ''} m"),
+                          textRow("Largura",          "${product[DBItems.columnGrossWidth]    ?? ''} m"),
+                          textRow("Altura",           "${product[DBItems.columnGrossHeight]   ?? ''} m"),
+                          textRow("Volume",           "${product[DBItems.columnUnitVolumeML]  ?? ''} m³"),
+                          textRow("Qt Peças Interna", "${product[DBItems.columnNrOfItems]     ?? ''}"),
+                        ]),
+                        buildExpansionTile("Código de Barras", [
+                          textRow("Master", product[DBItems.columnItemBarCode] ?? ''),
+                        ]),
+                        buildExpansionTile("Classificação Fiscal", [
+                          textRow("Classificação Fiscal", product[DBItems.columnTaxFiscalClassification] ?? ''),
+                        ]),
+                        buildExpansionTile("Família e Marca", [
+                          textRow("Família",    product[DBItems.columnProdFamilyDescription]        ?? ''),
+                          textRow("Marca",      product[DBItems.columnProdBrandDescriptionId]       ?? ''),
+                          textRow("Linha",      product[DBItems.columnProdLinesDescriptionId]       ?? ''),
+                          textRow("Decoração",  product[DBItems.columnProdDecorationDescriptionId]  ?? ''),
+                        ]),
+                        buildExpansionTile("Características", [
+                          FutureBuilder<List<Map<String, dynamic>>>(
+                            future: DBItems.instance.getProductTags(product[DBItems.columnItemId]), // Buscar as tags do produto
+                            builder: (context, tagsSnapshot) {
+                              if (tagsSnapshot.connectionState == ConnectionState.waiting) {
+                                return const CircularProgressIndicator(); // Exibe o carregando enquanto aguarda as tags
+                              } else if (tagsSnapshot.hasError) {
+                                return Text('Erro: ${tagsSnapshot.error}');
+                              } else if (!tagsSnapshot.hasData || tagsSnapshot.data!.isEmpty) {
+                                return const Text('Sem características');
+                              } else {
+                                final tags = tagsSnapshot.data!;
+                                return (tags != null && tags.isNotEmpty) 
+                                    ? Column(
+                                        children: tags.map((tag) => textRow("Características", tag[DBItems.columnTag])).toList(),
+                                      ) : SizedBox.shrink();
+                              }
+                            },
+                          ),
+                        ]),
+                      ],
+                    );
+                  }
+                },
+              )
+
+              /*buildExpansionTile("Informações do Produto", [ // buscar da tabela tableProducts
+                textRow("Código", "139600"), // columnItemId
+                textRow("Descrição", "PRATO RASO 26CM - JARDIM SECRETO - A02D-5953"), // columnName
               ]),
-              buildExpansionTile("Dimensões e Peso", [
-                textRow("Peso Bruto", "9,14 kg"),
-                textRow("Peso Líquido", "8,88 kg"),
-                textRow("Tara", "0,26 kg"),
-                textRow("Profundidade", "0,266 m"),
-                textRow("Largura", "0,180 m"),
-                textRow("Altura", "0,288 m"),
-                textRow("Volume", "0,014 m³"),
-                textRow("Qt Peças Interna", "12"),
+              buildExpansionTile("Dimensões e Peso", [ // buscar da tabela tableProducts
+                textRow("Peso Bruto", "9,14 kg"),   // columnGrossWeight
+                textRow("Peso Líquido", "8,88 kg"), // columnItemNetWeight
+                textRow("Tara", "0,26 kg"),         // columnTaraWeight
+                textRow("Profundidade", "0,266 m"), // columnGrossDepth
+                textRow("Largura", "0,180 m"),      // columnGrossWidth
+                textRow("Altura", "0,288 m"),       // columnGrossHeight
+                textRow("Volume", "0,014 m³"),      // columnUnitVolumeML
+                textRow("Qt Peças Interna", "12"),  // columnNrOfItems
               ]),
-              buildExpansionTile("Código de Barras", [
-                textRow("Master", "7891361391387"),
+              buildExpansionTile("Código de Barras", [ // buscar da tabela tableProducts
+                textRow("Master", "7891361391387"), // columnItemBarCode
               ]),
-              buildExpansionTile("Classificação Fiscal", [
-                textRow("Classificação Fiscal", "123456789"),
-                textRow("Exceção", "123456789"),
+              buildExpansionTile("Classificação Fiscal", [ // buscar da tabela tableProducts
+                textRow("Classificação Fiscal", "123456789"), // columnTaxFiscalClassification
               ]),
-              buildExpansionTile("Família e Marca", [
-                textRow("Família", "0002 - PRODUTO ACABADO"),
-                textRow("Marca", "OXFORD DAILY"),
-                textRow("Linha", "UNNI"),
-                textRow("Decoração", "JARDIM SECRETO"),
+              buildExpansionTile("Família e Marca", [ // buscar da tabela tableProducts
+                textRow("Família", "0002 - PRODUTO ACABADO"), // columnProdFamilyDescription
+                textRow("Marca", "OXFORD DAILY"),             // columnProdBrandDescriptionId
+                textRow("Linha", "UNNI"),                     // columnProdLinesDescriptionId
+                textRow("Decoração", "JARDIM SECRETO"),       // columnProdDecorationDescriptionId
               ]),
+
               buildExpansionTile("Características", [
                 textRow("Características", "Borboleta, Flor, Verde, Laranja, Rosa"),
-              ]),
+                // Buscar da tabela tableProductTags
+              ]),*/
             ],
           ),
         ),

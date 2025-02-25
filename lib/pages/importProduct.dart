@@ -65,19 +65,26 @@ class _ImportProductPage extends State<ImportProduct> {
           }
 
           await db.insertProduct({
-            DBItems.columnItemBarCode: row[0],
-            DBItems.columnItemId: row[1],
-            DBItems.columnName: row[2],
-            DBItems.columnProdBrandId: row[3],
-            DBItems.columnProdBrandDescriptionId: row[4],
-            DBItems.columnProdLinesId: row[5],
-            DBItems.columnProdLinesDescriptionId: row[6],
-            DBItems.columnProdDecorationId: row[7],
+            DBItems.columnItemBarCode:              row[0],
+            DBItems.columnItemId:                   row[1],
+            DBItems.columnName:                     row[2],
+            DBItems.columnProdBrandId:              row[3],
+            DBItems.columnProdBrandDescriptionId:   row[4],
+            DBItems.columnProdLinesId:              row[5],
+            DBItems.columnProdLinesDescriptionId:   row[6],
+            DBItems.columnProdDecorationId:         row[7],
             DBItems.columnProdDecorationDescriptionId: row[8],
-            DBItems.columnProdFamilyId: row[9],
-            DBItems.columnProdFamilyDescription: row[10],
-            DBItems.columnUnitVolumeML: double.tryParse(row[11]) ?? 0.0,
-            DBItems.columnItemNetWeight: double.tryParse(row[12]) ?? 0.0,
+            DBItems.columnProdFamilyId:             row[9],
+            DBItems.columnProdFamilyDescription:    row[10],
+            DBItems.columnUnitVolumeML:             double.tryParse(row[11]) ?? 0.0,
+            DBItems.columnItemNetWeight:            double.tryParse(row[12]) ?? 0.0,
+            DBItems.columnGrossWeight:              double.tryParse(row[13]) ?? 0.0,
+            DBItems.columnTaraWeight:               double.tryParse(row[14]) ?? 0.0,
+            DBItems.columnGrossDepth:               double.tryParse(row[15]) ?? 0.0,
+            DBItems.columnGrossWidth:               double.tryParse(row[16]) ?? 0.0,
+            DBItems.columnGrossHeight:              double.tryParse(row[17]) ?? 0.0,
+            DBItems.columnNrOfItems:                double.tryParse(row[18]) ?? 0.0,
+            DBItems.columnTaxFiscalClassification:  row[19],
           });
         }
       } else if (filePath!.endsWith('.txt')) {
@@ -95,19 +102,27 @@ class _ImportProductPage extends State<ImportProduct> {
           }
 
           await db.insertProduct({
-            DBItems.columnItemBarCode: row[0],
-            DBItems.columnItemId: row[1],
-            DBItems.columnName: row[2],
-            DBItems.columnProdBrandId: row[3],
-            DBItems.columnProdBrandDescriptionId: row[4],
-            DBItems.columnProdLinesId: row[5],
-            DBItems.columnProdLinesDescriptionId: row[6],
-            DBItems.columnProdDecorationId: row[7],
+            DBItems.columnItemBarCode:              row[0],
+            DBItems.columnItemId:                   row[1],
+            DBItems.columnName:                     row[2],
+            DBItems.columnProdBrandId:              row[3],
+            DBItems.columnProdBrandDescriptionId:   row[4],
+            DBItems.columnProdLinesId:              row[5],
+            DBItems.columnProdLinesDescriptionId:   row[6],
+            DBItems.columnProdDecorationId:         row[7],
             DBItems.columnProdDecorationDescriptionId: row[8],
-            DBItems.columnProdFamilyId: row[9],
-            DBItems.columnProdFamilyDescription: row[10],
-            DBItems.columnUnitVolumeML: double.tryParse(row[11]) ?? 0.0,
-            DBItems.columnItemNetWeight: double.tryParse(row[12]) ?? 0.0,
+            DBItems.columnProdFamilyId:             row[9],
+            DBItems.columnProdFamilyDescription:    row[10],
+            DBItems.columnUnitVolumeML:             double.tryParse(row[11].replaceAll(',', '.')) ?? 0.0,
+            DBItems.columnItemNetWeight:            double.tryParse(row[12].replaceAll(',', '.')) ?? 0.0,
+            
+            DBItems.columnGrossWeight:              double.tryParse(row[13].replaceAll(',', '.')) ?? 0.0,
+            DBItems.columnTaraWeight:               double.tryParse(row[14].replaceAll(',', '.')) ?? 0.0,
+            DBItems.columnGrossDepth:               double.tryParse(row[15].replaceAll(',', '.')) ?? 0.0,
+            DBItems.columnGrossWidth:               double.tryParse(row[16].replaceAll(',', '.')) ?? 0.0,
+            DBItems.columnGrossHeight:              double.tryParse(row[17].replaceAll(',', '.')) ?? 0.0,
+            DBItems.columnNrOfItems:                double.tryParse(row[18].replaceAll(',', '.')) ?? 0.0,
+            DBItems.columnTaxFiscalClassification:  row[19],
           });
         }
       } else {
@@ -148,9 +163,10 @@ class _ImportProductPage extends State<ImportProduct> {
     showDialog(
       context: context,
       builder: (BuildContext context) {
-        return AlertDialog(
-          title: const Text("Informações de Layout"),
-          content: const Text(
+      return AlertDialog(
+        title: const Text("Informações de Layout"),
+        content: const SingleChildScrollView(
+          child: Text(
             "Os arquivos suportados para importação são:\n\n"
             "- CSV (com separador `;`)\n"
             "- TXT (com separador `;`)\n\n"
@@ -167,17 +183,26 @@ class _ImportProductPage extends State<ImportProduct> {
             "10. ID da família\n"
             "11. Descrição da família\n"
             "12. Volume\n"
-            "13. Peso líquido\n",
+            "13. Peso Líquido\n"
+            "14. Peso Bruto\n"
+            "15. Tara\n"
+            "16. Profundidade\n"
+            "17. Largura\n"
+            "18. Altura\n"
+            "19. Quantidade de Peças\n"
+            "20. Classificação Fiscal\n"
           ),
-          actions: <Widget>[
-            TextButton(
-              onPressed: () {
-                Navigator.of(context).pop();
-              },
-              child: const Text("Fechar", style: TextStyle(color: Colors.black)),
-            ),
-          ],
-        );
+        ),
+        actions: <Widget>[
+          TextButton(
+            onPressed: () {
+              Navigator.of(context).pop();
+            },
+            child: const Text("Fechar", style: TextStyle(color: Colors.black)),
+          ),
+        ],
+      );
+
       },
     );
   }

@@ -8,7 +8,7 @@
 PRODUCT_NAME = app_oxf_inv
 
 // The application's bundle identifier
-PRODUCT_BUNDLE_IDENTIFIER = com.example.appOxfInv
+PRODUCT_BUNDLE_IDENTIFIER = com.oxford.appOxfInv
 
 // The copyright displayed in application information
-PRODUCT_COPYRIGHT = Copyright © 2024 com.example. All rights reserved.
+PRODUCT_COPYRIGHT = Copyright © 2024 com.oxford. All rights reserved.

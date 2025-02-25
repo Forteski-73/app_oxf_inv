@@ -1,4 +1,4 @@
-package com.example.app_oxf_inv
+package com.oxford.app_oxf_inv
 
 import io.flutter.embedding.android.FlutterActivity
 
