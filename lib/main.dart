@@ -4,6 +4,7 @@ import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 import 'pages/importProduct.dart';
 import 'pages/management.dart';
 import 'pages/productSearch.dart';
+import 'pages/SearchProduct.dart';
 import 'pages/productDetail.dart';
 import 'pages/productImages.dart';
 //import 'pages/settings.dart';
@@ -46,6 +47,14 @@ class MyApp extends StatelessWidget {
         '/importProduct': (context) => ImportProduct(),               // Rota para Importação de Produtos
         '/sync': (context) => const SyncPage(),                       // Rota para Sincronização
         '/productSearch': (context) => const ProductSearchPage(),     // Rota para Pesquisar Produtos
+        //'/searchProduct': (context) => const SearchProduct(),         // Rota para Pesquisar Produtos simples
+        '/searchProduct': (context) {
+          final args = ModalRoute.of(context)?.settings.arguments;
+          final Function(String) onProductSelected = 
+              (args is Function(String)) ? args : (String _) {}; // Função vazia por padrão
+          
+          return SearchProduct(onProductSelected: onProductSelected);
+        },
         //'/ProductDetails': (context) => const ProductDetailsPage(),   // Rota para Pesquisar Produtos
         '/ProductImages': (context) {
           //final Product product = ModalRoute.of(context)?.settings.arguments as Product;

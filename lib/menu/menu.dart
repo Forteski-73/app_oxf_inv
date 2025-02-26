@@ -63,7 +63,7 @@ class MenuPage extends StatelessWidget {
                 context,
                 icon: Icons.search,
                 label: "Pesquisar Produtos",
-                routeName: '/inventorySearch', // Rota para Pesquisar Produtos
+                routeName: '/searchProduct', // Rota para Pesquisar Produtos
               ),
               _menuItem(
                 context,
