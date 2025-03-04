@@ -1,5 +1,5 @@
 import 'dart:ffi';
-
+//import 'package:flutter_barcode_scanner/flutter_barcode_scanner.dart';
 import 'package:flutter/material.dart';
 import 'package:app_oxf_inv/operator/db_settings.dart';
 import 'package:app_oxf_inv/operator/db_inventory.dart';
@@ -19,9 +19,9 @@ class InventoryPageState extends State<InventoryRecordsPage> {
   late Future<Map<String, Map<String, dynamic>>> _settingsFuture = Future.value({});
   final List<TextEditingController> controllers = List.generate(11,(index) => TextEditingController(),);
   final TextEditingController _totalController = TextEditingController();
-  
   final List<FocusNode> focusNodes = List.generate(11, (index) => FocusNode());
   TextEditingController controller = TextEditingController();
+  String _barcodeResult = "Nenhum código escaneado";
 
   @override
   void dispose() {  
@@ -434,9 +434,10 @@ Future<void> saveMoreRecords(BuildContext context) async {
         mainAxisSize: MainAxisSize.min,
         children: [
           IconButton(
-            icon: const Icon(Icons.barcode_reader),
-            onPressed: () {
-              // Por hora não tem ação para o ícone barcode_reader, apenas ilustrativo
+            icon: const Icon(Icons.qr_code_scanner),
+            onPressed: () async {
+              //String barcode = await scanBarcode(); // Espera o código ser escaneado
+              //controller.text = barcode; // Atribui ao campo de texto
             },
           ),
           IconButton(
@@ -483,6 +484,29 @@ Future<void> saveMoreRecords(BuildContext context) async {
       ),
     );
   }
+
+
+  /*Future<String> scanBarcode() async {
+    String barcodeScanRes;
+    try {
+      barcodeScanRes = await FlutterBarcodeScanner.scanBarcode(
+        "#ff6666", // Cor do botão de cancelamento
+        "Cancelar", // Texto do botão de cancelamento
+        true, // Exibir linha guia de escaneamento
+        ScanMode.BARCODE, // Modo de escaneamento (BARCODE ou QR_CODE)
+      );
+    } catch (e) {
+      barcodeScanRes = "Falha ao escanear código de barras";
+    }
+
+    //if (!mounted) return '';
+
+    /*setState(() {
+      _barcodeResult = barcodeScanRes;
+    });*/
+
+    return barcodeScanRes;
+  }*/
 
   @override
   Widget build(BuildContext context) {

@@ -32,14 +32,16 @@ class _ProductSearchPage extends State<ProductSearchPage> {
   Future<void> _loadProducts() async {
     try {
       final products = await DBItems.instance.getAllProducts1();
+      if (!mounted) return;
       setState(() {
         _allProducts = products;
         _filteredProducts = products;
         _isLoading = false;
       });
     } catch (e) {
+      if (!mounted) return;
       setState(() {
-        _isLoading = false; // Caso haja erro, também para o carregamento
+        _isLoading = false;
       });
       _showError('Erro ao carregar produtos do banco de dados: $e');
     }

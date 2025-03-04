@@ -28,6 +28,7 @@ android {
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
         versionName = flutter.versionName
+        // namespace 'com.oxford.app_oxf_inv'
     }
 
     namespace "com.oxford.app_oxf_inv"
@@ -42,7 +43,7 @@ android {
 
     dependencies {
         //implementation 'org.tensorflow:tensorflow-lite:2.0.0'  // Ou a versão que você está utilizando
-        implementation 'org.tensorflow:tensorflow-lite:2.7.0'
+        //implementation 'org.tensorflow:tensorflow-lite:2.7.0'
     }
 }
 
