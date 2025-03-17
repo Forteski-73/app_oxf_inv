@@ -734,10 +734,10 @@ Future<void> saveMoreRecords(BuildContext context) async {
                             icon: const Icon(Icons.close, color: Colors.white),
                             label: const Text('LIMPAR', style: TextStyle(color: Colors.white, fontSize: 16,),),
                           ),
-                          const SizedBox(width: 16),
+                          const SizedBox(width: 16), 
                           ElevatedButton.icon(
                             style: ElevatedButton.styleFrom(
-                              padding: const EdgeInsets.all(16),
+                              padding: const EdgeInsets.all(16), 
                               backgroundColor: _isSaveButtonEnabled ? Colors.blue : Colors.grey,
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(8),
