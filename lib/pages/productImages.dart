@@ -94,7 +94,13 @@ class _ProductImagesPageState extends State<ProductImagesPage> {
     }
   }
 
-
+  /*
+  Future<void> saveTagsImages() async {
+    FTPUploader ftpUploader = FTPUploader();
+    await ftpUploader.uploadImages(imagens, context);
+  }
+  */
+  
   @override
   void initState() {
     super.initState();

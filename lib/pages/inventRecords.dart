@@ -728,7 +728,7 @@ Future<void> saveMoreRecords(BuildContext context) async {
                               ),
                             ),
                             onPressed: () {
-                              FocusScope.of(context).unfocus();
+                              FocusScope.of(context).unfocus(); 
                               clearFields();
                             },
                             icon: const Icon(Icons.close, color: Colors.white),
