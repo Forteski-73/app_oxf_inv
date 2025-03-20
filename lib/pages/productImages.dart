@@ -5,7 +5,7 @@ import 'dart:io';
 import 'package:path_provider/path_provider.dart';
 import 'package:reorderables/reorderables.dart';
 import 'package:app_oxf_inv/operator/db_product.dart';
-
+import '../ftp/ftp.dart';
 
 class ProductImagesPage extends StatefulWidget {
   final Product product;
@@ -82,6 +82,8 @@ class _ProductImagesPageState extends State<ProductImagesPage> {
         });
       }
 
+      saveTagsImages1();
+
       // Exibir mensagem de sucesso
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
         content: Text('Imagens e tags salvas com sucesso no banco de dados.'),
@@ -94,12 +96,12 @@ class _ProductImagesPageState extends State<ProductImagesPage> {
     }
   }
 
-  /*
-  Future<void> saveTagsImages() async {
+  
+  Future<void> saveTagsImages1() async {
     FTPUploader ftpUploader = FTPUploader();
-    await ftpUploader.uploadImages(imagens, context);
+    await ftpUploader.saveTagsImages(imagens, context);
   }
-  */
+  
   
   @override
   void initState() {
