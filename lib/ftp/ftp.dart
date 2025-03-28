@@ -7,7 +7,7 @@ import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart' as path;
 
 class FTPUploader {
-  Future<void> saveTagsImages(List<File> imagens, BuildContext context) async {
+  Future<void> saveTagsImages(String remoteDir, List<File> imagens, BuildContext context) async {
     
     final ftpConnect = FTPConnect(
       "ftp.oxfordtec1.hospedagemdesites.ws",
@@ -31,22 +31,21 @@ class FTPUploader {
 
     try {
 
-      await ftpConnect.connect();
+      bool changed = await ftpConnect.connect();
 
       await ftpConnect.setTransferType(TransferType.binary);
 
-      conn = await MySqlConnection.connect(dbSettings);
+      
+      //String remoteDir = "Familia/Marca/Linha/Decoracao";
 
-
-      String remoteDir = "Familia/Marca/Linha/Decoracao";
-
-      bool changed = await ftpConnect.changeDirectory(remoteDir);
+      changed = await ftpConnect.changeDirectory(remoteDir);
       if (!changed) {
-        
-        await ftpConnect.makeDirectory(remoteDir);
-        await ftpConnect.changeDirectory(remoteDir);
+        changed = await ftpConnect.makeDirectory(remoteDir);
+        changed = await ftpConnect.changeDirectory(remoteDir);
       }
 
+      
+      //conn = await MySqlConnection.connect(dbSettings);
 
       for (File image in imagens) {
         File resizedImage = await _resizeImage(image);
@@ -56,19 +55,19 @@ class FTPUploader {
 
         bool uploaded = await ftpConnect.uploadFile(resizedImage);
 
-        if (uploaded) {
+        /*if (uploaded) {
           // Inserir no banco de dados
           await conn.query(
             'INSERT INTO oxford_imagens (caminho) VALUES (?)',
             [imagePath],
-          );
+          );*/
 
 
-        } else {
+        /*} else {
           ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('❌ Falha no upload da imagem.')),);
 
-        }
+        }*/
       }
 
       ScaffoldMessenger.of(context).showSnackBar(
@@ -111,19 +110,12 @@ class FTPUploader {
         conn = await MySqlConnection.connect(settings);
         print("✅ Conectado!");
 
-        // Criar banco de dados
-        //await conn.query('CREATE DATABASE IF NOT EXISTS oxford;');
-        //print("📦 Banco de dados 'oxford' criado ou já existente.");
-
-        // Usar o banco de dados
-       // await conn.query('USE oxford;');
-
         // Criar tabela oxf_item
         await conn.query('''
           CREATE TABLE IF NOT EXISTS oxf_item ( 
             id INT AUTO_INCREMENT PRIMARY KEY,
             item VARCHAR(20) NOT NULL UNIQUE, 
-            qr_code VARCHAR(20) NOT NULL UNIQUE, 
+            qr_code VARCHAR(20) NOT NULL UNIQUE,
             description VARCHAR(255),
             create_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP
           );
