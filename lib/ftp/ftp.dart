@@ -8,10 +8,13 @@ import 'package:path/path.dart' as path;
 
 class FTPUploader {
   Future<void> saveTagsImages(String remoteDir, List<File> imagens, BuildContext context) async {
-    
+        
+    final parts; // Divide o caminho em partes
+    String currentPath = ""; 
+
     final ftpConnect = FTPConnect(
-      "ftp.oxfordtec1.hospedagemdesites.ws",
-      user: "oxfordtec1",
+      "ftp.oxfordtec.com.br",
+      user: "u700242432.oxfordftp",
       pass: "OxforEstrutur@25",
       timeout: 60,
     );
@@ -36,16 +39,32 @@ class FTPUploader {
       await ftpConnect.setTransferType(TransferType.binary);
 
       
-      //String remoteDir = "Familia/Marca/Linha/Decoracao";
+      remoteDir = remoteDir.replaceAll(" ", "_");
+      parts = remoteDir.split("/");
 
       changed = await ftpConnect.changeDirectory(remoteDir);
       if (!changed) {
+
+        /*await ftpConnect.makeDirectory("PRODUTO_EMBALADO");
+        await ftpConnect.makeDirectory("PRODUTO_EMBALADO/OXFORD_DAILY");
+        await ftpConnect.makeDirectory("PRODUTO_EMBALADO/OXFORD_DAILY/FLOREAL");
+        await ftpConnect.makeDirectory("PRODUTO_EMBALADO/OXFORD_DAILY/FLOREAL/LA_CARRETA");*/
+
+        for (var part in parts) {
+            currentPath = currentPath.isNotEmpty ? "$currentPath/$part" : part; // Constrói o caminho progressivamente
+            try {
+                await ftpConnect.makeDirectory(currentPath);
+            } catch (error) {
+                const SnackBar(content: Text('❌ Erro ao criar diretório'));
+            }
+        }
+
         changed = await ftpConnect.makeDirectory(remoteDir);
         changed = await ftpConnect.changeDirectory(remoteDir);
       }
 
       
-      //conn = await MySqlConnection.connect(dbSettings);
+      conn = await MySqlConnection.connect(dbSettings);
 
       for (File image in imagens) {
         File resizedImage = await _resizeImage(image);
@@ -55,19 +74,19 @@ class FTPUploader {
 
         bool uploaded = await ftpConnect.uploadFile(resizedImage);
 
-        /*if (uploaded) {
+        if (uploaded) {
           // Inserir no banco de dados
           await conn.query(
             'INSERT INTO oxford_imagens (caminho) VALUES (?)',
             [imagePath],
-          );*/
+          );
 
 
-        /*} else {
+        } else {
           ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('❌ Falha no upload da imagem.')),);
 
-        }*/
+        }
       }
 
       ScaffoldMessenger.of(context).showSnackBar(

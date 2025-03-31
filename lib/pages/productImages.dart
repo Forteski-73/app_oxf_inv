@@ -100,8 +100,8 @@ class _ProductImagesPageState extends State<ProductImagesPage> {
   Future<void> saveTagsImages1() async {
     FTPUploader ftpUploader = FTPUploader();
     
-    String remoteDir = '/${widget.product.prodFamilyDescription}/${widget.product.prodBrandDescriptionId}/'+
-    '${widget.product.prodLinesDescriptionId}/${widget.product.prodDecorationDescriptionId}/'; 
+    String remoteDir = '${widget.product.prodFamilyDescription}/${widget.product.prodBrandDescriptionId}/'+
+    '${widget.product.prodLinesDescriptionId}/${widget.product.prodDecorationDescriptionId}'; 
     await ftpUploader.saveTagsImages(remoteDir, imagens, context);
   }
   
