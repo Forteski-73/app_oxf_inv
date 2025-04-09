@@ -7,7 +7,7 @@ import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart' as path;
 
 class FTPUploader {
-  Future<void> saveTagsImages(String remoteDir, List<File> imagens, BuildContext context) async {
+  Future<void> saveTagsImages(String remoteDir, String itemId, List<File> imagens, BuildContext context) async {
         
     final parts; // Divide o caminho em partes
     String currentPath = ""; 
@@ -21,35 +21,28 @@ class FTPUploader {
 
 
     final dbSettings = ConnectionSettings(
-      host: 'appprodutos.mysql.dbaas.com.br',
+      host: '193.203.175.198',
       port: 3306,
-      user: 'appprodutos',
+      user: 'u700242432_appprodutos',
       password: 'OxEstrutur@25',
-      db: 'appprodutos',
+      db: 'u700242432_appprodutos',
     );
 
     MySqlConnection? conn;
 
+    conn = await MySqlConnection.connect(dbSettings);
     //createDatabaseAndTables(dbSettings);
 
     try {
 
       bool changed = await ftpConnect.connect();
-
       await ftpConnect.setTransferType(TransferType.binary);
 
-      
       remoteDir = remoteDir.replaceAll(" ", "_");
       parts = remoteDir.split("/");
 
       changed = await ftpConnect.changeDirectory(remoteDir);
       if (!changed) {
-
-        /*await ftpConnect.makeDirectory("PRODUTO_EMBALADO");
-        await ftpConnect.makeDirectory("PRODUTO_EMBALADO/OXFORD_DAILY");
-        await ftpConnect.makeDirectory("PRODUTO_EMBALADO/OXFORD_DAILY/FLOREAL");
-        await ftpConnect.makeDirectory("PRODUTO_EMBALADO/OXFORD_DAILY/FLOREAL/LA_CARRETA");*/
-
         for (var part in parts) {
             currentPath = currentPath.isNotEmpty ? "$currentPath/$part" : part; // Constrói o caminho progressivamente
             try {
@@ -58,13 +51,11 @@ class FTPUploader {
                 const SnackBar(content: Text('❌ Erro ao criar diretório'));
             }
         }
-
         changed = await ftpConnect.makeDirectory(remoteDir);
         changed = await ftpConnect.changeDirectory(remoteDir);
       }
 
       
-      conn = await MySqlConnection.connect(dbSettings);
 
       for (File image in imagens) {
         File resizedImage = await _resizeImage(image);
@@ -76,11 +67,14 @@ class FTPUploader {
 
         if (uploaded) {
           // Inserir no banco de dados
-          await conn.query(
-            'INSERT INTO oxford_imagens (caminho) VALUES (?)',
+          /*var result = await conn.query(
+            'INSERT INTO oxf_image (caminho) VALUES (?)',
             [imagePath],
+          );*/
+          var result = await conn.query(
+            'INSERT INTO oxf_image (item_id, path) VALUES (?, ?)',
+            [itemId, imagePath], // Certifique-se de passar o itemId correto
           );
-
 
         } else {
           ScaffoldMessenger.of(context).showSnackBar(

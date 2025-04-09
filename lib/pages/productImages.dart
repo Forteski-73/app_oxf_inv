@@ -102,7 +102,7 @@ class _ProductImagesPageState extends State<ProductImagesPage> {
     
     String remoteDir = '${widget.product.prodFamilyDescription}/${widget.product.prodBrandDescriptionId}/'+
     '${widget.product.prodLinesDescriptionId}/${widget.product.prodDecorationDescriptionId}'; 
-    await ftpUploader.saveTagsImages(remoteDir, imagens, context);
+    await ftpUploader.saveTagsImages(remoteDir, widget.product.itemId, imagens, context);
   }
   
   
