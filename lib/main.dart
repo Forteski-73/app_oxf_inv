@@ -38,40 +38,37 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       theme: ThemeData.light(),
       debugShowCheckedModeBanner: false,
-      initialRoute: '/',  // Página inicial (HomePage)
+      initialRoute: '/',
       routes: {
-        '/': (context) => const HomePage(),                           // Página inicial (HomePage)
-        '/menu': (context) => const MenuPage(),                       // Página inicial (Menu)
-        '/management': (context) => const InventoryManagementPage(),  // Rota para Gerenciamento de Inventário
-        '/inventoryExport': (context) => const InventoryHistory(),    // Rota para Exportação de Dados
-        '/importProduct': (context) => ImportProduct(),               // Rota para Importação de Produtos
-        '/sync': (context) => const SyncPage(),                       // Rota para Sincronização
-        '/productSearch': (context) => const ProductSearchPage(),     // Rota para Pesquisar Produtos
-        //'/searchProduct': (context) => const SearchProduct(),         // Rota para Pesquisar Produtos simples
-        '/searchProduct': (context) {
+        '/':                (context) => const HomePage(),                // Página inicial (HomePage)
+        '/menu':            (context) => const MenuPage(),                // Página inicial (Menu)
+        '/management':      (context) => const InventoryManagementPage(), // Rota para Gerenciamento de Inventário
+        '/inventoryExport': (context) => const InventoryHistory(),        // Rota para Exportação de Dados
+        '/importProduct':   (context) => ImportProduct(),                 // Rota para Importação de Produtos
+        '/sync':            (context) => const SyncPage(),                // Rota para Sincronização
+        '/productSearch':   (context) => const ProductSearchPage(),       // Rota para Pesquisar Produtos
+        //'/searchProduct': (context) => const SearchProduct(),           // Rota para Pesquisar Produtos simples
+        '/searchProduct':   (context) {
           final args = ModalRoute.of(context)?.settings.arguments;
           final Function(String) onProductSelected = 
               (args is Function(String)) ? args : (String _) {}; // Função vazia por padrão
           
           return SearchProduct(onProductSelected: onProductSelected);
         },
-        //'/ProductDetails': (context) => const ProductDetailsPage(),   // Rota para Pesquisar Produtos
-        '/ProductImages': (context) {
-          //final Product product = ModalRoute.of(context)?.settings.arguments as Product;
+        '/ProductImages':   (context) {
           Product product = Product();
-          return ProductImagesPage(product: product); // Passe o produto para o construtor
+          return ProductImagesPage(product: product);  // Passe o produto para o construtor
         },
-        '/productDetails': (context) {                        // Rota para Consultar Detalhes do Inventário
+        '/productDetails':  (context) {                // Rota para Consultar Detalhes do Inventário
           Product product = Product();
           return ProductDetailsPage(product: product); // Passe o produto para o construtor
         },
-        //'/settings': (context) => const SettingsPage(),             // Rota para Configurações
-        '/settingsProfile': (context) => const SettingsProfilePage(), // Rota para Configurações
-        '/inventory': (context) => const InventoryPage(),             // Rota para Consultar Inventários
-        '/inventoryHistory': (context) => const InventoryHistory(),   // Rota para Consultar Histórico
-        '/inventoryHistoryDetail': (context) {                        // Rota para Consultar Detalhes do Inventário
+        '/settingsProfile':         (context) => const SettingsProfilePage(), // Rota para Configurações
+        '/inventory':               (context) => const InventoryPage(),       // Rota para Consultar Inventários
+        '/inventoryHistory':        (context) => const InventoryHistory(),    // Rota para Consultar Histórico
+        '/inventoryHistoryDetail':  (context) {                               // Rota para Consultar Detalhes do Inventário
           final int inventoryId = ModalRoute.of(context)?.settings.arguments as int;  // Recuperar o argumento passado na navegação
-          return InventoryHistoryDetail(inventoryId: inventoryId);  // Passar o argumento para o construtor da página
+          return InventoryHistoryDetail(inventoryId: inventoryId);            // Passar o argumento para o construtor da página
         },
         '/inventoryRecord': (context) => InventoryRecordsPage(),
       },
