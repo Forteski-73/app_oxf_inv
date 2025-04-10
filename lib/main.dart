@@ -16,6 +16,7 @@ import 'menu/menu.dart';
 import 'pages/home.dart';
 import 'pages/inventory.dart';
 import 'pages/inventRecords.dart';
+import 'pages/teste.dart';
 import 'models/product.dart';
 
 void main() {
@@ -71,6 +72,7 @@ class MyApp extends StatelessWidget {
           return InventoryHistoryDetail(inventoryId: inventoryId);            // Passar o argumento para o construtor da página
         },
         '/inventoryRecord': (context) => InventoryRecordsPage(),
+        '/teste': (context) => const PaginaComAcoesFlutuantes(),
       },
     );
   }

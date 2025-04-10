@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:app_oxf_inv/widgets/footer.dart';
 
 void main() {
   runApp(const InventoryManagementPage());
@@ -131,23 +132,7 @@ class InventoryManagementPage extends StatelessWidget {
         ],
       ),
       // Rodapé
-      bottomNavigationBar: Container(
-        color: Colors.grey[200],
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-        child: const Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Text(
-              "Oxford Porcelanas",
-              style: TextStyle(fontSize: 14),
-            ),
-            Text(
-              "Versão: 1.0",
-              style: TextStyle(fontSize: 14),
-            ),
-          ],
-        ),
-      ),
+      bottomNavigationBar: const Footer(),
     );
   }
 }

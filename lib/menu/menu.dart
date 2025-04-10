@@ -72,6 +72,12 @@ class MenuPage extends StatelessWidget {
                 routeName: '/settingsProfile', // Rota para Configurações
                 //routeName: '/settings', // Rota para Configurações
               ),
+              _menuItem(
+                context,
+                icon: Icons.settings_outlined,
+                label: "DEV",
+                routeName: '/teste', // Rota para teste
+              ),
             ],
           ),
 
@@ -93,6 +99,7 @@ class MenuPage extends StatelessWidget {
               ],
             ),
           ),
+          
         ],
       ),
     );
