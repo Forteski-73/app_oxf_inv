@@ -7,7 +7,7 @@ class Footer extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       color: Colors.grey[200],
-      padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 8),
+      padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 7),
       child: const Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [

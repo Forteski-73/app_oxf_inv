@@ -3,6 +3,7 @@ import 'package:app_oxf_inv/operator/db_settings.dart';
 import 'settings.dart';
 import 'package:app_oxf_inv/widgets/basePage.dart';
 import 'package:app_oxf_inv/styles/btnStyles.dart';
+import 'package:app_oxf_inv/widgets/customSnackBar.dart';
 
 class SettingsProfilePage extends StatefulWidget {
   const SettingsProfilePage({super.key});
@@ -62,17 +63,26 @@ class SettingsProfilePageState extends State<SettingsProfilePage> {
     try {
       st = await dbHelper.deleteSettingsProfile(recordId);
       if (st > 0) {
-        ScaffoldMessenger.of(context).showSnackBar(
+        /*ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Configuração excluída com sucesso!', style: TextStyle(fontSize: 18))),
+        );*/
+        CustomSnackBar.show(context, message: 'Configuração excluída com sucesso!',
+          duration: const Duration(seconds: 3),type: SnackBarType.success,
         );
       } else {
-        ScaffoldMessenger.of(context).showSnackBar(
+        /*ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Erro ao excluir o registro.', style: TextStyle(fontSize: 18))),
+        );*/
+        CustomSnackBar.show(context, message: 'Erro ao excluir o registro.',
+          duration: const Duration(seconds: 3),type: SnackBarType.error,
         );
       }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
+      /*ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Erro ao atualizar os dados: $e', style: const TextStyle(fontSize: 18))),
+      );*/
+      CustomSnackBar.show(context, message: 'Erro ao atualizar os dados: $e',
+        duration: const Duration(seconds: 4),type: SnackBarType.error,
       );
     }
   }
@@ -179,8 +189,11 @@ class SettingsProfilePageState extends State<SettingsProfilePage> {
                               ),
                             );
                           } else {
-                            ScaffoldMessenger.of(context).showSnackBar(
+                            /*ScaffoldMessenger.of(context).showSnackBar(
                               const SnackBar(content: Text('Adicione um perfil primeiro.')),
+                            );*/
+                            CustomSnackBar.show(context, message: 'Adicione um perfil primeiro.',
+                              duration: const Duration(seconds: 4),type: SnackBarType.warning,
                             );
                           }
                         },

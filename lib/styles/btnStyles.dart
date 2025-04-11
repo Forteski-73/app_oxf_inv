@@ -104,7 +104,7 @@ class ButtonStyles {
     final ButtonStyle estilo = ElevatedButton.styleFrom(
       backgroundColor: Colors.blue,
       foregroundColor: Colors.white,
-      padding: const EdgeInsets.symmetric(vertical: 15),
+      padding: const EdgeInsets.symmetric(vertical: 12),
       minimumSize: Size(largura, 50),
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(8),
