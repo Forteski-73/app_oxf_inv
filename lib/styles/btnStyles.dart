@@ -83,16 +83,25 @@ class ButtonStyles {
     );
   }*/
 
-  static ButtonStyle processButton(BuildContext context, int _tamanho) {
+  static Widget processButton(
+    BuildContext context,
+    String texto,
+    int tamanho,
+    IconData? icone,
+    VoidCallback onPressed,
+  ) {
     double largura = MediaQuery.of(context).size.width;
+    String textoFormatado = texto;
 
-    if (_tamanho == 2) {
+    if (tamanho == 2) {
       largura *= 0.5;
-    } else if (_tamanho == 3) {
+    } else if (tamanho == 3) {
       largura *= 0.25;
+      final int limiteCaracteres = icone != null ? 4 : 6;
+      textoFormatado = texto.length > limiteCaracteres ? '${texto.substring(0, limiteCaracteres)}' : texto;
     }
 
-    return ElevatedButton.styleFrom(
+    final ButtonStyle estilo = ElevatedButton.styleFrom(
       backgroundColor: Colors.blue,
       foregroundColor: Colors.white,
       padding: const EdgeInsets.symmetric(vertical: 15),
@@ -114,6 +123,24 @@ class ButtonStyles {
           }
           return null;
         },
+      ),
+    );
+
+    return ElevatedButton(
+      style: estilo,
+      onPressed: onPressed,
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (icone != null) ...[
+            Icon(icone, color: Colors.white, size: 28),
+            const SizedBox(width: 5),
+          ],
+          Text(
+            textoFormatado,
+            style: const TextStyle(fontSize: 16, color: Colors.white),
+          ),
+        ],
       ),
     );
   }

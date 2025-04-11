@@ -207,18 +207,15 @@ class SettingsProfilePageState extends State<SettingsProfilePage> {
           ),
         ],
       ),
-      floatingButtons: ElevatedButton(
-        onPressed: _addProfile,
-        style: ButtonStyles.processButton(context, 1),
-        child: const Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(Icons.playlist_add, color: Colors.white, size: 30),
-            SizedBox(width: 5),
-            Text('Adicionar', style: TextStyle(fontSize: 16, color: Colors.white)),
-          ],
-        ),
+
+      floatingButtons: ButtonStyles.processButton(
+        context,
+        "Adicionar",
+        1,
+        Icons.playlist_add,
+        _addProfile,
       ),
+
     );
   }
 }

@@ -28,7 +28,7 @@ class PaginaComAcoesFlutuantes extends StatelessWidget {
         children: [
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
-            children: [
+            /*children: [
               ElevatedButton(
                 onPressed: () {
                   CustomSnackBar.show(
@@ -59,10 +59,10 @@ class PaginaComAcoesFlutuantes extends StatelessWidget {
                 style: ButtonStyles.outlinedBlackButton(),
                 child: const Text("Filtrar"),
               ),
-            ],
+            ],*/
           ),
           const SizedBox(height: 10),
-          ElevatedButton(
+          /*ElevatedButton(
             onPressed: () {
               CustomSnackBar.show(
                 context,
@@ -74,10 +74,24 @@ class PaginaComAcoesFlutuantes extends StatelessWidget {
             style: ButtonStyles.processButton(context, 1),
             child: const Text("Btn 100%"),
           ),
-        
+          */
+          ButtonStyles.processButton(
+            context,
+            'Btn 100%',
+            1, // tamanho 1 = 100%
+            Icons.touch_app, // escolha o ícone que deseja exibir
+            () {
+              CustomSnackBar.show(
+                context,
+                message: 'Botão Grande',
+                duration: const Duration(seconds: 2),
+                type: SnackBarType.success,
+              );
+            },
+          ),
 
           const SizedBox(height: 10),
-          Row(
+          /*Row(
             children: [
               Expanded(
                 child: ElevatedButton(
@@ -109,8 +123,46 @@ class PaginaComAcoesFlutuantes extends StatelessWidget {
                 ),
               ),
             ],
-          ),
+          ),*/
 
+          Row(
+            children: [
+              Expanded(
+                child: ButtonStyles.processButton(
+                  context,
+                  'Btn 50%',
+                  2, // Tamanho 2 = 50%
+                  Icons.touch_app, // ou outro ícone desejado
+                  () {
+                    CustomSnackBar.show(
+                      context,
+                      message: 'Botão Médio',
+                      duration: const Duration(seconds: 2),
+                      type: SnackBarType.warning,
+                    );
+                  },
+                ),
+              ),
+              const SizedBox(width: 10), // Espaço entre os botões
+              Expanded(
+                child: ButtonStyles.processButton(
+                  context,
+                  'Btn 50%',
+                  2,
+                  Icons.touch_app,
+                  () {
+                    CustomSnackBar.show(
+                      context,
+                      message: 'Botão Médio',
+                      duration: const Duration(seconds: 2),
+                      type: SnackBarType.info,
+                    );
+                  },
+                ),
+              ),
+            ],
+          ),
+/*
           const SizedBox(height: 10),
           Row(
             children: [
@@ -171,6 +223,79 @@ class PaginaComAcoesFlutuantes extends StatelessWidget {
                   },
                   style: ButtonStyles.processButton(context, 3),
                   child: const Text("Btn 25%"),
+                ),
+              ),
+            ],
+          ),
+*/
+          const SizedBox(height: 10),
+          Row(
+            children: [
+              Expanded(
+                child: ButtonStyles.processButton(
+                  context,
+                  'Btn 25%',
+                  3, // Tamanho 3 = 25%
+                  null, // Ícone à sua escolha
+                  () {
+                    CustomSnackBar.show(
+                      context,
+                      message: 'Botão Pequeno',
+                      duration: const Duration(seconds: 2),
+                      type: SnackBarType.info,
+                    );
+                  },
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: ButtonStyles.processButton(
+                  context,
+                  'Btn 25%',
+                  3,
+                  null,
+                  () {
+                    CustomSnackBar.show(
+                      context,
+                      message: 'Botão Pequeno',
+                      duration: const Duration(seconds: 2),
+                      type: SnackBarType.info,
+                    );
+                  },
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: ButtonStyles.processButton(
+                  context,
+                  'Btn 25%',
+                  3,
+                  Icons.touch_app,
+                  () {
+                    CustomSnackBar.show(
+                      context,
+                      message: 'Botão Pequeno',
+                      duration: const Duration(seconds: 2),
+                      type: SnackBarType.info,
+                    );
+                  },
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: ButtonStyles.processButton(
+                  context,
+                  'Btn 25%',
+                  3,
+                  Icons.touch_app,
+                  () {
+                    CustomSnackBar.show(
+                      context,
+                      message: 'Botão Pequeno',
+                      duration: const Duration(seconds: 2),
+                      type: SnackBarType.info,
+                    );
+                  },
                 ),
               ),
             ],
