@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:app_oxf_inv/operator/db_settings.dart';
 import 'settings.dart';
 import 'package:app_oxf_inv/widgets/basePage.dart';
-import 'package:app_oxf_inv/styles/btnStyles.dart';
+import 'package:app_oxf_inv/widgets/customButton.dart';
 import 'package:app_oxf_inv/widgets/customSnackBar.dart';
 
 class SettingsProfilePage extends StatefulWidget {
@@ -221,7 +221,7 @@ class SettingsProfilePageState extends State<SettingsProfilePage> {
         ],
       ),
 
-      floatingButtons: ButtonStyles.processButton(
+      floatingButtons: CustomButton.processButton(
         context,
         "Adicionar",
         1,

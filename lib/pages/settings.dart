@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:app_oxf_inv/operator/db_settings.dart';
+import 'package:app_oxf_inv/widgets/basePage.dart';
+import 'package:app_oxf_inv/widgets/customButton.dart';
+import 'package:app_oxf_inv/widgets/customSnackBar.dart';
 
   class SettingsPage extends StatefulWidget {
     final int profileId;
@@ -273,55 +276,67 @@ class ConfiguracoesScreenState extends State<SettingsPage> {
                       ),
                       const SizedBox(height: 16),
                       // DataTable - Mini Grid
-                      SingleChildScrollView(
-                        scrollDirection: Axis.horizontal,
-                        child: DataTable(
-                          columns: const [
-                            DataColumn(label: Text("Máscara")),
-                            DataColumn(label: Text("Ação")),
-                          ],
-                          rows: maskData.asMap().map<int, DataRow>((index, mask) {
-                            final controller = controllers[index];
-                            return MapEntry(
-                              index,
-                              DataRow(cells: [
-                                DataCell(
-                                  TextField(
-                                    controller: controller,
-                                    onChanged: (value) {
-                                      setDialogState(() {
-                                        mask['mask'] = value; // Atualiza a máscara
-                                      });
-                                    },
-                                    decoration: const InputDecoration(
-                                      border: InputBorder.none,
-                                      labelText: '',
-                                    ),
-                                  ),
-                                ),
-                                DataCell(
-                                  IconButton(
-                                    icon: const Icon(Icons.delete, color: Colors.red),
-                                    onPressed: () async {
-                                      // Deleta máscara do banco de dados antes de remover do contexto
-                                      if (maskData[index]['_id'] != null) {
-                                        await dbHelper.deleteMask(maskData[index]['_id']);
-                                      }
-                                      setDialogState(() {
-                                        maskData.removeAt(index); // Remover da lista local
-                                        controllers.removeAt(index); // Remover o controlador
-                                      });
-                                    },
-                                  ),
-                                ),
-                              ]),
-                            );
-                          }).values.toList(),
-                        ),
-                      ),
+Container(
+  width: double.infinity,
+  child: SingleChildScrollView(
+    //scrollDirection: Axis.horizontal,
+    child: DataTable(
+      columnSpacing: 24,
+      headingRowHeight: 40,
+      dataRowHeight: 50,
+      columns: const [
+        DataColumn(label: Text("Máscara")),
+        DataColumn(label: Text("Ação")),
+      ],
+      rows: maskData.asMap().entries.map((entry) {
+        final index = entry.key;
+        final mask = entry.value;
+        final controller = controllers[index];
+
+        return DataRow(cells: [
+          DataCell(
+            Container( // Força o TextField a ter largura mínima
+              width: MediaQuery.of(context).size.width * 0.9, // ou constraints.maxWidth * 0.7 se quiser dinâmico
+              child: TextField(
+                controller: controller,
+                onChanged: (value) {
+                  setDialogState(() {
+                    mask['mask'] = value;
+                  });
+                },
+                decoration: const InputDecoration(
+                  border: InputBorder.none,
+                  labelText: '',
+                ),
+              ),
+            ),
+          ),
+          DataCell(
+            IconButton(
+              icon: const Icon(Icons.delete, color: Colors.red),
+              onPressed: () async {
+                if (mask['_id'] != null) {
+                  await dbHelper.deleteMask(mask['_id']);
+                }
+                setDialogState(() {
+                  maskData.removeAt(index);
+                  controllers.removeAt(index);
+                });
+              },
+            ),
+          ),
+        ]);
+      }).toList(),
+    ),
+  ),
+),
+
                       const SizedBox(height: 8),
+                      
+                      /*
                       Container(
                         width: double.infinity,  // Faz o botão ocupar toda a largura
+                        
                         child: ElevatedButton(
                           onPressed: () {
                             setDialogState(() {
@@ -346,6 +361,20 @@ class ConfiguracoesScreenState extends State<SettingsPage> {
                           ),
                         ),
                       ),
+                      */
+                      CustomButton.processButton(
+                        context,
+                        "Adicionar Máscara",
+                        1,
+                        Icons.playlist_add,
+                        () {
+                          setDialogState(() {
+                            maskData.add({'mask': '', '_id': null});
+                            controllers.add(TextEditingController());
+                          });
+                        },
+                      ),
+
                     ],
                   ),
                 ),
@@ -431,6 +460,134 @@ class ConfiguracoesScreenState extends State<SettingsPage> {
       );
     }
 
+@override
+Widget build(BuildContext context) {
+  return BasePage(
+    title: 'Aplicativo de Consulta de Estrutura de Produtos. ACEP',
+    subtitle: 'Configurações',
+    body: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Padding(
+          padding: EdgeInsets.symmetric(vertical: 8.0),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Expanded(
+                child: Text(
+                  'Campo',
+                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                ),
+              ),
+              Text(
+                'Exibir',
+                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+              ),
+              SizedBox(width: 25),
+              Text(
+                'Obrigatório',
+                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+              ),
+            ],
+          ),
+        ),
+        const Divider(),
+
+        // REMOVIDO O Expanded AQUI
+        ListView.separated(
+          physics: const NeverScrollableScrollPhysics(), // evita scroll dentro do scroll
+          shrinkWrap: true, // permite renderizar dentro do Column
+          itemCount: campos.length,
+          separatorBuilder: (context, index) => const Divider(),
+          itemBuilder: (context, index) {
+            final campo = campos[index];
+            return InkWell(
+              onTap: () {
+                _showFieldDetailsDialog(
+                    context, widget.profileId, campo['_id'], campo['nome']);
+              },
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Expanded(
+                    child: SingleChildScrollView(
+                      scrollDirection: Axis.horizontal,
+                      child: Row(
+                        children: [
+                          const Icon(Icons.more_vert,
+                              size: 20, color: Colors.black),
+                          Text(campo['nome'],
+                              style: const TextStyle(fontSize: 16)),
+                        ],
+                      ),
+                    ),
+                  ),
+                  Switch(
+                    value: campo['exibir'] == 1,
+                    onChanged: (value) {
+                      setState(() {
+                        campos[index] = {
+                          ...campo,
+                          'exibir': value ? 1 : 0,
+                        };
+                      });
+                      _updateField(
+                          campo['_id'], value, campo['obrigatorio'] == 1);
+                    },
+                    activeColor: Colors.green,
+                  ),
+                  const SizedBox(width: 45),
+                  Switch(
+                    value: campo['obrigatorio'] == 1,
+                    onChanged: (value) {
+                      setState(() {
+                        campos[index] = {
+                          ...campo,
+                          'obrigatorio': value ? 1 : 0,
+                        };
+                      });
+                      _updateField(
+                          campo['_id'], campo['exibir'] == 1, value);
+                    },
+                    activeColor: Colors.green,
+                  ),
+                ],
+              ),
+            );
+          },
+        ),
+      ],
+    ),
+    floatingButtons: SizedBox(
+      width: double.infinity,
+      child: TextButton(
+        onPressed: () {
+          _confirmRestoreDefault(context);
+        },
+        style: TextButton.styleFrom(
+          foregroundColor: Colors.white,
+          backgroundColor: Colors.blue,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(8),
+          ),
+          minimumSize: const Size(double.infinity, 45),
+        ),
+        child: const Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(Icons.refresh, color: Colors.white, size: 30),
+            SizedBox(width: 8),
+            Text("Restaurar Padrão",
+                style: TextStyle(color: Colors.white, fontSize: 16)),
+          ],
+        ),
+      ),
+    ),
+  );
+}
+
+
+/*
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -589,6 +746,7 @@ class ConfiguracoesScreenState extends State<SettingsPage> {
       ),
     );
   }
+  */
 }
 
 void main() {

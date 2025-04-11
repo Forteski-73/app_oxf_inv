@@ -42,7 +42,7 @@ class _BasePageState extends State<BasePage> with TickerProviderStateMixin {
         children: [
           // Conteúdo do corpo que ficará atrás dos botões
           SingleChildScrollView(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 16),
             child: ConstrainedBox(
               constraints: BoxConstraints(
                 minHeight: MediaQuery.of(context).size.height,
@@ -70,7 +70,7 @@ class _BasePageState extends State<BasePage> with TickerProviderStateMixin {
                     opacity: _mostrarFloatingButtons ? 1.0 : 0.0,
                     child: Container(
                       //color: Colors.black.withAlpha((0.15 * 255).round()),
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 10),
                       child: widget.floatingButtons!,
                     ),
                   ),
