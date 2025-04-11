@@ -296,7 +296,7 @@ Container(
         return DataRow(cells: [
           DataCell(
             Container( // Força o TextField a ter largura mínima
-              width: MediaQuery.of(context).size.width * 0.9, // ou constraints.maxWidth * 0.7 se quiser dinâmico
+              width: MediaQuery.of(context).size.width * 0.6, // ocupa 90% da largura da tela
               child: TextField(
                 controller: controller,
                 onChanged: (value) {
