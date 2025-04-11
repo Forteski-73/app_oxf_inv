@@ -9,7 +9,7 @@ class PaginaComAcoesFlutuantes extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return BasePage(
-      title: 'Gestão de Produtos',
+      title: '',
       subtitle: 'Painel de Ações',
       body: const Center(
         child: Text(

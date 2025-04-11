@@ -35,7 +35,7 @@ class _BasePageState extends State<BasePage> with TickerProviderStateMixin {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: CustomAppBar(
-        title: widget.title,
+        title: widget.title.isNotEmpty ? widget.title : "Aplicativo de Consulta de Estrutura de Produtos. ACEP",
         subtitle: widget.subtitle,
       ),
       body: Stack(
