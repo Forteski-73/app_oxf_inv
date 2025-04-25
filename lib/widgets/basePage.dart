@@ -18,6 +18,71 @@ class BasePage extends StatefulWidget {
 
   @override
   State<BasePage> createState() => _BasePageState();
+
+  /// Método estático para exibir o diálogo de confirmação
+  static Future<bool> confirmAlert(BuildContext context, String message) async {
+    final result = await showDialog<bool>(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(8),
+          ),
+          content: Text(
+            message,
+            style: const TextStyle(
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          actions: [
+            Row(
+              children: [
+                Expanded(
+                  child: ElevatedButton(
+                    onPressed: () {
+                      Navigator.of(context).pop(false); // Cancelar
+                    },
+                    style: ElevatedButton.styleFrom(
+                      padding: const EdgeInsets.all(16),
+                      backgroundColor: Colors.red,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                    ),
+                    child: const Text(
+                      'CANCELAR',
+                      style: TextStyle(fontSize: 16, color: Colors.white),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: ElevatedButton(
+                    onPressed: () {
+                      Navigator.of(context).pop(true); // SIM
+                    },
+                    style: ElevatedButton.styleFrom(
+                      padding: const EdgeInsets.all(16),
+                      backgroundColor: Colors.blue,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                    ),
+                    child: const Text(
+                      'SIM',
+                      style: TextStyle(fontSize: 16, color: Colors.white),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        );
+      },
+    );
+
+    return result ?? false;
+  }
 }
 
 class _BasePageState extends State<BasePage> with TickerProviderStateMixin {

@@ -89,7 +89,7 @@ class ConfiguracoesScreenState extends State<SettingsPage> {
     }
   }
 
-  void _confirmRestoreDefault(BuildContext context) {
+  /*void _confirmRestoreDefault(BuildContext context) {
     showDialog(
       context: context,
       builder: (BuildContext context) {
@@ -150,6 +150,13 @@ class ConfiguracoesScreenState extends State<SettingsPage> {
         );
       },
     );
+  }*/
+
+  void _confirmRestoreDefault(BuildContext context) async {
+    bool confirmed = await BasePage.confirmAlert(context, 'Deseja mesmo restaurar o padrão? isso apagará os dados');
+    if (confirmed) {
+      restoreDefault();
+    }
   }
 
   Future<void> _showFieldDetailsDialog(BuildContext context, int perfilId, int settingId, String name) async {
@@ -373,86 +380,76 @@ Container(
                             controllers.add(TextEditingController());
                           });
                         },
+                        Colors.blue,
                       ),
 
                     ],
                   ),
                 ),
               ),
-                actions: [
-                  Row(
-                    children: [
-                      // Botão Cancelar
-                      Expanded(
-                        child: ElevatedButton(
-                          style: ElevatedButton.styleFrom(
-                            padding: const EdgeInsets.all(16),
-                            backgroundColor: Colors.red,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                          ),
-                          onPressed: () {
-                            Navigator.of(context).pop();
-                          },
-                          child: const Text(
-                            'CANCELAR',
-                            style: TextStyle(color: Colors.white),
-                          ),
-                        ),
+              actions: [
+                Row(
+                  children: [
+                    // Botão Cancelar
+                    Expanded(
+                      child: CustomButton.processButton(
+                        context,
+                        'CANCELAR',
+                        2, // Tamanho 1
+                        null, // Sem ícone
+                        () {
+                          Navigator.of(context).pop();
+                        },
+                        Colors.red, // Cor vermelha
                       ),
-                      const SizedBox(width: 8),
-                      // Botão OK
-                      Expanded(
-                        child: ElevatedButton(
-                          style: ElevatedButton.styleFrom(
-                            padding: const EdgeInsets.all(16),
-                            backgroundColor: Colors.blue, 
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                          ),
-                          onPressed: () async {
-                            // Atualizar os dados no banco
-                            int id = await dbHelper.saveFieldDataTypeSetting({
-                              DBSettings.columnSettingId: settingId,
-                              DBSettings.columnFieldName: fieldName,
-                              DBSettings.columnFieldType: fieldType,
-                              DBSettings.columnMinSize: minSize,
-                              DBSettings.columnMaxSize: maxSize,
-                            });
+                    ),
+                    const SizedBox(width: 8),
+                    
+                    // Botão OK
+                    Expanded(
+                      child: CustomButton.processButton(
+                        context,
+                        'OK',
+                        2, // Tamanho 1
+                        null, // Sem ícone
+                        () async {
+                          // Atualizar os dados no banco
+                          int id = await dbHelper.saveFieldDataTypeSetting({
+                            DBSettings.columnSettingId: settingId,
+                            DBSettings.columnFieldName: fieldName,
+                            DBSettings.columnFieldType: fieldType,
+                            DBSettings.columnMinSize: minSize,
+                            DBSettings.columnMaxSize: maxSize,
+                          });
 
-                            if (id > 0) {
-                              // Salvar as máscaras no banco
-                              for (var mask in maskData) {
-                                if (mask['mask'] != null && mask['mask']!.isNotEmpty) {
-                                  if (mask['_id'] != null) {
-                                    // Atualizar máscara existente
-                                    await dbHelper.updateMask({
-                                      DBSettings.columnId: mask['_id'],
-                                      DBSettings.columnMask: mask['mask'],
-                                    });
-                                  } else {
-                                    // Inserir nova máscara
-                                    await dbHelper.insertMask({
-                                      DBSettings.columnMask: mask['mask'],
-                                      DBSettings.columnFieldDataTypeSettingId: id,
-                                    });
-                                  }
+                          if (id > 0) {
+                            // Salvar as máscaras no banco
+                            for (var mask in maskData) {
+                              if (mask['mask'] != null && mask['mask']!.isNotEmpty) {
+                                if (mask['_id'] != null) {
+                                  // Atualizar máscara existente
+                                  await dbHelper.updateMask({
+                                    DBSettings.columnId: mask['_id'],
+                                    DBSettings.columnMask: mask['mask'],
+                                  });
+                                } else {
+                                  // Inserir nova máscara
+                                  await dbHelper.insertMask({
+                                    DBSettings.columnMask: mask['mask'],
+                                    DBSettings.columnFieldDataTypeSettingId: id,
+                                  });
                                 }
                               }
                             }
-                            Navigator.of(context).pop();
-                          },
-                          child: const Text(
-                            'OK',
-                            style: TextStyle(color: Colors.white),
-                          ),
-                        ),
+                          }
+                          Navigator.of(context).pop();
+                        },
+                        Colors.blue, // Cor azul
                       ),
-                    ],
-                  ),
-                ],
+                    ),
+                  ],
+                ),
+              ],
               );
             },
           );
@@ -560,27 +557,15 @@ Widget build(BuildContext context) {
     ),
     floatingButtons: SizedBox(
       width: double.infinity,
-      child: TextButton(
-        onPressed: () {
-          _confirmRestoreDefault(context);
+      child: CustomButton.processButton(
+        context,
+        'Restaurar Padrão',
+        1, // Tamanho padrão (100%)
+        Icons.refresh, // Ícone de restaurar
+        () {
+          _confirmRestoreDefault(context); // Função de confirmação
         },
-        style: TextButton.styleFrom(
-          foregroundColor: Colors.white,
-          backgroundColor: Colors.blue,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(8),
-          ),
-          minimumSize: const Size(double.infinity, 45),
-        ),
-        child: const Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(Icons.refresh, color: Colors.white, size: 30),
-            SizedBox(width: 8),
-            Text("Restaurar Padrão",
-                style: TextStyle(color: Colors.white, fontSize: 16)),
-          ],
-        ),
+        Colors.blue, // Cor azul
       ),
     ),
   );

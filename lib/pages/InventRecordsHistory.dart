@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:app_oxf_inv/operator/db_inventory.dart';
 import 'inventoryExport.dart';
+import 'package:app_oxf_inv/widgets/basePage.dart';
+import 'package:app_oxf_inv/widgets/customSnackBar.dart';
+import 'package:app_oxf_inv/widgets/customButton.dart';
 
 class InventoryHistoryDetail extends StatefulWidget {
   final int inventoryId;
@@ -49,8 +52,8 @@ class _InventoryHistoryDetailState extends State<InventoryHistoryDetail> {
       setState(() {
         _isLoading = false; // Em caso de erro, para de carregar
       });
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Erro ao carregar os dados: $e', style: TextStyle(fontSize: 18))),
+      CustomSnackBar.show(context, message: "Erro ao carregar os dados: $e",
+        duration: const Duration(seconds: 4),type: SnackBarType.error,
       );
     }
   }
@@ -82,19 +85,19 @@ class _InventoryHistoryDetailState extends State<InventoryHistoryDetail> {
       st = await DBInventory.instance.deleteInventoryAndRecords(inventoryId);
 
       if(st > 0) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Registro excluído com sucesso!', style: TextStyle(fontSize: 18))),
+        CustomSnackBar.show(context, message: 'Registro excluído com sucesso!',
+          duration: const Duration(seconds: 3),type: SnackBarType.success,
         );
       }
       else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Erro ao excluir o registro.', style: TextStyle(fontSize: 18))),
+        CustomSnackBar.show(context, message: "Erro ao excluir o registro.",
+          duration: const Duration(seconds: 4),type: SnackBarType.error,
         );
       }
 
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Erro ao excluir registro: $e', style: TextStyle(fontSize: 18))),
+      CustomSnackBar.show(context, message: "Erro ao excluir registro: $e",
+        duration: const Duration(seconds: 4),type: SnackBarType.error,
       );
     }
 
@@ -124,18 +127,18 @@ class _InventoryHistoryDetailState extends State<InventoryHistoryDetail> {
           _records = inventoryRecordsResult;
         });
 
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Contagem excluída com sucesso!', style: TextStyle(fontSize: 18))),
+        CustomSnackBar.show(context, message: 'Contagem excluída com sucesso!',
+          duration: const Duration(seconds: 3),type: SnackBarType.success,
         );
       }
       else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Erro ao excluir o registro.', style: TextStyle(fontSize: 18))),
+        CustomSnackBar.show(context, message: 'Erro ao excluir o registro.',
+          duration: const Duration(seconds: 4),type: SnackBarType.error,
         );
       }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Erro ao atualizar os dados: $e', style: const TextStyle(fontSize: 18))),
+      CustomSnackBar.show(context, message: 'Erro ao atualizar os dados: $e',
+        duration: const Duration(seconds: 4),type: SnackBarType.error,
       );
     }
   }
@@ -206,6 +209,126 @@ class _InventoryHistoryDetailState extends State<InventoryHistoryDetail> {
   }
 
   @override
+  Widget build(BuildContext context) {
+    return BasePage(
+      title: 'Aplicativo de Consulta de Estrutura de Produtos. ACEP',
+      subtitle: _inventory['code'] ?? 'Detalhes do Inventário',
+      body: _isLoading // Exibir carregando.. até que os dados estejam prontos
+          ? const Center(child: CircularProgressIndicator(color: Colors.black))
+          : _inventory.isEmpty // Se o inventário estiver vazio após carregar
+              ? const Center(child: Text('Inventário não encontrado.'))
+              : SingleChildScrollView(
+                  child: Padding(
+                    padding: const EdgeInsets.all(8.0),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text('INVENTÁRIO',
+                          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                        ),
+                        Card(
+                          color: _inventory[DBInventory.columnStatus] == 'CONCLUÍDO'
+                              ? Colors.green.shade100
+                              : _inventory[DBInventory.columnStatus] == 'EM ANDAMENTO'
+                                  ? Colors.orange.shade100
+                                  : _inventory[DBInventory.columnStatus] == 'NÃO INICIADO'
+                                      ? Colors.blue.shade100
+                                      : Colors.grey.shade100,
+                          child: ListTile(
+                            title: Text(
+                              _inventory[DBInventory.columnStatus] ?? 'Status não disponível',
+                              style: TextStyle(
+                                color: _inventory[DBInventory.columnStatus] == 'CONCLUÍDO'
+                                    ? Colors.green
+                                    : _inventory[DBInventory.columnStatus] == 'EM ANDAMENTO'
+                                        ? Colors.orange
+                                        : _inventory[DBInventory.columnStatus] == 'NÃO INICIADO'
+                                            ? Colors.blue
+                                            : Colors.grey,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            subtitle: _inventory.isEmpty
+                                ? const Text('Inventário excluído.')
+                                : Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      _alignRow('Código do Inventário:', '${_inventory[DBInventory.columnCode]}'),
+                                      _alignRow('Data de criação:', '${_inventory[DBInventory.columnDate]}'),
+                                      _alignRow('Nome do Inventário:', '${_inventory[DBInventory.columnName]}'),
+                                      _alignRow('Setor:', '${_inventory[DBInventory.columnSector]}'),
+                                      _alignRow('Total:', '${_inventory[DBInventory.columnTotal] ?? 0}'),
+                                    ],
+                                  ),
+                            trailing: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                IconButton(
+                                  icon: const Icon(Icons.delete, color: Colors.red),
+                                  onPressed: () async {
+                                    await _showDeleteConfirmationDialog(context, _inventory[DBInventory.columnId] as int, 0);
+                                  },
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 10),
+                        const Text('ITENS DO INVENTÁRIO',
+                          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                        ),
+                        ..._records.map((record) {
+                          return Card(
+                            child: ListTile(
+                              title: _alignRow('Sequência:', '${record[DBInventory.columnId] ?? ''}'),
+                              subtitle: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  _alignRow('Unitizador:', '${record[DBInventory.columnUnitizer] ?? ''}'),
+                                  _alignRow('Depósito:', '${record[DBInventory.columnDeposit] ?? ''}'),
+                                  _alignRow('Código de Barras:', '${record[DBInventory.columnBarcode] ?? ''}'),
+                                  _alignRow('Total:', '${record[DBInventory.columnTotal] ?? ''}'),
+                                ],
+                              ),
+                              trailing: IconButton(
+                                icon: const Icon(Icons.delete, color: Colors.red),
+                                onPressed: () async {
+                                  await _showDeleteConfirmationDialog(context, record[DBInventory.columnId] as int, 1);
+                                },
+                              ),
+                            ),
+                          );
+                        }).toList(),
+                      ],
+                    ),
+                  ),
+                ),
+      floatingButtons: _inventory[DBInventory.columnStatus] == 'CONCLUÍDO'
+          ? Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 8.0),
+              child: CustomButton.processButton(
+                context,
+                'Exportar dados',
+                1,
+                Icons.open_in_browser,
+                () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => InventoryExportPage(
+                        inventoryId: _inventory[DBInventory.columnId] as int,
+                      ),
+                    ),
+                  );
+                },
+                Colors.blue,
+              ),
+            )
+          : null,
+    );
+  }
+
+  /*@override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
@@ -376,6 +499,6 @@ class _InventoryHistoryDetailState extends State<InventoryHistoryDetail> {
         ],
       ),
     );
-  }
+  }*/
 }
 

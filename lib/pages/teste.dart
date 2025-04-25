@@ -26,55 +26,10 @@ class PaginaComAcoesFlutuantes extends StatelessWidget {
       floatingButtons: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Row(
+          const Row(
             mainAxisAlignment: MainAxisAlignment.center,
-            /*children: [
-              ElevatedButton(
-                onPressed: () {
-                  CustomSnackBar.show(
-                    context,
-                    message: 'Produto adicionado!!!',
-                    duration: const Duration(seconds: 2),
-                    type: SnackBarType.info,
-                  );
-                },
-                style: ButtonStyles.blackButton(),
-                child: const Text("Adicionar Produto"),
-              ),
-              const SizedBox(width: 10),
-              OutlinedButton(
-                onPressed: () {
-                  CustomSnackBar.show(
-                    context,
-                    message: 'Produto adicionado com sucesso!\n'
-                            'Produto adicionado com sucesso!\n'
-                            'teste1\n'
-                            'teste2\n'
-                            'teste3\n'
-                            'eita!',
-                    duration: const Duration(seconds: 8),
-                    type: SnackBarType.error,
-                  );
-                },
-                style: ButtonStyles.outlinedBlackButton(),
-                child: const Text("Filtrar"),
-              ),
-            ],*/
           ),
           const SizedBox(height: 10),
-          /*ElevatedButton(
-            onPressed: () {
-              CustomSnackBar.show(
-                context,
-                message: 'Botão Grande',
-                duration: const Duration(seconds: 2),
-                type: SnackBarType.info,
-              );
-            },
-            style: ButtonStyles.processButton(context, 1),
-            child: const Text("Btn 100%"),
-          ),
-          */
           ButtonStyles.processButton(
             context,
             'Btn 100%',
@@ -89,42 +44,7 @@ class PaginaComAcoesFlutuantes extends StatelessWidget {
               );
             },
           ),
-
           const SizedBox(height: 10),
-          /*Row(
-            children: [
-              Expanded(
-                child: ElevatedButton(
-                  onPressed: () {
-                    CustomSnackBar.show(
-                      context,
-                      message: 'Botão Médio',
-                      duration: const Duration(seconds: 2),
-                      type: SnackBarType.info,
-                    );
-                  },
-                  style: ButtonStyles.processButton(context, 2),
-                  child: const Text("Btn 50%"),
-                ),
-              ),
-              const SizedBox(width: 10), // Espaço entre os botões
-              Expanded(
-                child: ElevatedButton(
-                  onPressed: () {
-                    CustomSnackBar.show(
-                      context,
-                      message: 'Botão Médio',
-                      duration: const Duration(seconds: 2),
-                      type: SnackBarType.info,
-                    );
-                  },
-                  style: ButtonStyles.processButton(context, 2),
-                  child: const Text("Btn 50%"),
-                ),
-              ),
-            ],
-          ),*/
-
           Row(
             children: [
               Expanded(
@@ -162,72 +82,6 @@ class PaginaComAcoesFlutuantes extends StatelessWidget {
               ),
             ],
           ),
-/*
-          const SizedBox(height: 10),
-          Row(
-            children: [
-              Expanded(
-                child: ElevatedButton(
-                  onPressed: () {
-                    CustomSnackBar.show(
-                      context,
-                      message: 'Botão Pequeno',
-                      duration: const Duration(seconds: 2),
-                      type: SnackBarType.info,
-                    );
-                  },
-                  style: ButtonStyles.processButton(context, 3),
-                  child: const Text("Btn 25%"),
-                ),
-              ),
-              const SizedBox(width: 10), // Espaço entre os botões
-              Expanded(
-                child: ElevatedButton(
-                  onPressed: () {
-                    CustomSnackBar.show(
-                      context,
-                      message: 'Botão Pequeno',
-                      duration: const Duration(seconds: 2),
-                      type: SnackBarType.info,
-                    );
-                  },
-                  style: ButtonStyles.processButton(context, 3),
-                  child: const Text("Btn 25%"),
-                ),
-              ),
-              const SizedBox(width: 10), // Espaço entre os botões
-              Expanded(
-                child: ElevatedButton(
-                  onPressed: () {
-                    CustomSnackBar.show(
-                      context,
-                      message: 'Botão Pequeno',
-                      duration: const Duration(seconds: 2),
-                      type: SnackBarType.info,
-                    );
-                  },
-                  style: ButtonStyles.processButton(context, 3),
-                  child: const Text("Btn 25%"),
-                ),
-              ),
-              const SizedBox(width: 10), // Espaço entre os botões
-              Expanded(
-                child: ElevatedButton(
-                  onPressed: () {
-                    CustomSnackBar.show(
-                      context,
-                      message: 'Botão Pequeno',
-                      duration: const Duration(seconds: 2),
-                      type: SnackBarType.info,
-                    );
-                  },
-                  style: ButtonStyles.processButton(context, 3),
-                  child: const Text("Btn 25%"),
-                ),
-              ),
-            ],
-          ),
-*/
           const SizedBox(height: 10),
           Row(
             children: [
@@ -300,10 +154,8 @@ class PaginaComAcoesFlutuantes extends StatelessWidget {
               ),
             ],
           ),
-
         ],
       ),
     );
   }
-
 }

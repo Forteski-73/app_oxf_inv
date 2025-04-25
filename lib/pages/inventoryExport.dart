@@ -7,6 +7,9 @@ import 'package:app_oxf_inv/operator/db_inventoryExport.dart';
 import 'package:ftpconnect/ftpconnect.dart';
 import 'dart:typed_data';
 import 'package:flutter_email_sender/flutter_email_sender.dart';
+import 'package:app_oxf_inv/widgets/basePage.dart';
+import 'package:app_oxf_inv/widgets/customSnackBar.dart';
+import 'package:app_oxf_inv/widgets/customButton.dart';
 
 class InventoryExportPage extends StatefulWidget {
   final int inventoryId;
@@ -206,9 +209,9 @@ class _InventoryExportPage extends State<InventoryExportPage> {
           "${_fileNameController.text}.csv" : "${_fileNameController.text}.txt");
       }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: Text("Erro ao exportar: $e", style: const TextStyle(fontSize: 18)),
-      ));
+      CustomSnackBar.show(context, message: "Erro ao exportar: $e",
+        duration: const Duration(seconds: 4),type: SnackBarType.error,
+      );
     } finally {
       setState(() {
         _isExporting = false;
@@ -238,16 +241,14 @@ class _InventoryExportPage extends State<InventoryExportPage> {
       bool uploaded = await ftpConnect.uploadFile(tempFile);
       if (!uploaded) throw Exception("Falha ao enviar o arquivo para o servidor.");
 
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-        content: Text("Arquivo exportado com sucesso para o servidor FTP."),
-      ));
+      CustomSnackBar.show(context, message: 'Arquivo exportado com sucesso para o servidor FTP.',
+        duration: const Duration(seconds: 3),type: SnackBarType.success,);
 
       // Exclui o arquivo temporário
       await tempFile.delete();
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: Text("Erro ao gravar na rede: $e", style: const TextStyle(fontSize: 18)),
-      ));
+      CustomSnackBar.show(context, message: 'Erro ao gravar na rede: $e',
+        duration: const Duration(seconds: 4),type: SnackBarType.error,);
     } finally {
       ftpConnect.disconnect();
     }
@@ -280,9 +281,8 @@ class _InventoryExportPage extends State<InventoryExportPage> {
 
       await FlutterEmailSender.send(email);
     } catch (error) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: Text('Erro ao enviar e-mail: $error', style: const TextStyle(fontSize: 18)),
-      ));
+      CustomSnackBar.show(context, message: 'Erro ao enviar e-mail: $error',
+        duration: const Duration(seconds: 4),type: SnackBarType.error,);
     }
   }
 
@@ -306,24 +306,9 @@ class _InventoryExportPage extends State<InventoryExportPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Column(
-          mainAxisAlignment: MainAxisAlignment.start,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text("Aplicativo de Consulta de Estrutura de Produtos. ACEP",
-              style: TextStyle(color: Colors.white, fontSize: 12),
-            ),
-            const SizedBox(height: 2),
-            Text("Exportar Inventário: ${_inventory[DBInventory.columnCode] ?? ''}",
-              style: const TextStyle(color: Colors.white),
-            ),
-          ],
-        ),
-        backgroundColor: Colors.black,
-        iconTheme: const IconThemeData(color: Colors.white),
-      ),
+    return BasePage(
+      title: "Aplicativo de Consulta de Estrutura de Produtos. ACEP",
+      subtitle: "Exportar Inventário: ${_inventory[DBInventory.columnCode] ?? ''}",
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: SingleChildScrollView(
@@ -475,7 +460,7 @@ class _InventoryExportPage extends State<InventoryExportPage> {
                                   _exportToFilePath = true;
                                   _exportToEmail = false;
                                 });
-                              }: null, 
+                              }: null,
                             ),
                           ),
                         ],
@@ -538,29 +523,32 @@ class _InventoryExportPage extends State<InventoryExportPage> {
           ),
         ),
       ),
-      bottomNavigationBar: Padding(
-        padding: const EdgeInsets.fromLTRB(8.0, 0.0, 8.0, 15.0),
-        child: ElevatedButton(
-          onPressed: _isExporting
-              ? null 
+      floatingButtons: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 8.0),
+        child: CustomButton.processButton(
+          context,
+          _isExporting ? 'Exportando..' : 'Exportar',
+          1, // Tamanho 1 = 100% de largura
+          null, // Nenhum ícone se não estiver exportando
+          _isExporting
+              ? null
               : () {
                   exportFile(context);
                 },
-          style: ElevatedButton.styleFrom(
-            backgroundColor: Colors.blue,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-            minimumSize: const Size(double.infinity, 50),
-          ),
-          child: _isExporting
+          Colors.blue, // Cor do botão
+          childCustom: _isExporting
               ? const Row(
                   mainAxisAlignment: MainAxisAlignment.center,
-                  children: const [
+                  children: [
                     CircularProgressIndicator(color: Colors.white),
                     SizedBox(width: 10),
-                    Text('Exportando...', style: TextStyle(fontSize: 16, color: Colors.white),),
+                    Text(
+                      'Exportando...',
+                      style: TextStyle(fontSize: 16, color: Colors.white),
+                    ),
                   ],
                 )
-              : const Text('Exportar', style: TextStyle(fontSize: 16, color: Colors.white),),
+              : null,
         ),
       ),
     );

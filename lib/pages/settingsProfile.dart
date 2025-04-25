@@ -227,6 +227,7 @@ class SettingsProfilePageState extends State<SettingsProfilePage> {
         1,
         Icons.playlist_add,
         _addProfile,
+        Colors.blue,
       ),
 
     );
