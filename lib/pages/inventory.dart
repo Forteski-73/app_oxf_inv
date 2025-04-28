@@ -2,6 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:app_oxf_inv/operator/db_inventory.dart';
 import 'package:app_oxf_inv/operator/db_settings.dart';
 import 'package:intl/intl.dart';
+import 'package:app_oxf_inv/widgets/basePage.dart';
+import 'package:app_oxf_inv/widgets/customSnackBar.dart';
+import 'package:app_oxf_inv/styles/btnStyles.dart';
+import 'package:app_oxf_inv/widgets/customButton.dart';
 
 class InventoryPage extends StatefulWidget {
   const InventoryPage({super.key});
@@ -246,7 +250,217 @@ class _InventoryPageState extends State<InventoryPage> {
     );
   }
   
-  
+
+@override
+Widget build(BuildContext context) {
+  return BasePage(
+    title: '',
+    subtitle: 'Criação de Inventário',
+    body: SingleChildScrollView(
+      padding: const EdgeInsets.all(16.0),
+      child: Column(
+        children: [
+          Card(
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(8),
+            ),
+            elevation: 4,
+            child: Column(
+              children: [
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: inventory?['status'] == 'EM ANDAMENTO'
+                        ? Colors.orange
+                        : inventory?['status'] == 'CONCLUÍDO'
+                            ? Colors.green
+                            : Colors.blue,
+                    borderRadius: const BorderRadius.only(
+                      topLeft: Radius.circular(8),
+                      topRight: Radius.circular(8),
+                    ),
+                  ),
+                  child: Text(
+                    inventory?['status'] ?? 'NÃO INICIADO',
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 16,
+                    ),
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Flexible(
+                            flex: 3,
+                            child: TextField(
+                              readOnly: true,
+                              decoration: const InputDecoration(
+                                labelText: 'Código do Inventário',
+                                border: OutlineInputBorder(),
+                              ),
+                              style: const TextStyle(fontSize: 18),
+                              controller: _codeController,
+                            ),
+                          ),
+                          const SizedBox(width: 5),
+                          Flexible(
+                            flex: 2,
+                            child: TextField(
+                              readOnly: true,
+                              decoration: const InputDecoration(
+                                labelText: 'Data de Criação',
+                                border: OutlineInputBorder(),
+                              ),
+                              style: const TextStyle(fontSize: 18),
+                              controller: _dateController,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 12),
+                      const Divider(thickness: 1, color: Colors.grey),
+                      const SizedBox(height: 12),
+                      TextField(
+                        decoration: const InputDecoration(
+                          labelText: 'Nome do Inventário',
+                          border: OutlineInputBorder(),
+                        ),
+                        style: const TextStyle(fontSize: 18),
+                        controller: _nameController,
+                      ),
+                      const SizedBox(height: 16),
+                      TextField(
+                        keyboardType: TextInputType.text,
+                        decoration: const InputDecoration(
+                          labelText: 'Setor',
+                          border: OutlineInputBorder(),
+                        ),
+                        style: const TextStyle(fontSize: 18),
+                        controller: _sectorController,
+                      ),
+                      const SizedBox(height: 16),
+                      SizedBox(
+                        height: 54,
+                        child: InputDecorator(
+                          decoration: InputDecoration(
+                            labelText: 'Selecione um perfil de configuração',
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(4),
+                            ),
+                            contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                          ),
+                          child: DropdownButtonHideUnderline(
+                            child: DropdownButton<String>(
+                              style: const TextStyle(fontSize: 18, color: Colors.black),
+                              value: _selectedProfile.isNotEmpty ? _selectedProfile : null,
+                              onChanged: (String? newValue) {
+                                setState(() {
+                                  _selectedProfile = newValue ?? '';
+                                });
+                              },
+                              items: _profileOptions.map((String profile) {
+                                return DropdownMenuItem<String>(
+                                  value: profile,
+                                  child: Text(profile),
+                                );
+                              }).toList(),
+                              isExpanded: true,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 16),
+        ],
+      ),
+    ),
+    floatingButtons: Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        const SizedBox(height: 10),
+        CustomButton.processButton(
+          context,
+          'INICIAR',
+          1,
+          Icons.play_arrow,
+          updateControlls(1)
+              ? () {
+                  FocusScope.of(context).unfocus();
+                  startInventory();
+                }
+              : null,
+          updateControlls(1) ? null : Colors.grey,
+        ),
+        const SizedBox(height: 10),
+        CustomButton.processButton(
+          context,
+          'REGISTRAR ITENS',
+          1,
+          Icons.barcode_reader,
+          updateControlls(0)
+              ? () async {
+                  int result = await startInventory();
+                  if (result == 1) {
+                    Navigator.pushNamed(
+                      context,
+                      '/inventoryRecord',
+                      arguments: _selectedProfile,
+                    );
+                  }
+                }
+              : null,
+          updateControlls(0) ? null : Colors.grey,
+        ),
+        const SizedBox(height: 10),
+        CustomButton.processButton(
+          context,
+          'FINALIZAR',
+          1,
+          Icons.check_circle,
+          updateControlls(2)
+              ? () {
+                  _showConfirFinish(context);
+                }
+              : null,
+          updateControlls(2) ? null : Colors.grey,
+        ),
+        const SizedBox(height: 10),
+        CustomButton.processButton(
+          context,
+          'CANCELAR',
+          1,
+          Icons.cancel,
+          updateControlls(3)
+              ? () {
+                  Navigator.pushReplacementNamed(
+                    context,
+                    '/management',
+                  );
+                }
+              : null,
+          updateControlls(3) ? null : Colors.grey,
+        ),
+      ],
+    ),
+
+  );
+}
+
+
+
+  /*
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -501,5 +715,5 @@ class _InventoryPageState extends State<InventoryPage> {
         ],
       ),
     );
-  }
+  }*/
 }

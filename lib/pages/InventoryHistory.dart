@@ -77,7 +77,7 @@ class _InventoryHistoryState extends State<InventoryHistory> with RouteAware {
 Widget build(BuildContext context) {
   return BasePage(
     title: '',
-    subtitle: 'Inventário Histórico__',
+    subtitle: 'Inventário Histórico',
     body: isLoading
         ? const Center(child: CircularProgressIndicator(color: Colors.white))
         : inventoryData.isEmpty
