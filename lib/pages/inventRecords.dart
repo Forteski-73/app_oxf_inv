@@ -4,6 +4,10 @@ import 'package:flutter/material.dart';
 import 'package:app_oxf_inv/operator/db_settings.dart';
 import 'package:app_oxf_inv/operator/db_inventory.dart';
 import 'searchProduct.dart';
+import 'package:app_oxf_inv/widgets/basePage.dart';
+import 'package:app_oxf_inv/widgets/customSnackBar.dart';
+import 'package:app_oxf_inv/styles/btnStyles.dart';
+import 'package:app_oxf_inv/widgets/customButton.dart';
 
 class InventoryRecordsPage extends StatefulWidget {
   InventoryRecordsPage({super.key});
@@ -508,26 +512,261 @@ Future<void> saveMoreRecords(BuildContext context) async {
     return barcodeScanRes;
   }*/
 
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-      title: const Column(
-        mainAxisAlignment: MainAxisAlignment.start,
-        crossAxisAlignment: CrossAxisAlignment.start,
+@override
+Widget build(BuildContext context) {
+  return BasePage(
+    title: '',
+    subtitle: 'Criação de Inventário',
+    body: SingleChildScrollView(
+      child: Padding(
+        padding: const EdgeInsets.all(1.0),
+        child: FutureBuilder<Map<String, Map<String, dynamic>>>(
+          future: _settingsFuture,
+          builder: (context, snapshot) {
+            if (snapshot.connectionState == ConnectionState.waiting) {
+              return const Center(child: CircularProgressIndicator(color: Colors.white));
+            } else if (snapshot.hasError) {
+              return const Center(child: Text('Erro ao carregar inventário.'));
+            } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
+              return const Center(child: Text('Nenhum inventário encontrado.'));
+            }
+            final settings = snapshot.data!;
+            return Column(
+              children: [
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 8.0),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        const Text(
+                          'Total de Registros: ',
+                          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+                        ),
+                        Text(
+                          _totalController.text,
+                          style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+                        ),
+                        const Padding(padding: EdgeInsets.only(right: 1)),
+                      ],
+                    ),
+                  ),
+                ),
+                _buildTextField(
+                  id: 1,
+                  label: 'Unitizador',
+                  visible: true,
+                  enabled: settings['Unitizador']?['exibir'] == 1,
+                  required: settings['Unitizador']?['obrigatorio'] == 1,
+                  controller: controllers[0],
+                  focusNode: focusNodes[0],
+                  settings: settings,
+                  suffixIcon: const Icon(Icons.barcode_reader),
+                ),
+                const SizedBox(height: 8),
+                _buildTextField(
+                  id: 2,
+                  label: 'Posição',
+                  visible: true,
+                  enabled: settings['Posição']?['exibir'] == 1,
+                  required: settings['Posição']?['obrigatorio'] == 1,
+                  controller: controllers[1],
+                  focusNode: focusNodes[1],
+                  settings: settings,
+                  suffixIcon: const Icon(Icons.barcode_reader),
+                ),
+                const SizedBox(height: 8),
+                Row(
+                  children: [
+                    Expanded(
+                      child: _buildTextField(
+                        id: 3,
+                        label: 'Depósito',
+                        visible: true,
+                        enabled: settings['Depósito']?['exibir'] == 1,
+                        required: settings['Depósito']?['obrigatorio'] == 1,
+                        controller: controllers[2],
+                        focusNode: focusNodes[2],
+                        settings: settings,
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: _buildTextField(
+                        id: 4,
+                        label: 'Bloco',
+                        visible: true,
+                        enabled: settings['Bloco']?['exibir'] == 1,
+                        required: settings['Bloco']?['obrigatorio'] == 1,
+                        controller: controllers[3],
+                        focusNode: focusNodes[3],
+                        settings: settings,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                Row(
+                  children: [
+                    Expanded(
+                      child: _buildTextField(
+                        id: 5,
+                        label: 'Quadra',
+                        visible: true,
+                        enabled: settings['Quadra']?['exibir'] == 1,
+                        required: settings['Quadra']?['obrigatorio'] == 1,
+                        controller: controllers[4],
+                        focusNode: focusNodes[4],
+                        settings: settings,
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: _buildTextField(
+                        id: 6,
+                        label: 'Lote',
+                        visible: true,
+                        enabled: settings['Lote']?['exibir'] == 1,
+                        required: settings['Lote']?['obrigatorio'] == 1,
+                        controller: controllers[5],
+                        focusNode: focusNodes[5],
+                        settings: settings,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                _buildTextField(
+                  id: 7,
+                  label: 'Andar',
+                  visible: true,
+                  enabled: settings['Andar']?['exibir'] == 1,
+                  required: settings['Andar']?['obrigatorio'] == 1,
+                  controller: controllers[6],
+                  focusNode: focusNodes[6],
+                  settings: settings,
+                ),
+                const SizedBox(height: 8),
+                _buildTextField(
+                  id: 8,
+                  label: 'Código de Barras',
+                  visible: true,
+                  enabled: settings['Código de Barras']?['exibir'] == 1,
+                  required: settings['Código de Barras']?['obrigatorio'] == 1,
+                  controller: controllers[7],
+                  focusNode: focusNodes[7],
+                  settings: settings,
+                  suffixIcon: const Icon(Icons.barcode_reader),
+                  context: context,
+                ),
+                const SizedBox(height: 8),
+                Row(
+                  children: [
+                    Expanded(
+                      child: _buildTextField(
+                        id: 9,
+                        label: 'Qtde Padrão da Pilha',
+                        visible: true,
+                        enabled: settings['Qtde Padrão da Pilha']?['exibir'] == 1,
+                        required: settings['Qtde Padrão da Pilha']?['obrigatorio'] == 1,
+                        controller: controllers[8],
+                        focusNode: focusNodes[8],
+                        settings: settings,
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: _buildTextField(
+                        id: 10,
+                        label: 'Qtde de Pilhas Completas',
+                        visible: true,
+                        enabled: settings['Qtde de Pilhas Completas']?['exibir'] == 1,
+                        required: settings['Qtde de Pilhas Completas']?['obrigatorio'] == 1,
+                        controller: controllers[9],
+                        focusNode: focusNodes[9],
+                        settings: settings,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                _buildTextField(
+                  id: 11,
+                  label: 'Qtde de Itens Avulsos',
+                  visible: true,
+                  enabled: settings['Qtde de Itens Avulsos']?['exibir'] == 1,
+                  required: settings['Qtde de Itens Avulsos']?['obrigatorio'] == 1,
+                  controller: controllers[10],
+                  focusNode: focusNodes[10],
+                  settings: settings,
+                ),
+              ],
+            );
+          },
+        ),
+      ),
+    ),
+    floatingButtons: Padding(
+      padding: const EdgeInsets.all(16.0),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Text('Aplicativo de Consulta de Estrutura de Produtos. ACEP',
-            style: TextStyle(color: Colors.white,fontSize: 12,),
+          ElevatedButton.icon(
+            style: ElevatedButton.styleFrom(
+              padding: const EdgeInsets.all(16),
+              backgroundColor: Colors.red,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
+            ),
+            onPressed: () {
+              FocusScope.of(context).unfocus();
+              clearFields();
+            },
+            icon: const Icon(Icons.close, color: Colors.white),
+            label: const Text(
+              'LIMPAR',
+              style: TextStyle(color: Colors.white, fontSize: 16),
+            ),
           ),
-          SizedBox(height: 2),
-          Text('Criação de Inventário',
-            style: TextStyle(color: Colors.white, fontSize: 20, ),
+          const SizedBox(width: 16),
+          ElevatedButton.icon(
+            style: ElevatedButton.styleFrom(
+              padding: const EdgeInsets.all(16),
+              backgroundColor: _isSaveButtonEnabled ? Colors.blue : Colors.grey,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
+            ),
+            onPressed: _isSaveButtonEnabled
+                ? () async {
+                    FocusScope.of(context).unfocus();
+                    //if (_validateMandatoryFields(_settingsFuture.data ?? {})) {
+                      int result = await saveData(context);
+                    //}
+                  }
+                : null,
+            icon: const Icon(Icons.save, color: Colors.white),
+            label: const Text(
+              'GRAVAR',
+              style: TextStyle(color: Colors.white, fontSize: 16),
+            ),
           ),
         ],
       ),
-      backgroundColor: Colors.black,
-      iconTheme: const IconThemeData(color: Colors.white),
-      ),
+    ),
+  );
+}
+
+
+/*
+  @override
+  Widget build(BuildContext context) {
+    return BasePage(
+      title: '',
+      subtitle: 'Criação de Inventário',
       body: SingleChildScrollView( // coloca scroll para rolar o conteúdo
         child: Padding(
           padding: const EdgeInsets.all(1.0),
@@ -764,18 +1003,6 @@ Future<void> saveMoreRecords(BuildContext context) async {
           ),
         ),
       ),
-      // Retirado o radapé para melhor aproveitamento de espaço em tela
-      /*bottomNavigationBar: Container(
-        color: Colors.grey[200],
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-        child: const Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Text("Oxford Porcelanas", style: TextStyle(fontSize: 14)),
-            Text("Versão: 1.0", style: TextStyle(fontSize: 14)),
-          ],
-        ),
-      ),*/
     );
-  }
+  }*/
 }
