@@ -87,7 +87,13 @@ class InventoryPageState extends State<InventoryRecordsPage> {
         controllers[4].text = posicao.substring(4, 5);
         controllers[5].text = posicao.substring(5, 7);
         controllers[6].text = posicao.substring(7, 8);
-        FocusScope.of(context).requestFocus(focusNodes[7]);
+        setState(() {}); // pra pintar de verde
+        //FocusScope.of(context).requestFocus(focusNodes[7]);
+
+        //FocusScope.of(context).requestFocus(focusNodes[7]); // Dá o foco no campo desejado
+        //Future.delayed(Duration(milliseconds: 100), () {
+        //FocusScope.of(context).unfocus(); // Remove o foco e esconde o teclado
+        //});
       }
     }
   }
@@ -430,7 +436,7 @@ Future<void> saveMoreRecords(BuildContext context) async {
       labelWithAsterisk = '$label *'; // Adiciona o "*" ao label
     }
     
-    if (id == 8 || id == 2) { // Quando for barcode
+    if (id == 1 || id == 2 || id == 8) { // Quando for barcode
       suffixIcon = Row(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -438,7 +444,13 @@ Future<void> saveMoreRecords(BuildContext context) async {
             icon: const Icon(Icons.qr_code_scanner),
             onPressed: () async {
               String barcode = await scanBarcode(context!); // força para não ser nulo
-              controller.text = barcode;
+              if (mounted) { // Verifica se o widget ainda está ativo para evitar erro no retorno da leitura
+                controller.text = barcode;
+                // Avança para o próximo campo
+                if (id == 2) {
+                  await _onEditingComplete(barcode, 1);
+                }
+              }
             },
           ),
           IconButton(
@@ -478,8 +490,27 @@ Future<void> saveMoreRecords(BuildContext context) async {
           decoration: InputDecoration(
             labelText: labelWithAsterisk,
             suffixIcon: suffixIcon,
+            filled: true,
+            fillColor: controller.text.isNotEmpty
+                ? const Color.fromARGB(255, 210, 250, 220) // Fundo verde claro quando preenchido
+                : Colors.white, // Fundo branco quando vazio
             border: const OutlineInputBorder(),
-            contentPadding: const EdgeInsets.symmetric(vertical: 14.0, horizontal: 12.0), // Ajuste a altura
+            contentPadding: const EdgeInsets.symmetric(vertical: 14.0, horizontal: 12.0),
+            focusedBorder: OutlineInputBorder(
+              borderSide: BorderSide(
+                color: const Color.fromARGB(255, 160, 241, 171), // Borda verde ao focar
+                width: 2.0,
+              ),
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderSide: BorderSide(
+                color: controller.text.isNotEmpty
+                    ? const Color.fromARGB(255, 210, 250, 220) // Verde se preenchido
+                    : Colors.grey, // Cinza se vazio
+                width: 1.5,
+              ),
+            ),
+            floatingLabelStyle: const TextStyle(color: Color.fromARGB(255, 70, 69, 69)), // Mantém o título cinza mesmo com foco
           ),
         ),
       ),
@@ -517,6 +548,9 @@ Future<String> scanBarcode(BuildContext context) async {
       builder: (context) => const BarcodeScannerPage(),
     ),
   );
+
+  // Esperar 1 segundo
+  //await Future.delayed(const Duration(seconds: 1));
 
   return result != null ? result as String : 'Falha ao escanear código de barras';
 }
