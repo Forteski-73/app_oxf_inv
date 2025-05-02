@@ -1,13 +1,16 @@
 import 'dart:ffi';
-//import 'package:flutter_barcode_scanner/flutter_barcode_scanner.dart';
 import 'package:flutter/material.dart';
 import 'package:app_oxf_inv/operator/db_settings.dart';
 import 'package:app_oxf_inv/operator/db_inventory.dart';
 import 'searchProduct.dart';
 import 'package:app_oxf_inv/widgets/basePage.dart';
 import 'package:app_oxf_inv/widgets/customSnackBar.dart';
+import 'package:app_oxf_inv/widgets/barcodescannerpage.dart';
 import 'package:app_oxf_inv/styles/btnStyles.dart';
 import 'package:app_oxf_inv/widgets/customButton.dart';
+import 'package:mobile_scanner/mobile_scanner.dart';
+///import 'package:flutter_barcode_scanner/flutter_barcode_scanner.dart';
+
 
 class InventoryRecordsPage extends StatefulWidget {
   InventoryRecordsPage({super.key});
@@ -197,8 +200,8 @@ class InventoryPageState extends State<InventoryRecordsPage> {
         inventory = await db.queryFirstInventoryByStatus();
         _totalController.text = inventory?["total"]?.toString() ?? "0";
 
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Dados salvos com sucesso!', style: TextStyle(fontSize: 18))),
+        CustomSnackBar.show(context, message: "Dados salvos com sucesso!",
+          duration: const Duration(seconds: 3),type: SnackBarType.success,
         );
 
         if (controllers[0].text.isNotEmpty && controllers[1].text.isEmpty) {
@@ -216,14 +219,14 @@ class InventoryPageState extends State<InventoryRecordsPage> {
           _isSaveButtonEnabled = false; // Desabilita até que os campos obrigatórios sejam preenchidos
         });
       } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Erro ao salvar os dados.', style: TextStyle(fontSize: 18))),
+        CustomSnackBar.show(context, message: "Erro ao salvar os dados.",
+          duration: const Duration(seconds: 4),type: SnackBarType.error,
         );
       }
       setState(() {});
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Erro ao salvar os dados: $e', style: const TextStyle(fontSize: 18))),
+      CustomSnackBar.show(context, message: "Erro ao salvar os dados: $e",
+        duration: const Duration(seconds: 4),type: SnackBarType.error,
       );
     }
 
@@ -335,10 +338,8 @@ Future<void> saveMoreRecords(BuildContext context) async {
       // Validação do tipo de campo
       if (field_type == 'Numérico') {
         if (!RegExp(r'^\d+$').hasMatch(value)) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('O campo ${field_name} deve conter apenas números.'),
-            ),
+          CustomSnackBar.show(context, message: 'O campo ${field_name} deve conter apenas números.',
+            duration: const Duration(seconds: 4),type: SnackBarType.warning,
           );
           st = false; // Interrompe a validação se o campo não for numérico
           return st;
@@ -352,11 +353,8 @@ Future<void> saveMoreRecords(BuildContext context) async {
         if(min_size != max_size) {
           msg = 'O campo $field_name deve ter entre $min_size e $max_size caracteres.';
         }
-        
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(msg),
-          ),
+        CustomSnackBar.show(context, message: '${msg}',
+          duration: const Duration(seconds: 4),type: SnackBarType.warning,
         );
         st = false; // Interrompe a validação se o tamanho não estiver dentro dos limites
         return st;
@@ -379,10 +377,9 @@ Future<void> saveMoreRecords(BuildContext context) async {
           } 
         }
         if(!st) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('$field_name inválido.'),
-          ),
-        );
+          CustomSnackBar.show(context, message: '$field_name inválido.',
+            duration: const Duration(seconds: 4),type: SnackBarType.warning,
+          );
         }
       }
     }
@@ -433,15 +430,15 @@ Future<void> saveMoreRecords(BuildContext context) async {
       labelWithAsterisk = '$label *'; // Adiciona o "*" ao label
     }
     
-    if (id == 8) { // Quando for barcode
+    if (id == 8 || id == 2) { // Quando for barcode
       suffixIcon = Row(
         mainAxisSize: MainAxisSize.min,
         children: [
           IconButton(
             icon: const Icon(Icons.qr_code_scanner),
             onPressed: () async {
-              //String barcode = await scanBarcode(); // Espera o código ser escaneado
-              //controller.text = barcode; // Atribui ao campo de texto
+              String barcode = await scanBarcode(context!); // força para não ser nulo
+              controller.text = barcode;
             },
           ),
           IconButton(
@@ -489,8 +486,8 @@ Future<void> saveMoreRecords(BuildContext context) async {
     );
   }
 
-
-  /*Future<String> scanBarcode() async {
+/*
+  Future<String> scanBarcode() async {
     String barcodeScanRes;
     try {
       barcodeScanRes = await FlutterBarcodeScanner.scanBarcode(
@@ -510,7 +507,20 @@ Future<void> saveMoreRecords(BuildContext context) async {
     });*/
 
     return barcodeScanRes;
-  }*/
+  }
+*/
+
+Future<String> scanBarcode(BuildContext context) async {
+  final result = await Navigator.push(
+    context,
+    MaterialPageRoute(
+      builder: (context) => const BarcodeScannerPage(),
+    ),
+  );
+
+  return result != null ? result as String : 'Falha ao escanear código de barras';
+}
+
 
 @override
 Widget build(BuildContext context) {
@@ -575,6 +585,7 @@ Widget build(BuildContext context) {
                   focusNode: focusNodes[1],
                   settings: settings,
                   suffixIcon: const Icon(Icons.barcode_reader),
+                  context: context,
                 ),
                 const SizedBox(height: 8),
                 Row(
