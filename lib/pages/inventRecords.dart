@@ -580,23 +580,41 @@ Widget build(BuildContext context) {
                 Align(
                   alignment: Alignment.centerLeft,
                   child: Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 8.0),
+                    padding: const EdgeInsets.symmetric(vertical: 0),
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         const Text(
-                          'Total de Registros: ',
+                          'TOTAL DE REGISTROS: ',
                           style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
                         ),
-                        Text(
+                        /*Text(
                           _totalController.text,
                           style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+                        ),*/
+
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 3.0),
+                          decoration: BoxDecoration(
+                            color: Colors.black87,
+                            borderRadius: BorderRadius.circular(5),
+                          ),
+                          child: Text(
+                            _totalController.text,
+                            style: const TextStyle(
+                              fontSize: 24,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.white,
+                            ),
+                          ),
                         ),
-                        const Padding(padding: EdgeInsets.only(right: 1)),
+                        //const Padding(padding: EdgeInsets.only(bottom: 1.0)),
                       ],
                     ),
                   ),
+                 
                 ),
+                const SizedBox(height: 10),
                 _buildTextField(
                   id: 1,
                   label: 'Unitizador',
@@ -608,7 +626,7 @@ Widget build(BuildContext context) {
                   settings: settings,
                   suffixIcon: const Icon(Icons.barcode_reader),
                 ),
-                const SizedBox(height: 8),
+                const SizedBox(height: 7),
                 _buildTextField(
                   id: 2,
                   label: 'Posição',
@@ -621,7 +639,7 @@ Widget build(BuildContext context) {
                   suffixIcon: const Icon(Icons.barcode_reader),
                   context: context,
                 ),
-                const SizedBox(height: 8),
+                const SizedBox(height: 3),
                 Row(
                   children: [
                     Expanded(
@@ -651,7 +669,7 @@ Widget build(BuildContext context) {
                     ),
                   ],
                 ),
-                const SizedBox(height: 8),
+                const SizedBox(height: 3),
                 Row(
                   children: [
                     Expanded(
@@ -681,7 +699,7 @@ Widget build(BuildContext context) {
                     ),
                   ],
                 ),
-                const SizedBox(height: 8),
+                const SizedBox(height: 3),
                 _buildTextField(
                   id: 7,
                   label: 'Andar',
@@ -692,7 +710,7 @@ Widget build(BuildContext context) {
                   focusNode: focusNodes[6],
                   settings: settings,
                 ),
-                const SizedBox(height: 8),
+                const SizedBox(height: 3),
                 _buildTextField(
                   id: 8,
                   label: 'Código de Barras',
@@ -705,7 +723,7 @@ Widget build(BuildContext context) {
                   suffixIcon: const Icon(Icons.barcode_reader),
                   context: context,
                 ),
-                const SizedBox(height: 8),
+                const SizedBox(height: 7),
                 Row(
                   children: [
                     Expanded(
@@ -735,7 +753,7 @@ Widget build(BuildContext context) {
                     ),
                   ],
                 ),
-                const SizedBox(height: 8),
+                const SizedBox(height: 3),
                 _buildTextField(
                   id: 11,
                   label: 'Qtde de Itens Avulsos',
