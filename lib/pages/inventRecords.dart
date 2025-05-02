@@ -216,7 +216,7 @@ class InventoryPageState extends State<InventoryRecordsPage> {
           for (var i = 0; i < controllers.length; i++) { // limpa tudo
               controllers[i].clear();
           }
-          FocusScope.of(context).requestFocus(focusNodes[7]); // foco no item
+          //FocusScope.of(context).requestFocus(focusNodes[7]); // foco no item
         }
 
         createInventoryRecord(); // Prepara o próximo registro createInventoryRecord();
