@@ -21,8 +21,8 @@ class InventoryExportPage extends StatefulWidget {
 
 class _InventoryExportPage extends State<InventoryExportPage> {
   final TextEditingController _fileNameController = TextEditingController();
-  final List<String> _fields = ['Unitizador', 'Posição', 'Depósito', 'Bloco', 'Quadra', 'Lote', 'Andar',
-    'Código de Barras', 'Qtde Padrão da Pilha', 'Qtde de Pilhas Completas', 'Qtde de Itens Avulsos', 'Total'];
+  final List<String> _fields = ['Unitizador', 'Posição', 'Depósito', 'Bloco', 'Quadra', 'Lote', 'Andar', 'Código de Barras',
+    'Produto', 'Nome', 'Qtde Padrão da Pilha', 'Qtde de Pilhas Completas', 'Qtde de Itens Avulsos', 'Total'];
   Map<String, bool>           _selectedFields     = {};
   Map<String, dynamic>        _inventory          = {};
   final String                _separator          = ';';
@@ -96,6 +96,8 @@ class _InventoryExportPage extends State<InventoryExportPage> {
           "Lote":                     settings['lote'],
           "Andar":                    settings['andar'],
           "Código de Barras":         settings['codigoDeBarras'],
+          "Produto":                  settings['produto'],
+          "Nome":                     settings['nome'],
           "Qtde Padrão da Pilha":     settings['qtdePadraoDaPilha'],
           "Qtde de Pilhas Completas": settings['qtdeDePilhasCompletas'],
           "Qtde de Itens Avulsos":    settings['qtdeDeItensAvulsos'],
@@ -148,6 +150,8 @@ class _InventoryExportPage extends State<InventoryExportPage> {
         _selectedFields['Lote'] ?? false,
         _selectedFields['Andar'] ?? false,
         _selectedFields['Código de Barras'] ?? false,
+        _selectedFields['Produto'] ?? false,
+        _selectedFields['Nome'] ?? false,
         _selectedFields['Qtde Padrão da Pilha'] ?? false,
         _selectedFields['Qtde de Pilhas Completas'] ?? false,
         _selectedFields['Qtde de Itens Avulsos'] ?? false,
@@ -296,6 +300,8 @@ class _InventoryExportPage extends State<InventoryExportPage> {
       case 'Lote':                     return 'lot';
       case 'Andar':                    return 'floor';
       case 'Código de Barras':         return 'barcode';
+      case 'Produto':                  return 'item';
+      case 'Nome':                     return 'description';
       case 'Qtde Padrão da Pilha':     return 'standard_stack_qtd';
       case 'Qtde de Pilhas Completas': return 'number_complete_stacks';
       case 'Qtde de Itens Avulsos':    return 'number_loose_items';
@@ -327,7 +333,7 @@ class _InventoryExportPage extends State<InventoryExportPage> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text('Definição de campos para exportar',
+                      const Text('DEFINIÇÃO DE CAMPOS PARA EXPORTAR',
                         style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                       ),
                       ..._fields.map((field) {
@@ -363,7 +369,7 @@ class _InventoryExportPage extends State<InventoryExportPage> {
                     mainAxisSize: MainAxisSize.min,
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text( "Arquivo",
+                      const Text( "ARQUIVO",
                         style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                       ),
                       const SizedBox(height: 12),
@@ -427,10 +433,10 @@ class _InventoryExportPage extends State<InventoryExportPage> {
                     mainAxisSize: MainAxisSize.min,
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text('Destino do Arquivo',
+                      const Text('DESTINO DO ARQUIVO',
                         style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                       ),
-                      const SizedBox(height: 16),
+                      const SizedBox(height: 8),
                       Row(
                         children: [
                           Expanded(
@@ -519,6 +525,7 @@ class _InventoryExportPage extends State<InventoryExportPage> {
                   ),
                 ),
               ),
+              const SizedBox(height: 28),
             ],
           ),
         ),
@@ -593,7 +600,7 @@ class _InventoryExportPage extends State<InventoryExportPage> {
                   child: ElevatedButton(
                     onPressed: () {
                       // Verifica as credenciais informadas
-                      if (_userTemp.text == "admin" && _passwordTemp.text == "ti2025") {
+                      if (_userTemp.text == "admin" && _passwordTemp.text == "@ti2025") {
                         Navigator.of(context).pop();
                         setState(() {
                           _isAuthorized = true; // Permite interagir com os cards

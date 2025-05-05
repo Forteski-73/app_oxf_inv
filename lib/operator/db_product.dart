@@ -106,6 +106,7 @@ class DBItems {
     await db.execute('CREATE INDEX idx_prod_decoration_desc_id ON $tableProducts ($columnProdDecorationDescriptionId);');
     await db.execute('CREATE INDEX idx_prod_family_id ON $tableProducts ($columnProdFamilyId);');
     await db.execute('CREATE INDEX idx_prod_family_desc ON $tableProducts ($columnProdFamilyDescription);');
+    await db.execute('CREATE INDEX idx_item_barcode ON $tableProducts ($columnItemBarCode);');
 
     // Criando a tabela de imagens de produto
     await db.execute('''
@@ -295,6 +296,22 @@ Future<List<Map<String, dynamic>>> getAllProducts1() async {
     );
       return productDetails.first;
     
+  }
+
+  Future<Map<String, dynamic>?> getProductByBarCode(String barCode) async {
+    Database db = await instance.database;
+
+    final List<Map<String, dynamic>> result = await db.query(
+      tableProducts,
+      where: '$columnItemBarCode = ?',
+      whereArgs: [barCode],
+    );
+
+    if (result.isNotEmpty) {
+      return result.first;
+    } else {
+      return null;
+    }
   }
 
 }

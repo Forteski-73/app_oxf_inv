@@ -5,7 +5,7 @@ import 'package:path/path.dart';
 class DBInventory {
   // Configuração do banco de dados
   static const _databaseName      = "inventory.db";
-  static const _databaseVersion   = 1;
+  static const _databaseVersion   = 2;
   static const tableInvent        = 'inventory';
   // Tabela Inventory
   static const tableInventory = 'inventory';
@@ -32,7 +32,9 @@ class DBInventory {
   static const columnBlockB               = 'block_b';
   static const columnLot                  = 'lot';
   static const columnFloor                = 'floor';
+  static const columnItem                 = 'item';
   static const columnBarcode              = 'barcode';
+  static const columnDescription          = 'description';
   static const columnStandardStackQtd     = 'standard_stack_qtd';
   static const columnNumberCompleteStacks = 'number_complete_stacks';
   static const columnNumberLooseItems     = 'number_loose_items';
@@ -57,6 +59,7 @@ class DBInventory {
       path,
       version: _databaseVersion,
       onCreate: _onCreate,
+      onUpgrade: _onUpgrade, // adicione isso
     );
   }
 
@@ -101,7 +104,9 @@ class DBInventory {
         $columnBlockB               TEXT,
         $columnLot                  TEXT,
         $columnFloor                INTEGER,
+        $columnItem                 TEXT,
         $columnBarcode              TEXT,
+        $columnDescription          TEXT,
         $columnStandardStackQtd     INTEGER,
         $columnNumberCompleteStacks INTEGER,
         $columnNumberLooseItems     INTEGER,
@@ -110,6 +115,24 @@ class DBInventory {
       )
     ''');
   }
+
+  FutureOr<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {
+    if (oldVersion < 2) {
+      await db.execute('ALTER TABLE $tableInventoryRecord ADD COLUMN $columnDescription TEXT');
+      await db.execute('ALTER TABLE $tableInventoryRecord ADD COLUMN $columnItem TEXT');
+    }
+  }
+
+  /*
+  Future<void> _ensureSchemaUpgrade(Database db) async {
+    // Verifica se a coluna existe antes de tentar adicionar
+    final res = await db.rawQuery("PRAGMA table_info($tableInventoryRecord);");
+    final columnExists = res.any((row) => row['item'] == columnItem);
+
+    if (!columnExists) {
+      await db.execute('ALTER TABLE $tableInventoryRecord ADD COLUMN $columnItem TEXT');
+    }
+  }*/
 
   Future<int> insertInventory(Map<String, dynamic> row) async {
     Database db = await instance.database;
@@ -177,36 +200,68 @@ class DBInventory {
   Future<int> insertInventoryRecord(Map<String, dynamic> row) async {
     Database db = await instance.database;
     int st = 0;
-    
-    int inventoryRecordId = await db.insert(tableInventoryRecord, row);
-    if(inventoryRecordId > 0)
-    {
-      int inventoryId = row[columnInventoryId];
 
-      List<Map<String, dynamic>> inventoryResults = await db.query( // Pega o Inventário
-        tableInventory,
-        columns: [columnTotal],
+
+    //await _ensureSchemaUpgrade(db); // só para atualizar o banco
+    // Verifica se já existe
+    int inventoryId   = row[columnInventoryId];
+    String position   = row[columnPosition] ?? '';
+    String barcode    = row[columnBarcode] ?? '';
+    String? unitizer  = row[columnUnitizer];
+
+    Map<String, dynamic>? existingRecord = await getInventoryRecord(
+      inventoryId: inventoryId,
+      position: position,
+      barcode: barcode,
+      unitizer: unitizer,
+    );
+
+    int recordTotal = row[columnSubTotal] ?? 0;
+
+    if (existingRecord != null) {
+      // Atualiza o registro existente
+      int existingId = existingRecord[columnId];
+      int previousTotal = existingRecord[columnSubTotal] ?? 0;
+
+      // Atualiza o registro no banco
+      st = await db.update(
+        tableInventoryRecord,
+        row,
         where: '$columnId = ?',
-        whereArgs: [inventoryId],
+        whereArgs: [existingId],
       );
 
-      if (inventoryResults.isNotEmpty) {
-        int inventoryTotal = inventoryResults.first[columnTotal] ?? 0;
-        int inventoryRecordTotal = row[columnSubTotal] ?? 0;
+      // Atualiza o total na tabela de inventário
+      int difference = recordTotal - previousTotal;
 
-        int newTotal = inventoryTotal + inventoryRecordTotal; //recalcula o total
-
-        st = await db.update(
-          tableInventory,
-          {columnTotal: newTotal},
-          where: '$columnId = ?',
-          whereArgs: [inventoryId],
+      await db.rawUpdate(
+        '''
+        UPDATE $tableInventory 
+        SET $columnTotal = $columnTotal + ? 
+        WHERE $columnId = ?
+        ''',
+        [difference, inventoryId],
+      );
+    } else {
+      // Insere novo registro
+      int insertedId = await db.insert(tableInventoryRecord, row);
+      if (insertedId > 0) {
+        // Atualiza total na tabela inventory
+        await db.rawUpdate(
+          '''
+          UPDATE $tableInventory 
+          SET $columnTotal = $columnTotal + ? 
+          WHERE $columnId = ?
+          ''',
+          [recordTotal, inventoryId],
         );
+        st = 1;
       }
     }
 
     return st;
   }
+
 
   Future<int> updateInventoryRecord(Map<String, dynamic> row) async {
     Database db = await instance.database;
@@ -282,6 +337,37 @@ class DBInventory {
     });
 
     return result;
+  }
+
+  Future<Map<String, dynamic>?> getInventoryRecord({
+    required int inventoryId,
+    String? unitizer,
+    required String position,
+    required String barcode,
+  }) async {
+    final db = await instance.database;
+
+    // Construção dinâmica do WHERE
+    final whereClauses = <String>['$columnInventoryId = ?', '$columnPosition = ?', '$columnBarcode = ?'];
+    final whereArgs = <dynamic>[inventoryId, position, barcode];
+
+    if (unitizer != null && unitizer.isNotEmpty) {
+      whereClauses.add('$columnUnitizer = ?');
+      whereArgs.add(unitizer);
+    }
+
+    final results = await db.query(
+      tableInventoryRecord,
+      where: whereClauses.join(' AND '),
+      whereArgs: whereArgs,
+      limit: 1,
+    );
+
+    if (results.isNotEmpty) {
+      return results.first;
+    } else {
+      return null;
+    }
   }
 
 }

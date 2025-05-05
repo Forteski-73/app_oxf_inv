@@ -283,92 +283,61 @@ class ConfiguracoesScreenState extends State<SettingsPage> {
                       ),
                       const SizedBox(height: 16),
                       // DataTable - Mini Grid
-Container(
-  width: double.infinity,
-  child: SingleChildScrollView(
-    //scrollDirection: Axis.horizontal,
-    child: DataTable(
-      columnSpacing: 24,
-      headingRowHeight: 40,
-      dataRowHeight: 50,
-      columns: const [
-        DataColumn(label: Text("Máscara")),
-        DataColumn(label: Text("Ação")),
-      ],
-      rows: maskData.asMap().entries.map((entry) {
-        final index = entry.key;
-        final mask = entry.value;
-        final controller = controllers[index];
-
-        return DataRow(cells: [
-          DataCell(
-            Container( // Força o TextField a ter largura mínima
-              width: MediaQuery.of(context).size.width * 0.6, // ocupa 90% da largura da tela
-              child: TextField(
-                controller: controller,
-                onChanged: (value) {
-                  setDialogState(() {
-                    mask['mask'] = value;
-                  });
-                },
-                decoration: const InputDecoration(
-                  border: InputBorder.none,
-                  labelText: '',
-                ),
-              ),
-            ),
-          ),
-          DataCell(
-            IconButton(
-              icon: const Icon(Icons.delete, color: Colors.red),
-              onPressed: () async {
-                if (mask['_id'] != null) {
-                  await dbHelper.deleteMask(mask['_id']);
-                }
-                setDialogState(() {
-                  maskData.removeAt(index);
-                  controllers.removeAt(index);
-                });
-              },
-            ),
-          ),
-        ]);
-      }).toList(),
-    ),
-  ),
-),
-
-                      const SizedBox(height: 8),
-                      
-                      /*
                       Container(
-                        width: double.infinity,  // Faz o botão ocupar toda a largura
-                        
-                        child: ElevatedButton(
-                          onPressed: () {
-                            setDialogState(() {
-                              maskData.add({'mask': '', '_id': null});
-                              controllers.add(TextEditingController());
-                            });
-                          },
-                          style: ElevatedButton.styleFrom(
-                            padding: const EdgeInsets.symmetric(horizontal: 20),
-                            backgroundColor: Colors.blue,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                          ),
-                          child: const Row(
-                            mainAxisSize: MainAxisSize.max,  // Garante que o Row ocupe toda a largura
-                            children: [
-                              Icon(Icons.playlist_add, color: Colors.white, size: 30),
-                              SizedBox(width: 5),
-                              Text('Adicionar Máscara', style: TextStyle(color: Colors.white)),
+                        width: double.infinity,
+                        child: SingleChildScrollView(
+                          //scrollDirection: Axis.horizontal,
+                          child: DataTable(
+                            columnSpacing: 24,
+                            headingRowHeight: 40,
+                            dataRowHeight: 50,
+                            columns: const [
+                              DataColumn(label: Text("Máscara")),
+                              DataColumn(label: Text("Ação")),
                             ],
+                            rows: maskData.asMap().entries.map((entry) {
+                              final index = entry.key;
+                              final mask = entry.value;
+                              final controller = controllers[index];
+
+                              return DataRow(cells: [
+                                DataCell(
+                                  Container( // Força o TextField a ter largura mínima
+                                    width: MediaQuery.of(context).size.width * 0.6, // ocupa 90% da largura da tela
+                                    child: TextField(
+                                      controller: controller,
+                                      onChanged: (value) {
+                                        setDialogState(() {
+                                          mask['mask'] = value;
+                                        });
+                                      },
+                                      decoration: const InputDecoration(
+                                        border: InputBorder.none,
+                                        labelText: '',
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                                DataCell(
+                                  IconButton(
+                                    icon: const Icon(Icons.delete, color: Colors.red),
+                                    onPressed: () async {
+                                      if (mask['_id'] != null) {
+                                        await dbHelper.deleteMask(mask['_id']);
+                                      }
+                                      setDialogState(() {
+                                        maskData.removeAt(index);
+                                        controllers.removeAt(index);
+                                      });
+                                    },
+                                  ),
+                                ),
+                              ]);
+                            }).toList(),
                           ),
                         ),
                       ),
-                      */
+                      const SizedBox(height: 8),
                       CustomButton.processButton(
                         context,
                         "Adicionar Máscara",
@@ -457,281 +426,118 @@ Container(
       );
     }
 
-@override
-Widget build(BuildContext context) {
-  return BasePage(
-    title: 'Aplicativo de Consulta de Estrutura de Produtos. ACEP',
-    subtitle: 'Configurações',
-    body: Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Padding(
-          padding: EdgeInsets.symmetric(vertical: 8.0),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Expanded(
-                child: Text(
-                  'Campo',
-                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-                ),
-              ),
-              Text(
-                'Exibir',
-                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-              ),
-              SizedBox(width: 25),
-              Text(
-                'Obrigatório',
-                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-              ),
-            ],
-          ),
-        ),
-        const Divider(),
-
-        // REMOVIDO O Expanded AQUI
-        ListView.separated(
-          physics: const NeverScrollableScrollPhysics(), // evita scroll dentro do scroll
-          shrinkWrap: true, // permite renderizar dentro do Column
-          itemCount: campos.length,
-          separatorBuilder: (context, index) => const Divider(),
-          itemBuilder: (context, index) {
-            final campo = campos[index];
-            return InkWell(
-              onTap: () {
-                _showFieldDetailsDialog(
-                    context, widget.profileId, campo['_id'], campo['nome']);
-              },
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Expanded(
-                    child: SingleChildScrollView(
-                      scrollDirection: Axis.horizontal,
-                      child: Row(
-                        children: [
-                          const Icon(Icons.more_vert,
-                              size: 20, color: Colors.black),
-                          Text(campo['nome'],
-                              style: const TextStyle(fontSize: 16)),
-                        ],
-                      ),
-                    ),
-                  ),
-                  Switch(
-                    value: campo['exibir'] == 1,
-                    onChanged: (value) {
-                      setState(() {
-                        campos[index] = {
-                          ...campo,
-                          'exibir': value ? 1 : 0,
-                        };
-                      });
-                      _updateField(
-                          campo['_id'], value, campo['obrigatorio'] == 1);
-                    },
-                    activeColor: Colors.green,
-                  ),
-                  const SizedBox(width: 45),
-                  Switch(
-                    value: campo['obrigatorio'] == 1,
-                    onChanged: (value) {
-                      setState(() {
-                        campos[index] = {
-                          ...campo,
-                          'obrigatorio': value ? 1 : 0,
-                        };
-                      });
-                      _updateField(
-                          campo['_id'], campo['exibir'] == 1, value);
-                    },
-                    activeColor: Colors.green,
-                  ),
-                ],
-              ),
-            );
-          },
-        ),
-      ],
-    ),
-    floatingButtons: SizedBox(
-      width: double.infinity,
-      child: CustomButton.processButton(
-        context,
-        'Restaurar Padrão',
-        1, // Tamanho padrão (100%)
-        Icons.refresh, // Ícone de restaurar
-        () {
-          _confirmRestoreDefault(context); // Função de confirmação
-        },
-        Colors.blue, // Cor azul
-      ),
-    ),
-  );
-}
-
-
-/*
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Column(
-          mainAxisAlignment: MainAxisAlignment.start,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text('Aplicativo de Consulta de Estrutura de Produtos. ACEP',
-              style: TextStyle(color: Colors.white,fontSize: 12,),
-            ),
-            SizedBox(height: 2),
-            Text('Configurações',
-              style: TextStyle(color: Colors.white, fontSize: 20, ),
-            ),
-          ],
-        ),
-        backgroundColor: Colors.black,
-        iconTheme: const IconThemeData(color: Colors.white),
-      ),
-      body: Stack(
+    return BasePage(
+      title: 'Aplicativo de Consulta de Estrutura de Produtos. ACEP',
+      subtitle: 'Configurações',
+      body: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Column(
+          const Padding(
+            padding: EdgeInsets.symmetric(vertical: 8.0),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const Padding(
-                  padding: EdgeInsets.symmetric(vertical: 8.0),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Expanded(
-                        child: Text(
-                          'Campo',
-                          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-                        ),
-                      ),
-                      Text(
-                        'Exibir',
-                        style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-                      ),
-                      SizedBox(width: 25),
-                      Text(
-                        'Obrigatório',
-                        style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-                      ),
-                    ],
-                  ),
-                ),
-                const Divider(),
                 Expanded(
-                  child: ListView.separated(
-                    itemCount: campos.length,
-                    separatorBuilder: (context, index) => const Divider(),
-                    itemBuilder: (context, index) {
-                      final campo = campos[index];
-                      return InkWell(
-                        onTap: () {
-                          _showFieldDetailsDialog(context, widget.profileId, campo['_id'], campo['nome']);
-                        },
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Expanded(
-                              child: SingleChildScrollView( // Permite rolagem horizontal
-                                scrollDirection: Axis.horizontal, // Define a
-                                child: Row(
-                                  mainAxisAlignment: MainAxisAlignment.start, // Alinha o texto à esquerda
-                                  children: [
-                                    const Icon(
-                                      Icons.more_vert, // Ícone de seta para a direita
-                                      size: 20, // Tamanho do ícone
-                                      color: Colors.black, // Cor do ícone
-                                    ),
-                                    Text(
-                                      campo['nome'], 
-                                      style: const TextStyle(fontSize: 16),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ),
-                            Switch(
-                              value: campo['exibir'] == 1,
-                              onChanged: (value) {
-                                setState(() {
-                                  campos[index] = {
-                                    ...campo,
-                                    'exibir': value ? 1 : 0,
-                                  };
-                                });
-                                _updateField(campo['_id'], value, campo['obrigatorio'] == 1);
-                              },
-                              activeColor: Colors.green,
-                            ),
-                            const SizedBox(width: 45),
-                            Switch(
-                              value: campo['obrigatorio'] == 1,
-                              onChanged: (value) {
-                                setState(() {
-                                  campos[index] = {
-                                    ...campo,
-                                    'obrigatorio': value ? 1 : 0,
-                                  };
-                                });
-                                _updateField(campo['_id'], campo['exibir'] == 1, value);
-                              },
-                              activeColor: Colors.green,
-                            ),
-                          ],
-                        ),
-                      );
-                    },
+                  child: Text(
+                    'Campo',
+                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
                   ),
                 ),
-                SizedBox(
-                  width: double.infinity,
-                  child: TextButton(
-                    onPressed: () {
-                      _confirmRestoreDefault(context);
-                    },
-                    style: TextButton.styleFrom(
-                      foregroundColor: Colors.white,
-                      backgroundColor: Colors.blue,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      minimumSize: const Size(double.infinity, 45),
-                    ),
-                    child: const Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(Icons.refresh, color: Colors.white, size: 30),
-                        SizedBox(width: 8),
-                        Text("Restaurar Padrão",
-                            style: TextStyle(color: Colors.white, fontSize: 16)),
-                      ],
-                    ),
-                  ),
+                Text(
+                  'Exibir',
+                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                ),
+                SizedBox(width: 25),
+                Text(
+                  'Obrigatório',
+                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
                 ),
               ],
             ),
           ),
+          const Divider(),
+          // REMOVIDO O Expanded AQUI
+          ListView.separated(
+            physics: const NeverScrollableScrollPhysics(), // evita scroll dentro do scroll
+            shrinkWrap: true, // permite renderizar dentro do Column
+            itemCount: campos.length,
+            separatorBuilder: (context, index) => const Divider(),
+            itemBuilder: (context, index) {
+              final campo = campos[index];
+              return InkWell(
+                onTap: () {
+                  _showFieldDetailsDialog(
+                      context, widget.profileId, campo['_id'], campo['nome']);
+                },
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Expanded(
+                      child: SingleChildScrollView(
+                        scrollDirection: Axis.horizontal,
+                        child: Row(
+                          children: [
+                            const Icon(Icons.more_vert,
+                                size: 20, color: Colors.black),
+                            Text(campo['nome'],
+                                style: const TextStyle(fontSize: 16)),
+                          ],
+                        ),
+                      ),
+                    ),
+                    Switch(
+                      value: campo['exibir'] == 1,
+                      onChanged: (value) {
+                        setState(() {
+                          campos[index] = {
+                            ...campo,
+                            'exibir': value ? 1 : 0,
+                          };
+                        });
+                        _updateField(
+                            campo['_id'], value, campo['obrigatorio'] == 1);
+                      },
+                      activeColor: Colors.green,
+                    ),
+                    const SizedBox(width: 45),
+                    Switch(
+                      value: campo['obrigatorio'] == 1,
+                      onChanged: (value) {
+                        setState(() {
+                          campos[index] = {
+                            ...campo,
+                            'obrigatorio': value ? 1 : 0,
+                          };
+                        });
+                        _updateField(
+                            campo['_id'], campo['exibir'] == 1, value);
+                      },
+                      activeColor: Colors.green,
+                    ),
+                  ],
+                ),
+              );
+            },
+          ),
         ],
       ),
-      bottomNavigationBar: Container(
-        color: Colors.grey[200],
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-        child: const Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Text("Oxford Porcelanas", style: TextStyle(fontSize: 14)),
-            Text("Versão: 1.0", style: TextStyle(fontSize: 14)),
-          ],
+      floatingButtons: SizedBox(
+        width: double.infinity,
+        child: CustomButton.processButton(
+          context,
+          'Restaurar Padrão',
+          1, // Tamanho padrão (100%)
+          Icons.refresh, // Ícone de restaurar
+          () {
+            _confirmRestoreDefault(context); // Função de confirmação
+          },
+          Colors.blue, // Cor azul
         ),
       ),
     );
   }
-  */
 }
 
 void main() {

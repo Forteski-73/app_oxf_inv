@@ -1,20 +1,21 @@
-import 'dart:ffi';
 import 'package:flutter/material.dart';
 import 'package:app_oxf_inv/operator/db_settings.dart';
 import 'package:app_oxf_inv/operator/db_inventory.dart';
+import 'package:app_oxf_inv/operator/db_product.dart';
 import 'searchProduct.dart';
 import 'package:app_oxf_inv/widgets/basePage.dart';
 import 'package:app_oxf_inv/widgets/customSnackBar.dart';
 import 'package:app_oxf_inv/widgets/barcodescannerpage.dart';
-import 'package:app_oxf_inv/styles/btnStyles.dart';
-import 'package:app_oxf_inv/widgets/customButton.dart';
-import 'package:mobile_scanner/mobile_scanner.dart';
-///import 'package:flutter_barcode_scanner/flutter_barcode_scanner.dart';
-
 
 class InventoryRecordsPage extends StatefulWidget {
-  InventoryRecordsPage({super.key});
-  late String selectedProfile = "";
+  const InventoryRecordsPage({
+    super.key,
+    required this.selectedProfile,
+    required this.inventoryId,
+  });
+
+  final String selectedProfile;
+  final int inventoryId;
 
   @override
   InventoryPageState createState() => InventoryPageState();
@@ -24,7 +25,7 @@ class InventoryPageState extends State<InventoryRecordsPage> {
   Map<String, dynamic> inventoryRecordRow = {};
   bool _isSaveButtonEnabled = false;
   late Future<Map<String, Map<String, dynamic>>> _settingsFuture = Future.value({});
-  final List<TextEditingController> controllers = List.generate(11,(index) => TextEditingController(),);
+  final List<TextEditingController> controllers = List.generate(13,(index) => TextEditingController(),);
   final TextEditingController _totalController = TextEditingController();
   final List<FocusNode> focusNodes = List.generate(11, (index) => FocusNode());
   TextEditingController controller = TextEditingController();
@@ -52,7 +53,7 @@ class InventoryPageState extends State<InventoryRecordsPage> {
     // Não da para acessar o 'context' diretamente no initState, então vamos fazer isso depois que o widget for construído
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       // Acessa os argumentos da rota de forma segura
-      widget.selectedProfile = ModalRoute.of(context)?.settings.arguments as String? ?? ''; 
+      //widget.selectedProfile = ModalRoute.of(context)?.settings.arguments as String? ?? ''; 
       _settingsFuture = _loadSettings();
       
       await createInventoryRecord();
@@ -88,12 +89,6 @@ class InventoryPageState extends State<InventoryRecordsPage> {
         controllers[5].text = posicao.substring(5, 7);
         controllers[6].text = posicao.substring(7, 8);
         setState(() {}); // pra pintar de verde
-        //FocusScope.of(context).requestFocus(focusNodes[7]);
-
-        //FocusScope.of(context).requestFocus(focusNodes[7]); // Dá o foco no campo desejado
-        //Future.delayed(Duration(milliseconds: 100), () {
-        //FocusScope.of(context).unfocus(); // Remove o foco e esconde o teclado
-        //});
       }
     }
   }
@@ -176,10 +171,18 @@ class InventoryPageState extends State<InventoryRecordsPage> {
   Future<int> saveData(BuildContext context) async {
     Map<String, dynamic>? inventory;
     DBInventory db = DBInventory.instance;
+    DBItems dbItem = DBItems.instance;
     int st = 0;
     int subTotal = 0;
 
     try {
+
+      final product = await dbItem.getProductByBarCode(controllers[7].text);
+      controllers[12].text = product?[DBItems.columnItemId] ?? '';
+      if (controllers[11].text.isEmpty)
+      {
+        controllers[11].text = product?[DBItems.columnName] ?? '';
+      }
 
       subTotal = (getValidInt(controllers[8].text)*getValidInt(controllers[9].text))+getValidInt(controllers[10].text);
       inventory = await db.queryFirstInventoryByStatus();
@@ -194,6 +197,8 @@ class InventoryPageState extends State<InventoryRecordsPage> {
         "lot":                    controllers[5].text,
         "floor":                  int.tryParse(controllers[6].text) ?? 0,
         "barcode":                controllers[7].text,
+        "item":                controllers[12].text,
+        "description":            controllers[11].text,
         "standard_stack_qtd":     int.tryParse(controllers[8].text) ?? 0,
         "number_complete_stacks": int.tryParse(controllers[9].text) ?? 0,
         "number_loose_items":     int.tryParse(controllers[10].text) ?? 0,
@@ -210,7 +215,7 @@ class InventoryPageState extends State<InventoryRecordsPage> {
           duration: const Duration(seconds: 3),type: SnackBarType.success,
         );
 
-        if (controllers[0].text.isNotEmpty && controllers[1].text.isEmpty) {
+        if (controllers[0].text.isNotEmpty || controllers[1].text.isNotEmpty) {
           saveMoreRecords(context);
         } else {
           for (var i = 0; i < controllers.length; i++) { // limpa tudo
@@ -239,62 +244,70 @@ class InventoryPageState extends State<InventoryRecordsPage> {
     return st;
   }
 
-Future<void> saveMoreRecords(BuildContext context) async {
-  bool next = await showDialog<bool>(
-    context: context,
-    builder: (BuildContext context) {
-      return AlertDialog(
-        content: const Text("Encerrar contagem desse unitizador?",style: TextStyle(fontSize: 18,),),
-        actionsAlignment: MainAxisAlignment.center, // Centraliza os botões
-        actions: [
-          TextButton(
-            style: TextButton.styleFrom(
-              backgroundColor: Colors.blue, // Fundo azul
-              padding: const EdgeInsets.all(16), // Espaçamento interno
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8), // Borda arredondada
+  Future<void> saveMoreRecords(BuildContext context) async {
+    String msg;
+    if (controllers[0].text.isNotEmpty) {
+      msg = "Encerrar contagem desse unitizador?";
+    } else if (controllers[1].text.isNotEmpty) {
+      msg = "Encerrar contagem dessa posição?";
+    } else {
+      msg = "Encerrar contagem?";
+    }
+    bool next = await showDialog<bool>(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          content: Text(msg,style: TextStyle(fontSize: 18,),),
+          actionsAlignment: MainAxisAlignment.center, // Centraliza os botões
+          actions: [
+            TextButton(
+              style: TextButton.styleFrom(
+                backgroundColor: Colors.blue, // Fundo azul
+                padding: const EdgeInsets.all(16), // Espaçamento interno
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8), // Borda arredondada
+                ),
+              ),
+              onPressed: () {
+                Navigator.of(context).pop(false);
+              },
+              child: const Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(Icons.add, color: Colors.white),
+                  SizedBox(width: 8), // Espaçamento entre ícone e texto
+                  Text("NÃO", style: TextStyle(color: Colors.white, fontSize: 16), // Texto branco
+                  ),
+                ],
               ),
             ),
-            onPressed: () {
-              Navigator.of(context).pop(false);
-            },
-            child: const Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(Icons.add, color: Colors.white),
-                SizedBox(width: 8), // Espaçamento entre ícone e texto
-                Text("NÃO", style: TextStyle(color: Colors.white, fontSize: 16), // Texto branco
+            TextButton(
+              style: TextButton.styleFrom(
+                backgroundColor: Colors.blue, // Fundo azul
+                padding: const EdgeInsets.all(16), // Espaçamento interno
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8), // Borda arredondada
                 ),
-              ],
-            ),
-          ),
-          TextButton(
-            style: TextButton.styleFrom(
-              backgroundColor: Colors.blue, // Fundo azul
-              padding: const EdgeInsets.all(16), // Espaçamento interno
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8), // Borda arredondada
+              ),
+              onPressed: () {
+                Navigator.of(context).pop(true);
+              },
+              child: const Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(Icons.done, color: Colors.white), // Ícone
+                  SizedBox(width: 8), // Espaçamento entre ícone e texto
+                  Text(
+                    "SIM",
+                    style: TextStyle(color: Colors.white, fontSize: 16), // Texto branco
+                  ),
+                ],
               ),
             ),
-            onPressed: () {
-              Navigator.of(context).pop(true);
-            },
-            child: const Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(Icons.done, color: Colors.white), // Ícone
-                SizedBox(width: 8), // Espaçamento entre ícone e texto
-                Text(
-                  "SIM",
-                  style: TextStyle(color: Colors.white, fontSize: 16), // Texto branco
-                ),
-              ],
-            ),
-          ),
-        ],
-      );
-    },
-  ) ?? false;
+          ],
+        );
+      },
+    ) ?? false;
 
     if (next) {
       for (var controller in controllers) { // Limpar os campos após salvar
@@ -450,6 +463,38 @@ Future<void> saveMoreRecords(BuildContext context) async {
                 if (id == 2) {
                   await _onEditingComplete(barcode, 1);
                 }
+                if (id == 8) {
+                  // Supondo que você tenha essas variáveis acessíveis
+                  int inventoryId = widget.inventoryId; // Defina isso de acordo com seu contexto
+                  String unitizer = controllers[0].text;
+                  String position = controllers[1].text;
+
+                  // Chama o método para buscar o registro
+                  final inventory = await DBInventory.instance.getInventoryRecord(
+                    inventoryId: inventoryId,
+                    unitizer: unitizer,
+                    position: position,
+                    barcode: barcode,
+                  );
+
+                  if (inventory != null) {
+                    // Carrega os dados do registro nos campos da tela
+                    setState(() {
+                      controllers[2].text = inventory[DBInventory.columnDeposit] ?? '';
+                      controllers[3].text = inventory[DBInventory.columnBlockA] ?? '';
+                      controllers[4].text = inventory[DBInventory.columnBlockB] ?? '';
+                      controllers[5].text = inventory[DBInventory.columnLot] ?? '';
+                      controllers[6].text = (inventory[DBInventory.columnFloor] ?? '').toString();
+                      controllers[7].text = (inventory[DBInventory.columnStandardStackQtd] ?? '').toString();
+                      controllers[8].text = (inventory[DBInventory.columnBarcode] ?? '').toString();
+                      controllers[9].text = (inventory[DBInventory.columnNumberCompleteStacks] ?? '').toString();
+                      controllers[10].text = (inventory[DBInventory.columnNumberLooseItems] ?? '').toString();
+                      controllers[11].text = (inventory[DBInventory.columnDescription] ?? '').toString();
+                    });
+                  } else {
+
+                  }
+                }
               }
             },
           ),
@@ -483,8 +528,40 @@ Future<void> saveMoreRecords(BuildContext context) async {
           focusNode: focusNode,
           style: const TextStyle(fontSize: 18),
           enabled: enabled,
-          onChanged: (value) {
+          onChanged: (value) async {
             _validateMandatoryFields(settings);
+
+              if (id == 8) {
+                // Buscar o registro de inventário quando o texto mudar
+                int inventoryId = widget.inventoryId; // Garantir que isso esteja acessível
+                String unitizer = controllers[0].text;
+                String position = controllers[1].text;
+
+                // Chama o método para buscar o registro
+                final inventory = await DBInventory.instance.getInventoryRecord(
+                  inventoryId: inventoryId,
+                  unitizer: unitizer,
+                  position: position,
+                  barcode: value, // Usar o valor alterado do campo
+                );
+
+                if (inventory != null) {
+                  // Carregar os dados do registro nos campos da tela
+                  setState(() {
+                    controllers[2].text = inventory[DBInventory.columnDeposit] ?? '';
+                    controllers[3].text = inventory[DBInventory.columnBlockA] ?? '';
+                    controllers[4].text = inventory[DBInventory.columnBlockB] ?? '';
+                    controllers[5].text = inventory[DBInventory.columnLot] ?? '';
+                    controllers[6].text = (inventory[DBInventory.columnFloor] ?? '').toString();
+                    controllers[7].text = (inventory[DBInventory.columnBarcode] ?? '');
+                    controllers[8].text = (inventory[DBInventory.columnStandardStackQtd] ?? '').toString();
+                    controllers[9].text = (inventory[DBInventory.columnNumberCompleteStacks] ?? '').toString();
+                    controllers[10].text = (inventory[DBInventory.columnNumberLooseItems] ?? '').toString();
+                    controllers[11].text = (inventory[DBInventory.columnDescription] ?? '').toString();
+                  });
+                }
+              }
+
           },
           keyboardType: TextInputType.number,
           decoration: InputDecoration(
@@ -517,30 +594,6 @@ Future<void> saveMoreRecords(BuildContext context) async {
     );
   }
 
-/*
-  Future<String> scanBarcode() async {
-    String barcodeScanRes;
-    try {
-      barcodeScanRes = await FlutterBarcodeScanner.scanBarcode(
-        "#ff6666", // Cor do botão de cancelamento
-        "Cancelar", // Texto do botão de cancelamento
-        true, // Exibir linha guia de escaneamento
-        ScanMode.BARCODE, // Modo de escaneamento (BARCODE ou QR_CODE)
-      );
-    } catch (e) {
-      barcodeScanRes = "Falha ao escanear código de barras";
-    }
-
-    //if (!mounted) return '';
-
-    /*setState(() {
-      _barcodeResult = barcodeScanRes;
-    });*/
-
-    return barcodeScanRes;
-  }
-*/
-
 Future<String> scanBarcode(BuildContext context) async {
   final result = await Navigator.push(
     context,
@@ -549,291 +602,19 @@ Future<String> scanBarcode(BuildContext context) async {
     ),
   );
 
-  // Esperar 1 segundo
-  //await Future.delayed(const Duration(seconds: 1));
-
   return result != null ? result as String : 'Falha ao escanear código de barras';
 }
 
 
-@override
-Widget build(BuildContext context) {
-  return BasePage(
-    title: '',
-    subtitle: 'Criação de Inventário',
-    body: SingleChildScrollView(
-      child: Padding(
-        padding: const EdgeInsets.all(1.0),
-        child: FutureBuilder<Map<String, Map<String, dynamic>>>(
-          future: _settingsFuture,
-          builder: (context, snapshot) {
-            if (snapshot.connectionState == ConnectionState.waiting) {
-              return const Center(child: CircularProgressIndicator(color: Colors.white));
-            } else if (snapshot.hasError) {
-              return const Center(child: Text('Erro ao carregar inventário.'));
-            } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
-              return const Center(child: Text('Nenhum inventário encontrado.'));
-            }
-            final settings = snapshot.data!;
-            return Column(
-              children: [
-                Align(
-                  alignment: Alignment.centerLeft,
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 0),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        const Text(
-                          'TOTAL DE REGISTROS: ',
-                          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
-                        ),
-                        /*Text(
-                          _totalController.text,
-                          style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-                        ),*/
-
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 3.0),
-                          decoration: BoxDecoration(
-                            color: Colors.black87,
-                            borderRadius: BorderRadius.circular(5),
-                          ),
-                          child: Text(
-                            _totalController.text,
-                            style: const TextStyle(
-                              fontSize: 24,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.white,
-                            ),
-                          ),
-                        ),
-                        //const Padding(padding: EdgeInsets.only(bottom: 1.0)),
-                      ],
-                    ),
-                  ),
-                 
-                ),
-                const SizedBox(height: 10),
-                _buildTextField(
-                  id: 1,
-                  label: 'Unitizador',
-                  visible: true,
-                  enabled: settings['Unitizador']?['exibir'] == 1,
-                  required: settings['Unitizador']?['obrigatorio'] == 1,
-                  controller: controllers[0],
-                  focusNode: focusNodes[0],
-                  settings: settings,
-                  suffixIcon: const Icon(Icons.barcode_reader),
-                ),
-                const SizedBox(height: 7),
-                _buildTextField(
-                  id: 2,
-                  label: 'Posição',
-                  visible: true,
-                  enabled: settings['Posição']?['exibir'] == 1,
-                  required: settings['Posição']?['obrigatorio'] == 1,
-                  controller: controllers[1],
-                  focusNode: focusNodes[1],
-                  settings: settings,
-                  suffixIcon: const Icon(Icons.barcode_reader),
-                  context: context,
-                ),
-                const SizedBox(height: 3),
-                Row(
-                  children: [
-                    Expanded(
-                      child: _buildTextField(
-                        id: 3,
-                        label: 'Depósito',
-                        visible: true,
-                        enabled: settings['Depósito']?['exibir'] == 1,
-                        required: settings['Depósito']?['obrigatorio'] == 1,
-                        controller: controllers[2],
-                        focusNode: focusNodes[2],
-                        settings: settings,
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: _buildTextField(
-                        id: 4,
-                        label: 'Bloco',
-                        visible: true,
-                        enabled: settings['Bloco']?['exibir'] == 1,
-                        required: settings['Bloco']?['obrigatorio'] == 1,
-                        controller: controllers[3],
-                        focusNode: focusNodes[3],
-                        settings: settings,
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 3),
-                Row(
-                  children: [
-                    Expanded(
-                      child: _buildTextField(
-                        id: 5,
-                        label: 'Quadra',
-                        visible: true,
-                        enabled: settings['Quadra']?['exibir'] == 1,
-                        required: settings['Quadra']?['obrigatorio'] == 1,
-                        controller: controllers[4],
-                        focusNode: focusNodes[4],
-                        settings: settings,
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: _buildTextField(
-                        id: 6,
-                        label: 'Lote',
-                        visible: true,
-                        enabled: settings['Lote']?['exibir'] == 1,
-                        required: settings['Lote']?['obrigatorio'] == 1,
-                        controller: controllers[5],
-                        focusNode: focusNodes[5],
-                        settings: settings,
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 3),
-                _buildTextField(
-                  id: 7,
-                  label: 'Andar',
-                  visible: true,
-                  enabled: settings['Andar']?['exibir'] == 1,
-                  required: settings['Andar']?['obrigatorio'] == 1,
-                  controller: controllers[6],
-                  focusNode: focusNodes[6],
-                  settings: settings,
-                ),
-                const SizedBox(height: 3),
-                _buildTextField(
-                  id: 8,
-                  label: 'Código de Barras',
-                  visible: true,
-                  enabled: settings['Código de Barras']?['exibir'] == 1,
-                  required: settings['Código de Barras']?['obrigatorio'] == 1,
-                  controller: controllers[7],
-                  focusNode: focusNodes[7],
-                  settings: settings,
-                  suffixIcon: const Icon(Icons.barcode_reader),
-                  context: context,
-                ),
-                const SizedBox(height: 7),
-                Row(
-                  children: [
-                    Expanded(
-                      child: _buildTextField(
-                        id: 9,
-                        label: 'Qtde Padrão da Pilha',
-                        visible: true,
-                        enabled: settings['Qtde Padrão da Pilha']?['exibir'] == 1,
-                        required: settings['Qtde Padrão da Pilha']?['obrigatorio'] == 1,
-                        controller: controllers[8],
-                        focusNode: focusNodes[8],
-                        settings: settings,
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: _buildTextField(
-                        id: 10,
-                        label: 'Qtde de Pilhas Completas',
-                        visible: true,
-                        enabled: settings['Qtde de Pilhas Completas']?['exibir'] == 1,
-                        required: settings['Qtde de Pilhas Completas']?['obrigatorio'] == 1,
-                        controller: controllers[9],
-                        focusNode: focusNodes[9],
-                        settings: settings,
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 3),
-                _buildTextField(
-                  id: 11,
-                  label: 'Qtde de Itens Avulsos',
-                  visible: true,
-                  enabled: settings['Qtde de Itens Avulsos']?['exibir'] == 1,
-                  required: settings['Qtde de Itens Avulsos']?['obrigatorio'] == 1,
-                  controller: controllers[10],
-                  focusNode: focusNodes[10],
-                  settings: settings,
-                ),
-              ],
-            );
-          },
-        ),
-      ),
-    ),
-    floatingButtons: Padding(
-      padding: const EdgeInsets.all(16.0),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          ElevatedButton.icon(
-            style: ElevatedButton.styleFrom(
-              padding: const EdgeInsets.all(16),
-              backgroundColor: Colors.red,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8),
-              ),
-            ),
-            onPressed: () {
-              FocusScope.of(context).unfocus();
-              clearFields();
-            },
-            icon: const Icon(Icons.close, color: Colors.white),
-            label: const Text(
-              'LIMPAR',
-              style: TextStyle(color: Colors.white, fontSize: 16),
-            ),
-          ),
-          const SizedBox(width: 16),
-          ElevatedButton.icon(
-            style: ElevatedButton.styleFrom(
-              padding: const EdgeInsets.all(16),
-              backgroundColor: _isSaveButtonEnabled ? Colors.blue : Colors.grey,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8),
-              ),
-            ),
-            onPressed: _isSaveButtonEnabled
-                ? () async {
-                    FocusScope.of(context).unfocus();
-                    //if (_validateMandatoryFields(_settingsFuture.data ?? {})) {
-                      int result = await saveData(context);
-                    //}
-                  }
-                : null,
-            icon: const Icon(Icons.save, color: Colors.white),
-            label: const Text(
-              'GRAVAR',
-              style: TextStyle(color: Colors.white, fontSize: 16),
-            ),
-          ),
-        ],
-      ),
-    ),
-  );
-}
-
-
-/*
   @override
   Widget build(BuildContext context) {
     return BasePage(
       title: '',
-      subtitle: 'Criação de Inventário',
-      body: SingleChildScrollView( // coloca scroll para rolar o conteúdo
+      subtitle: 'Contagem do Inventário',
+      body: SingleChildScrollView(
         child: Padding(
           padding: const EdgeInsets.all(1.0),
-          child: FutureBuilder<Map<String, Map<String, dynamic>>>( 
+          child: FutureBuilder<Map<String, Map<String, dynamic>>>(
             future: _settingsFuture,
             builder: (context, snapshot) {
               if (snapshot.connectionState == ConnectionState.waiting) {
@@ -841,7 +622,7 @@ Widget build(BuildContext context) {
               } else if (snapshot.hasError) {
                 return const Center(child: Text('Erro ao carregar inventário.'));
               } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
-                return const Center(child: Text('Nenhuma inventário encontrado.'));
+                return const Center(child: Text('Nenhum inventário encontrado.'));
               }
               final settings = snapshot.data!;
               return Column(
@@ -849,216 +630,184 @@ Widget build(BuildContext context) {
                   Align(
                     alignment: Alignment.centerLeft,
                     child: Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 8.0),
+                      padding: const EdgeInsets.symmetric(vertical: 0),
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          const Text('Total de Registros: ',
+                          const Text(
+                            'TOTAL DE REGISTROS: ',
                             style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
                           ),
-                          Text(
-                            _totalController.text,
-                            style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold,),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 3.0),
+                            decoration: BoxDecoration(
+                              color: Colors.black87,
+                              borderRadius: BorderRadius.circular(5),
+                            ),
+                            child: Text(
+                              _totalController.text,
+                              style: const TextStyle(
+                                fontSize: 24,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.white,
+                              ),
+                            ),
                           ),
-                          const Padding( padding: EdgeInsets.only(right: 1)),
+                          //const Padding(padding: EdgeInsets.only(bottom: 1.0)),
                         ],
                       ),
                     ),
                   ),
+                  const SizedBox(height: 10),
                   _buildTextField(
-                    id:         1,
-                    label:      'Unitizador',
-                    visible:    true,
-                    enabled:    settings['Unitizador']?['exibir'] == 1,
-                    required:   settings['Unitizador']?['obrigatorio'] == 1,
+                    id: 1,
+                    label: 'Unitizador',
+                    visible: true,
+                    enabled: settings['Unitizador']?['exibir'] == 1,
+                    required: settings['Unitizador']?['obrigatorio'] == 1,
                     controller: controllers[0],
                     focusNode: focusNodes[0],
-                    settings:   settings,
+                    settings: settings,
                     suffixIcon: const Icon(Icons.barcode_reader),
+                    context: context,
                   ),
-                  const SizedBox(height: 8),
+                  const SizedBox(height: 7),
                   _buildTextField(
                     id: 2,
-                    label:      'Posição',
-                    visible:    true,
-                    enabled:    settings['Posição']?['exibir'] == 1,
-                    required:   settings['Posição']?['obrigatorio'] == 1,
+                    label: 'Posição',
+                    visible: true,
+                    enabled: settings['Posição']?['exibir'] == 1,
+                    required: settings['Posição']?['obrigatorio'] == 1,
                     controller: controllers[1],
                     focusNode: focusNodes[1],
-                    settings:   settings,
+                    settings: settings,
                     suffixIcon: const Icon(Icons.barcode_reader),
+                    context: context,
                   ),
-                  const SizedBox(height: 8),
+                  const SizedBox(height: 3),
                   Row(
                     children: [
                       Expanded(
                         child: _buildTextField(
-                          id:         3,
-                          label:      'Depósito',
-                          visible:    true,
-                          enabled:    settings['Depósito']?['exibir'] == 1,
-                          required:   settings['Depósito']?['obrigatorio'] == 1,
+                          id: 3,
+                          label: 'Depósito',
+                          visible: true,
+                          enabled: settings['Depósito']?['exibir'] == 1,
+                          required: settings['Depósito']?['obrigatorio'] == 1,
                           controller: controllers[2],
                           focusNode: focusNodes[2],
-                          settings:   settings,
+                          settings: settings,
                         ),
                       ),
                       const SizedBox(width: 8),
                       Expanded(
                         child: _buildTextField(
-                          id:         4,
-                          label:      'Bloco',
-                          visible:    true,
-                          enabled:    settings['Bloco']?['exibir'] == 1,
-                          required:   settings['Bloco']?['obrigatorio'] == 1,
+                          id: 4,
+                          label: 'Bloco',
+                          visible: true,
+                          enabled: settings['Bloco']?['exibir'] == 1,
+                          required: settings['Bloco']?['obrigatorio'] == 1,
                           controller: controllers[3],
                           focusNode: focusNodes[3],
-                          settings:   settings,
+                          settings: settings,
                         ),
                       ),
                     ],
                   ),
-                  const SizedBox(height: 8),
+                  const SizedBox(height: 3),
                   Row(
                     children: [
                       Expanded(
                         child: _buildTextField(
-                          id:         5,
-                          label:      'Quadra',
-                          visible:    true,
-                          enabled:    settings['Quadra']?['exibir'] == 1,
-                          required:   settings['Quadra']?['obrigatorio'] == 1,
+                          id: 5,
+                          label: 'Quadra',
+                          visible: true,
+                          enabled: settings['Quadra']?['exibir'] == 1,
+                          required: settings['Quadra']?['obrigatorio'] == 1,
                           controller: controllers[4],
                           focusNode: focusNodes[4],
-                          settings:   settings,
+                          settings: settings,
                         ),
                       ),
                       const SizedBox(width: 8),
                       Expanded(
                         child: _buildTextField(
-                          id:         6,
-                          label:      'Lote',
-                          visible:    true,
-                          enabled:    settings['Lote']?['exibir'] == 1,
-                          required:   settings['Lote']?['obrigatorio'] == 1,
+                          id: 6,
+                          label: 'Lote',
+                          visible: true,
+                          enabled: settings['Lote']?['exibir'] == 1,
+                          required: settings['Lote']?['obrigatorio'] == 1,
                           controller: controllers[5],
                           focusNode: focusNodes[5],
-                          settings:   settings,
+                          settings: settings,
                         ),
                       ),
                     ],
                   ),
-                  const SizedBox(height: 8),
+                  const SizedBox(height: 3),
                   _buildTextField(
-                    id:         7,
-                    label:      'Andar',
-                    visible:    true,
-                    enabled:    settings['Andar']?['exibir'] == 1,
-                    required:   settings['Andar']?['obrigatorio'] == 1,
+                    id: 7,
+                    label: 'Andar',
+                    visible: true,
+                    enabled: settings['Andar']?['exibir'] == 1,
+                    required: settings['Andar']?['obrigatorio'] == 1,
                     controller: controllers[6],
                     focusNode: focusNodes[6],
-                    settings:   settings,
+                    settings: settings,
                   ),
-                  const SizedBox(height: 8),
+                  const SizedBox(height: 3),
                   _buildTextField(
-                    id:         8,
-                    label:      'Código de Barras',
-                    visible:    true,
-                    enabled:    settings['Código de Barras']?['exibir'] == 1,
-                    required:   settings['Código de Barras']?['obrigatorio'] == 1,
+                    id: 8,
+                    label: 'Código de Barras',
+                    visible: true,
+                    enabled: settings['Código de Barras']?['exibir'] == 1,
+                    required: settings['Código de Barras']?['obrigatorio'] == 1,
                     controller: controllers[7],
                     focusNode: focusNodes[7],
-                    settings:   settings,
+                    settings: settings,
                     suffixIcon: const Icon(Icons.barcode_reader),
-                    context:    context,
+                    context: context,
                   ),
-                  const SizedBox(height: 8),
+                  const SizedBox(height: 7),
                   Row(
                     children: [
                       Expanded(
                         child: _buildTextField(
-                          id:         9,
-                          label:      'Qtde Padrão da Pilha',
-                          visible:    true,
-                          enabled:    settings['Qtde Padrão da Pilha']?['exibir'] == 1,
-                          required:   settings['Qtde Padrão da Pilha']?['obrigatorio'] == 1,
+                          id: 9,
+                          label: 'Qtde Padrão da Pilha',
+                          visible: true,
+                          enabled: settings['Qtde Padrão da Pilha']?['exibir'] == 1,
+                          required: settings['Qtde Padrão da Pilha']?['obrigatorio'] == 1,
                           controller: controllers[8],
                           focusNode: focusNodes[8],
-                          settings:   settings,
+                          settings: settings,
                         ),
                       ),
                       const SizedBox(width: 8),
                       Expanded(
                         child: _buildTextField(
-                          id:         10,
-                          label:      'Qtde de Pilhas Completas',
-                          visible:    true,
-                          enabled:    settings['Qtde de Pilhas Completas']?['exibir'] == 1,
-                          required:   settings['Qtde de Pilhas Completas']?['obrigatorio'] == 1,
+                          id: 10,
+                          label: 'Qtde de Pilhas Completas',
+                          visible: true,
+                          enabled: settings['Qtde de Pilhas Completas']?['exibir'] == 1,
+                          required: settings['Qtde de Pilhas Completas']?['obrigatorio'] == 1,
                           controller: controllers[9],
                           focusNode: focusNodes[9],
-                          settings:   settings,
+                          settings: settings,
                         ),
                       ),
                     ],
                   ),
-                  const SizedBox(height: 8),
+                  const SizedBox(height: 3),
                   _buildTextField(
-                    id:         11,
-                    label:      'Qtde de Itens Avulsos',
-                    visible:    true,
-                    enabled:    settings['Qtde de Itens Avulsos']?['exibir'] == 1,
-                    required:   settings['Qtde de Itens Avulsos']?['obrigatorio'] == 1,
+                    id: 11,
+                    label: 'Qtde de Itens Avulsos',
+                    visible: true,
+                    enabled: settings['Qtde de Itens Avulsos']?['exibir'] == 1,
+                    required: settings['Qtde de Itens Avulsos']?['obrigatorio'] == 1,
                     controller: controllers[10],
                     focusNode: focusNodes[10],
-                    settings:   settings,
-                  ),
-                  Align(
-                    alignment: Alignment.bottomCenter,
-                    child: Padding(
-                      padding: const EdgeInsets.all(16.0),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          ElevatedButton.icon(
-                            style: ElevatedButton.styleFrom(
-                              padding: const EdgeInsets.all(16),
-                              backgroundColor: Colors.red,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                            ),
-                            onPressed: () {
-                              FocusScope.of(context).unfocus(); 
-                              clearFields();
-                            },
-                            icon: const Icon(Icons.close, color: Colors.white),
-                            label: const Text('LIMPAR', style: TextStyle(color: Colors.white, fontSize: 16,),),
-                          ),
-                          const SizedBox(width: 16),
-                          ElevatedButton.icon(
-                            style: ElevatedButton.styleFrom( 
-                              padding: const EdgeInsets.all(16),
-                              backgroundColor: _isSaveButtonEnabled ? Colors.blue : Colors.grey,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                            ),
-                            onPressed: _isSaveButtonEnabled
-                              ? () async {
-                                  FocusScope.of(context).unfocus();
-                                  if (_validateMandatoryFields(settings)) {
-                                    int result = await saveData(context);
-                                  }
-                                }
-                              : null,
-                            icon: const Icon(Icons.save, color: Colors.white),
-                            label: const Text('GRAVAR', style: TextStyle(color: Colors.white, fontSize: 16,),),
-                          ),
-                        ],
-                      ),
-                    ),
+                    settings: settings,
                   ),
                 ],
               );
@@ -1066,6 +815,56 @@ Widget build(BuildContext context) {
           ),
         ),
       ),
+      floatingButtons: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            ElevatedButton.icon(
+              style: ElevatedButton.styleFrom(
+                padding: const EdgeInsets.all(16),
+                backgroundColor: Colors.red,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+              ),
+              onPressed: () {
+                FocusScope.of(context).unfocus();
+                clearFields();
+              },
+              icon: const Icon(Icons.close, color: Colors.white),
+              label: const Text(
+                'LIMPAR',
+                style: TextStyle(color: Colors.white, fontSize: 16),
+              ),
+            ),
+            const SizedBox(width: 16),
+            ElevatedButton.icon(
+              style: ElevatedButton.styleFrom(
+                padding: const EdgeInsets.all(16),
+                backgroundColor: _isSaveButtonEnabled ? Colors.blue : Colors.grey,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+              ),
+              onPressed: _isSaveButtonEnabled
+                  ? () async {
+                      FocusScope.of(context).unfocus();
+                      //if (_validateMandatoryFields(_settingsFuture.data ?? {})) {
+                        int result = await saveData(context);
+                      //}
+                    }
+                  : null,
+              icon: const Icon(Icons.save, color: Colors.white),
+              label: const Text(
+                'GRAVAR',
+                style: TextStyle(color: Colors.white, fontSize: 16),
+              ),
+            ),
+          ],
+        ),
+      ),
     );
-  }*/
+  }
 }

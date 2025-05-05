@@ -375,8 +375,6 @@ Container(
             '$label: ',
             style: TextStyle(fontWeight: FontWeight.bold),
           ),
-          //const SizedBox(width: 8),
-          // Texto alinhado à direita
           Expanded(
             child: Text(
               value,

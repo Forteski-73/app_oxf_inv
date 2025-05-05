@@ -64,14 +64,7 @@ class _SearchProductState extends State<SearchProduct> {
               // Obtendo os valores para comparação
         /*String itemBarCode = product['ItemBarCode'].toString();
         String itemID = product['ItemID'].toString();
-        String name = product['Name'].toString();
-
-        // Imprimindo o que está sendo comparado
-        print('Comparando "$query" com:');
-        print('- ItemBarCode: $itemBarCode → ${regex.hasMatch(itemBarCode)}');
-        print('- ItemID: $itemID → ${regex.hasMatch(itemID)}');
-        print('- Name: $name → ${regex.hasMatch(name)}');
-        print('----------------------------');*/
+        String name = product['Name'].toString();*/
 
 
         return regex.hasMatch(product['ItemBarCode'].toString()) ||
@@ -179,7 +172,7 @@ class _SearchProductState extends State<SearchProduct> {
               style: TextStyle(color: Colors.white, fontSize: 12),
             ),
             SizedBox(height: 2),
-            Text('Pesquisar Produtos', style: TextStyle(color: Colors.white)),
+            Text('Pesquisar Produtos 1', style: TextStyle(color: Colors.white)),
           ],
         ),
         backgroundColor: Colors.black,

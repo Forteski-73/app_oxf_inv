@@ -74,109 +74,109 @@ class _InventoryHistoryState extends State<InventoryHistory> with RouteAware {
   }
 
   @override
-Widget build(BuildContext context) {
-  return BasePage(
+  Widget build(BuildContext context) {
+    return BasePage(
     title: '',
     subtitle: 'Inventário Histórico',
     body: isLoading
-        ? const Center(child: CircularProgressIndicator(color: Colors.white))
-        : inventoryData.isEmpty
-            ? const Center(child: Text('Nenhum inventário encontrado.'))
-            : SingleChildScrollView(
-                padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 16.0),
-                child: ConstrainedBox(
-                  constraints: BoxConstraints(
-                    minHeight: MediaQuery.of(context).size.height,
-                  ),
-                  child: Column(
-                    children: [
-                      // Aqui você pode colocar outros widgets se necessário.
-                      ListView.builder(
-                        shrinkWrap: true,  // Faz o ListView ocupar apenas o espaço necessário
-                        physics: NeverScrollableScrollPhysics(),  // Desabilita rolagem do ListView
-                        padding: const EdgeInsets.all(8.0),
-                        itemCount: inventoryData.length,
-                        itemBuilder: (context, index) {
-                          final inventory = inventoryData[index];
-                          return Card(
-                            margin: const EdgeInsets.symmetric(vertical: 8.0),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.stretch,
+      ? const Center(child: CircularProgressIndicator(color: Colors.white))
+      : inventoryData.isEmpty
+        ? const Center(child: Text('Nenhum inventário encontrado.'))
+        : SingleChildScrollView(
+          padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 16.0),
+          child: ConstrainedBox(
+            constraints: BoxConstraints(
+              minHeight: MediaQuery.of(context).size.height,
+            ),
+            child: Column(
+              children: [
+                // Aqui você pode colocar outros widgets se necessário.
+                ListView.builder(
+                  shrinkWrap: true,  // Faz o ListView ocupar apenas o espaço necessário
+                  physics: NeverScrollableScrollPhysics(),  // Desabilita rolagem do ListView
+                  padding: const EdgeInsets.all(8.0),
+                  itemCount: inventoryData.length,
+                  itemBuilder: (context, index) {
+                    final inventory = inventoryData[index];
+                    return Card(
+                      margin: const EdgeInsets.symmetric(vertical: 8.0),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          Container(
+                            width: double.infinity,
+                            padding: const EdgeInsets.all(8),
+                            decoration: BoxDecoration(
+                              color: inventory[DBInventory.columnStatus] == 'EM ANDAMENTO'
+                                  ? Colors.orange
+                                  : inventory[DBInventory.columnStatus] == 'CONCLUÍDO'
+                                      ? Colors.green
+                                      : Colors.blue,
+                              borderRadius: const BorderRadius.only(
+                                topLeft: Radius.circular(8),
+                                topRight: Radius.circular(8),
+                              ),
+                            ),
+                            child: Text(
+                              inventory[DBInventory.columnStatus] ?? 'NÃO INICIADO',
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 16,
+                              ),
+                            ),
+                          ),
+                          SizedBox(
+                            height: 95,
+                            child: Row(
                               children: [
                                 Container(
-                                  width: double.infinity,
-                                  padding: const EdgeInsets.all(8),
-                                  decoration: BoxDecoration(
-                                    color: inventory[DBInventory.columnStatus] == 'EM ANDAMENTO'
-                                        ? Colors.orange
-                                        : inventory[DBInventory.columnStatus] == 'CONCLUÍDO'
-                                            ? Colors.green
-                                            : Colors.blue,
-                                    borderRadius: const BorderRadius.only(
-                                      topLeft: Radius.circular(8),
-                                      topRight: Radius.circular(8),
-                                    ),
-                                  ),
-                                  child: Text(
-                                    inventory[DBInventory.columnStatus] ?? 'NÃO INICIADO',
-                                    style: const TextStyle(
-                                      color: Colors.white,
-                                      fontWeight: FontWeight.bold,
-                                      fontSize: 16,
+                                  width: 12,
+                                  height: double.infinity,
+                                ),
+                                Expanded(
+                                  child: GestureDetector(
+                                    onTap: () async {
+                                      final result = await Navigator.pushNamed(
+                                        context, '/inventoryHistoryDetail',
+                                        arguments: inventory[DBInventory.columnId] as int,
+                                      );
+                                      if (result == true) {
+                                        _fetchInventoryData(); // Atualiza os dados
+                                      }
+                                    },
+                                    child: ListTile(
+                                      title: Text(inventory[DBInventory.columnName] as String),
+                                      subtitle: Column(
+                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        children: [
+                                          Text(inventory[DBInventory.columnCode] as String),
+                                          Text('${inventory[DBInventory.columnDate]} - ${inventory[DBInventory.columnStatus]}'),
+                                          Text('Total de itens: ${inventory[DBInventory.columnTotal] ?? '0'}'),
+                                        ],
+                                      ),
                                     ),
                                   ),
                                 ),
-                                SizedBox(
-                                  height: 95,
-                                  child: Row(
-                                    children: [
-                                      Container(
-                                        width: 12,
-                                        height: double.infinity,
-                                      ),
-                                      Expanded(
-                                        child: GestureDetector(
-                                          onTap: () async {
-                                            final result = await Navigator.pushNamed(
-                                              context, '/inventoryHistoryDetail',
-                                              arguments: inventory[DBInventory.columnId] as int,
-                                            );
-                                            if (result == true) {
-                                              _fetchInventoryData(); // Atualiza os dados
-                                            }
-                                          },
-                                          child: ListTile(
-                                            title: Text(inventory[DBInventory.columnName] as String),
-                                            subtitle: Column(
-                                              crossAxisAlignment: CrossAxisAlignment.start,
-                                              children: [
-                                                Text(inventory[DBInventory.columnCode] as String),
-                                                Text('${inventory[DBInventory.columnDate]} - ${inventory[DBInventory.columnStatus]}'),
-                                                Text('Total de itens: ${inventory[DBInventory.columnTotal] ?? '0'}'),
-                                              ],
-                                            ),
-                                          ),
-                                        ),
-                                      ),
-                                      const Align(
-                                        alignment: Alignment.center,
-                                        child: Padding(
-                                          padding: EdgeInsets.only(right: 16.0),
-                                          child: Icon(Icons.navigate_next_sharp, size: 30, color: Colors.black),
-                                        ),
-                                      ),
-                                    ],
+                                const Align(
+                                  alignment: Alignment.center,
+                                  child: Padding(
+                                    padding: EdgeInsets.only(right: 16.0),
+                                    child: Icon(Icons.navigate_next_sharp, size: 30, color: Colors.black),
                                   ),
                                 ),
                               ],
                             ),
-                          );
-                        },
+                          ),
+                        ],
                       ),
-                    ],
-                  ),
+                    );
+                  },
                 ),
-              ),
+              ],
+            ),
+          ),
+        ),
     );
   }
 }

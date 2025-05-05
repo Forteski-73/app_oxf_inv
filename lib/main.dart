@@ -48,7 +48,6 @@ class MyApp extends StatelessWidget {
         '/importProduct':   (context) => ImportProduct(),                 // Rota para Importação de Produtos
         '/sync':            (context) => const SyncPage(),                // Rota para Sincronização
         '/productSearch':   (context) => const ProductSearchPage(),       // Rota para Pesquisar Produtos
-        //'/searchProduct': (context) => const SearchProduct(),           // Rota para Pesquisar Produtos simples
         '/searchProduct':   (context) {
           final args = ModalRoute.of(context)?.settings.arguments;
           final Function(String) onProductSelected = 
@@ -71,7 +70,13 @@ class MyApp extends StatelessWidget {
           final int inventoryId = ModalRoute.of(context)?.settings.arguments as int;  // Recuperar o argumento passado na navegação
           return InventoryHistoryDetail(inventoryId: inventoryId);            // Passar o argumento para o construtor da página
         },
-        '/inventoryRecord': (context) => InventoryRecordsPage(),
+        '/inventoryRecord': (context) {
+          final args = ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>;
+          return InventoryRecordsPage(
+            selectedProfile: args['selectedProfile'],
+            inventoryId: args['inventoryId'],
+          );
+        },
         '/teste': (context) => const PaginaComAcoesFlutuantes(),
       },
     );

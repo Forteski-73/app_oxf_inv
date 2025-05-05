@@ -4,7 +4,7 @@ import 'package:path/path.dart';
 
 class DBInventoryExport {
   static const _databaseName = "export_settings.db";
-  static const _databaseVersion = 1;
+  static const _databaseVersion = 2;
   static const table = 'export_settings';
 
   // Definindo as colunas da tabela 'export_settings'
@@ -18,6 +18,8 @@ class DBInventoryExport {
   static const columnLote                   = 'lote';
   static const columnAndar                  = 'andar';
   static const columnCodigoDeBarras         = 'codigoDeBarras';
+  static const columnProduto                = 'produto';
+  static const columnNome                   = 'nome';
   static const columnQtdePadraoDaPilha      = 'qtdePadraoDaPilha';
   static const columnQtdeDePilhasCompletas  = 'qtdeDePilhasCompletas';
   static const columnQtdeDeItensAvulsos     = 'qtdeDeItensAvulsos';
@@ -43,16 +45,22 @@ class DBInventoryExport {
     return _database!;
   }
 
-  Future<Database> _initDatabase() async {
-    var databasesPath = await getDatabasesPath(); // Diretório do banco de dados
-    String path = join(databasesPath, _databaseName);
+Future<Database> _initDatabase() async {
+  var databasesPath = await getDatabasesPath();
+  String path = join(databasesPath, _databaseName);
 
-    return await openDatabase(
-      path,
-      version: _databaseVersion,
-      onCreate: _onCreate,
-    ); // Abrindo/criando a tabela
-  }
+  return await openDatabase(
+    path,
+    version: _databaseVersion,
+    onCreate: _onCreate,
+    onUpgrade: (Database db, int oldVersion, int newVersion) async {
+      if (oldVersion < 2) {
+        await db.execute('ALTER TABLE $table ADD COLUMN $columnProduto INTEGER');
+        await db.execute('ALTER TABLE $table ADD COLUMN $columnNome INTEGER');
+      }
+    },
+  );
+}
 
   Future<void> _deleteTable(Database db) async {
     try {
@@ -75,6 +83,8 @@ class DBInventoryExport {
         $columnLote                     INTEGER,
         $columnAndar                    INTEGER,
         $columnCodigoDeBarras           INTEGER,
+        $columnProduto                  INTEGER,
+        $columnNome                     INTEGER,
         $columnQtdePadraoDaPilha        INTEGER,
         $columnQtdeDePilhasCompletas    INTEGER,
         $columnQtdeDeItensAvulsos       INTEGER,
@@ -100,6 +110,8 @@ class DBInventoryExport {
     bool lote,
     bool andar,
     bool codigoDeBarras,
+    bool produto,
+    bool nome,
     bool qtdePadraoDaPilha,
     bool qtdeDePilhasCompletas,
     bool qtdeDeItensAvulsos,
@@ -134,6 +146,8 @@ class DBInventoryExport {
             columnLote:                   lote ? 1 : 0,
             columnAndar:                  andar ? 1 : 0,
             columnCodigoDeBarras:         codigoDeBarras ? 1 : 0,
+            columnProduto:                produto ? 1 : 0,
+            columnNome:                   nome ? 1 : 0,
             columnQtdePadraoDaPilha:      qtdePadraoDaPilha ? 1 : 0,
             columnQtdeDePilhasCompletas:  qtdeDePilhasCompletas ? 1 : 0,
             columnQtdeDeItensAvulsos:     qtdeDeItensAvulsos ? 1 : 0,
@@ -207,6 +221,8 @@ class DBInventoryExport {
           'lote':                   data[columnLote]                  == 1,
           'andar':                  data[columnAndar]                 == 1,
           'codigoDeBarras':         data[columnCodigoDeBarras]        == 1,
+          'produto':                data[columnProduto]               == 1,
+          'nome':                   data[columnNome]                  == 1,
           'qtdePadraoDaPilha':      data[columnQtdePadraoDaPilha]     == 1,
           'qtdeDePilhasCompletas':  data[columnQtdeDePilhasCompletas] == 1,
           'qtdeDeItensAvulsos':     data[columnQtdeDeItensAvulsos]    == 1,

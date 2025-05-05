@@ -19,6 +19,8 @@ class _InventoryHistoryDetailState extends State<InventoryHistoryDetail> {
   Map<String, dynamic> _inventory = {};
   List<Map<String, dynamic>> _records = [];
   bool _isLoading = true;
+  String _searchText = '';
+  TextEditingController _searchController = TextEditingController();
 
   @override
   void initState() {
@@ -58,21 +60,21 @@ class _InventoryHistoryDetailState extends State<InventoryHistoryDetail> {
     }
   }
 
-  Widget _alignRow(String label, String value) {
+  Widget _alignRow(String label, Widget valueWidget) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 0.0),
       child: Row(
         children: [
           Expanded(
-            flex: 2, // Espaço por rótulo
+            flex: 2,
             child: Text(
               label,
               style: const TextStyle(fontWeight: FontWeight.bold),
             ),
           ),
           Expanded(
-            flex: 3, // Ocupa o restante do espaço
-            child: Text(value),
+            flex: 3,
+            child: valueWidget,
           ),
         ],
       ),
@@ -253,11 +255,11 @@ class _InventoryHistoryDetailState extends State<InventoryHistoryDetail> {
                                 : Column(
                                     crossAxisAlignment: CrossAxisAlignment.start,
                                     children: [
-                                      _alignRow('Código do Inventário:', '${_inventory[DBInventory.columnCode]}'),
-                                      _alignRow('Data de criação:', '${_inventory[DBInventory.columnDate]}'),
-                                      _alignRow('Nome do Inventário:', '${_inventory[DBInventory.columnName]}'),
-                                      _alignRow('Setor:', '${_inventory[DBInventory.columnSector]}'),
-                                      _alignRow('Total:', '${_inventory[DBInventory.columnTotal] ?? 0}'),
+                                      _alignRow('Código do Inventário:', Text('${_inventory[DBInventory.columnCode]}')),
+                                      _alignRow('Data de criação:',      Text('${_inventory[DBInventory.columnDate]}')),
+                                      _alignRow('Nome do Inventário:',   Text('${_inventory[DBInventory.columnName]}')),
+                                      _alignRow('Setor:',                Text('${_inventory[DBInventory.columnSector]}')),
+                                      _alignRow('Total:',                Text('${_inventory[DBInventory.columnTotal] ?? 0}')),
                                     ],
                                   ),
                             trailing: Row(
@@ -273,28 +275,100 @@ class _InventoryHistoryDetailState extends State<InventoryHistoryDetail> {
                             ),
                           ),
                         ),
-                        const SizedBox(height: 10),
+                        
+                        const SizedBox(height: 6),
+                        Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 8.0),
+                          child: TextField(
+                            controller: _searchController,
+                            decoration: InputDecoration(
+                              labelText: 'Filtrar por produto',
+                              hintText: 'Imformação do produto...',
+                              prefixIcon: const Icon(Icons.search),
+                              border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+                              focusedBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(8),
+                                borderSide: const BorderSide(
+                                  color: Color.fromARGB(255, 160, 241, 171), // Verde ao focar
+                                  width: 2.0,
+                                ),
+                              ),
+                              suffixIcon: _searchText.isNotEmpty
+                                  ? IconButton(
+                                      icon: const Icon(Icons.clear),
+                                      onPressed: () {
+                                        _searchController.clear();
+                                        setState(() => _searchText = '');
+                                      },
+                                    )
+                                  : null,
+                            ),
+                            onChanged: (value) {
+                              setState(() {
+                                _searchText = value.toLowerCase();
+                              });
+                            },
+                          ),
+                        ),
+
+                        const SizedBox(height: 6),
                         const Text('ITENS DO INVENTÁRIO',
                           style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                         ),
-                        ..._records.map((record) {
+                        ..._records.where((record) {
+                          final unitizer    = record[DBInventory.columnUnitizer]?.toString().toLowerCase() ?? '';
+                          final item        = record[DBInventory.columnItem]?.toString() ?? '';
+                          final barcode     = record[DBInventory.columnBarcode]?.toString().toLowerCase() ?? '';
+                          final description = record[DBInventory.columnDescription]?.toString().toLowerCase() ?? '';
+                          
+                          
+                          return unitizer.contains(_searchText) ||
+                                item.contains(_searchText) ||
+                                barcode.contains(_searchText) ||
+                                description.contains(_searchText);
+                                
+                        }).map((record) {
                           return Card(
                             child: ListTile(
-                              title: _alignRow('Sequência:', '${record[DBInventory.columnId] ?? ''}'),
+                              title: _alignRow('Sequência:', Text('${record[DBInventory.columnId] ?? ''}')),
                               subtitle: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  _alignRow('Unitizador:', '${record[DBInventory.columnUnitizer] ?? ''}'),
-                                  _alignRow('Depósito:', '${record[DBInventory.columnDeposit] ?? ''}'),
-                                  _alignRow('Código de Barras:', '${record[DBInventory.columnBarcode] ?? ''}'),
-                                  _alignRow('Total:', '${record[DBInventory.columnTotal] ?? ''}'),
+                                  _alignRow('Unitizador:', Text('${record[DBInventory.columnUnitizer] ?? ''}')),
+                                  _alignRow('Depósito:', Text('${record[DBInventory.columnDeposit] ?? ''}')),
+                                  _alignRow('Produto:', Text('${record[DBInventory.columnItem] ?? ''}')),
+                                  _alignRow('Código de Barras:', Text('${record[DBInventory.columnBarcode] ?? ''}')),
+                                  _alignRow(
+                                    'Nome:',
+                                    SingleChildScrollView(
+                                      scrollDirection: Axis.horizontal,
+                                      child: ConstrainedBox(
+                                        constraints: const BoxConstraints(maxWidth: 350), // limite horizontal
+                                        child: Text(
+                                          '${record[DBInventory.columnDescription] ?? ''}',
+                                          maxLines: 2,
+                                          overflow: TextOverflow.ellipsis,
+                                          softWrap: true,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                  _alignRow('Total:', Text('${record[DBInventory.columnTotal] ?? ''}')),
                                 ],
                               ),
-                              trailing: IconButton(
-                                icon: const Icon(Icons.delete, color: Colors.red),
-                                onPressed: () async {
-                                  await _showDeleteConfirmationDialog(context, record[DBInventory.columnId] as int, 1);
-                                },
+                              trailing: SizedBox(
+                                width: 15,
+                                child: Align(
+                                  alignment: Alignment.centerLeft,
+                                  child: IconButton(
+                                    icon: const Icon(Icons.delete, color: Colors.red),
+                                    padding: EdgeInsets.zero,
+                                    constraints: const BoxConstraints(), // remove restrições de tamanho
+                                    onPressed: () async {
+                                      await _showDeleteConfirmationDialog(context, record[DBInventory.columnId] as int, 1);
+                                    },
+                                  ),
+                                ),
                               ),
                             ),
                           );
@@ -327,178 +401,5 @@ class _InventoryHistoryDetailState extends State<InventoryHistoryDetail> {
           : null,
     );
   }
-
-  /*@override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Column(
-          mainAxisAlignment: MainAxisAlignment.start,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text(
-              'Aplicativo de Consulta de Estrutura de Produtos. ACEP',
-              style: TextStyle(color: Colors.white, fontSize: 12),
-            ),
-            const SizedBox(height: 2),
-            Text(
-              _inventory['code'] ?? 'Detalhes do Inventário',
-              style: const TextStyle(color: Colors.white),
-            ),
-          ],
-        ),
-        backgroundColor: Colors.black,
-        iconTheme: const IconThemeData(color: Colors.white),
-      ),
-      body: _isLoading // Exibir carregando.. até que os dados estejam prontos
-          ? const Center(child: CircularProgressIndicator(color: Colors.white))
-          : _inventory.isEmpty // Se o inventário estiver vazio após carregar
-              ? const Center(child: Text('Inventário não encontrado.'))
-              : Stack(
-                  children: [
-                    SingleChildScrollView(
-                      child: Padding(
-                        padding: const EdgeInsets.all(8.0),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            const Text('INVENTÁRIO',
-                              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                            ),
-                            Card(
-                              color: _inventory[DBInventory.columnStatus] == 'CONCLUÍDO'
-                                  ? Colors.green.shade100
-                                  : _inventory[DBInventory.columnStatus] == 'EM ANDAMENTO'
-                                      ? Colors.orange.shade100
-                                      : _inventory[DBInventory.columnStatus] == 'NÃO INICIADO'
-                                          ? Colors.blue.shade100
-                                          : Colors.grey.shade100,
-                              child: ListTile(
-                                title: Text(
-                                  _inventory[DBInventory.columnStatus] ?? 'Status não disponível',
-                                  style: TextStyle(
-                                    color: _inventory[DBInventory.columnStatus] == 'CONCLUÍDO'
-                                        ? Colors.green
-                                        : _inventory[DBInventory.columnStatus] == 'EM ANDAMENTO'
-                                            ? Colors.orange
-                                            : _inventory[DBInventory.columnStatus] == 'NÃO INICIADO'
-                                                ? Colors.blue
-                                                : Colors.grey,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                                subtitle: _inventory.isEmpty
-                                    ? const Text('Inventário excluído.')
-                                    : Column(
-                                        crossAxisAlignment: CrossAxisAlignment.start,
-                                        children: [
-                                          _alignRow('Código do Inventário:', '${_inventory[DBInventory.columnCode]}'),
-                                          _alignRow('Data de criação:', '${_inventory[DBInventory.columnDate]}'),
-                                          _alignRow('Nome do Inventário:', '${_inventory[DBInventory.columnName]}'),
-                                          _alignRow('Setor:', '${_inventory[DBInventory.columnSector]}'),
-                                          _alignRow('Total:', '${_inventory[DBInventory.columnTotal] ?? 0}'),
-                                        ],
-                                      ),
-                                trailing: Row(
-                                  mainAxisSize: MainAxisSize.min, // Limita o tamanho da linha
-                                  children: [
-                                    IconButton(
-                                      icon: Icon(Icons.delete, color: Colors.red),
-                                      onPressed: () async {
-                                        await _showDeleteConfirmationDialog(context, _inventory[DBInventory.columnId] as int, 0);
-                                      },
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ),
-                            const SizedBox(height: 10),
-                            const Text('ITENS DO INVENTÁRIO',
-                              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                            ),
-                            ..._records.map((record) {
-                              return Card(
-                                child: ListTile(
-                                  title: _alignRow('Sequência:', '${record[DBInventory.columnId] ?? ''}'),
-                                  subtitle: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      _alignRow('Unitizador:',        '${record[DBInventory.columnUnitizer] ?? ''}'),
-                                      _alignRow('Depósito:',          '${record[DBInventory.columnDeposit] ?? ''}'),
-                                      _alignRow('Código de Barras:',  '${record[DBInventory.columnBarcode] ?? ''}'),
-                                      _alignRow('Total:',             '${record[DBInventory.columnTotal] ?? ''}'),
-                                    ],
-                                  ),
-                                  trailing: IconButton(
-                                    icon: Icon(Icons.delete, color: Colors.red),
-                                    onPressed: () async {
-                                      await _showDeleteConfirmationDialog(context, record[DBInventory.columnId] as int, 1);
-                                    },
-                                  ),
-                                ),
-                              );
-                            }).toList(),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-      bottomNavigationBar: Column(
-        mainAxisSize: MainAxisSize.min, // Altura seja mínima necessária
-        children: [
-          // Primeiro "bottom bar"
-          if (_inventory[DBInventory.columnStatus] == 'CONCLUÍDO')
-            Container(
-              padding: const EdgeInsets.all(8.0), // Padding ao redor do botão
-              child: SizedBox(
-                width: double.infinity,
-                child: TextButton(
-                  onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => InventoryExportPage(
-                          inventoryId: _inventory[DBInventory.columnId] as int,
-                        ),
-                      ),
-                    );
-                  },
-                  style: TextButton.styleFrom(
-                    foregroundColor: Colors.white,
-                    backgroundColor: Colors.blue,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    minimumSize: Size(double.infinity, 50),
-                  ),
-                  child: const Row(
-                    mainAxisSize: MainAxisSize.min, // Ajusta o tamanho para caber no conteúdo
-                    children: [
-                      Icon(Icons.open_in_browser, color: Colors.white, size: 30),
-                      SizedBox(width: 8),
-                      Text("Exportar dados", style: TextStyle(color: Colors.white, fontSize: 16)),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-          SizedBox(height: 4),
-          // Segundo "bottom bar"
-          Container(
-            color: Colors.grey[300],
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-            child: const Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text("Oxford Porcelanas", style: TextStyle(fontSize: 14)),
-                Text("Versão: 1.0", style: TextStyle(fontSize: 14)),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }*/
 }
 

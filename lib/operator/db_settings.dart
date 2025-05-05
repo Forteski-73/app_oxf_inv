@@ -193,12 +193,6 @@ class DBSettings {
     return await db.insert(tableFieldDataTypeSetting, row);
   }
 
-  /*Future<int> updateFieldDataTypeSetting(Map<String, dynamic> row) async {
-    Database db = await instance.database;
-    int id = row[columnId];
-    return await db.update(tableFieldDataTypeSetting, row, where: '$columnId = ?', whereArgs: [id]);
-  }*/
-
   Future<int> saveFieldDataTypeSetting(Map<String, dynamic> row) async {
     Database db = await instance.database;
     int settingId = row[DBSettings.columnSettingId];
@@ -361,25 +355,6 @@ class DBSettings {
     if (profileId == null) {
       return [];
     }
-    
-      /*
-      // Tabela "settings"
-      static const tableSettings = 'settings';
-      static const columnId = '_id';
-      static const sequence = 'sequence';
-      static const columnNome = 'nome';
-      static const columnExibir = 'exibir';
-      static const columnObrigatorio = 'obrigatorio';
-      static const columnProfileId = 'profile_id'; // FK para settings_profile
-
-      // Tabela "field_data_type_setting"
-      static const tableFieldDataTypeSetting = 'field_data_type_setting';
-      static const columnFieldName = 'field_name';
-      static const columnFieldType = 'field_type';
-      static const columnMinSize = 'min_size';
-      static const columnMaxSize = 'max_size';
-      static const columnSettingId = 'setting_id'; // FK para a tabela settings
-    */
 
     // Realiza a consulta agora com o profileId e settingId
     final resultFields = await db.rawQuery('''
@@ -539,10 +514,4 @@ class DBSettings {
 
     return 0; // Retorna null caso não encontre o perfil
   }
-
-  /*// Delete
-  Future<int> delete(int id) async {
-    Database db = await instance.database;
-    return await db.delete(tableSettings, where: '$columnId = ?', whereArgs: [id]);
-  }*/
 }

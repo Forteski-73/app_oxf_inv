@@ -79,10 +79,17 @@ class CustomButton {
       textoFormatado = texto.length > limiteCaracteres ? '${texto.substring(0, limiteCaracteres)}' : texto;
     }
 
+    Color? corFinal = cor;
+
+    // Aplica transparência se a cor for um tom de cinza (mesmo valor RGB)
+    if (cor != null && cor.r == cor.g && cor.g == cor.b) {
+      corFinal = cor.withAlpha(128); // 50% de transparência
+    }
+
     // Estilo base do botão
     final ButtonStyle estilo = defaultButton().copyWith(
       minimumSize: WidgetStateProperty.all(Size(largura, 50)),
-      backgroundColor: cor != null ? WidgetStateProperty.all(cor) : null,
+      backgroundColor: corFinal != null ? WidgetStateProperty.all(corFinal) : null,
     );
 
     return ElevatedButton(
