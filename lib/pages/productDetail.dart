@@ -106,114 +106,92 @@ class _ProductDetailsPageState extends State<ProductDetailsPage> {
       ),
       body: SingleChildScrollView(
         child: Padding(
-          padding: const EdgeInsets.all(8.0),
+          padding: const EdgeInsets.all(5.0),
           child: Column(
             children: [
               Stack(
                 children: [
-Container(
-  width: double.infinity,
-  constraints: const BoxConstraints(minHeight: 250),
-  child: Card(
-    elevation: 2,
-    child: Padding(
-      padding: const EdgeInsets.all(8.0),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text(
-            'Imagens do Produto',
-            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-          ),
-          const SizedBox(height: 8),
-          // Carregamento das imagens em um PageView com Stack
-          imagens.isNotEmpty
-              ? SizedBox(
-                  height: 260, // Define a altura do carousel
-                  child: Stack(
-                    children: [
-                      // O PageView com as imagens
-                      PageView.builder(
-                        controller: _pageController,  // Controller do PageView
-                        itemCount: imagens.length,
-                        itemBuilder: (context, index) {
-                          return Image.file(
-                            imagens[index],
-                            fit: BoxFit.cover,
-                            errorBuilder: (context, error, stackTrace) {
-                              return const Center(
-                                child: Icon(
-                                  Icons.image_not_supported,
-                                  size: 50,
-                                  color: Colors.grey,
-                                ),
-                              );
-                            },
-                          );
-                        },
+                  Container(
+                    width: double.infinity,
+                    constraints: const BoxConstraints(minHeight: 250),
+                    child: Card(
+                      elevation: 2,
+                      clipBehavior: Clip.antiAlias, // Para recorte do conteúdo pelo borderRadius
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(4),
                       ),
-                      // As bolinhas de navegação no rodapé (sobre a imagem)
-                      Positioned(
-                        bottom: 10, // Distância do rodapé
-                        left: 0,
-                        right: 0,
-                        child: Center(
-                          child: SmoothPageIndicator(
-                            controller: _pageController,  // Controller do PageView
-                            count: imagens.length,
-                            effect: const WormEffect(
-                              dotColor: Colors.grey, // Cor das bolinhas inativas
-                              activeDotColor: Colors.blueAccent, // Cor da bolinha ativa
+                      child: SizedBox(
+                        height: 260,
+                        width: double.infinity,
+                        child: Stack(
+                          children: [
+                            // Fundo com imagens
+                            PageView.builder(
+                              controller: _pageController,
+                              itemCount: imagens.length,
+                              itemBuilder: (context, index) {
+                                return Image.file(
+                                  imagens[index],
+                                  fit: BoxFit.cover,
+                                  width: double.infinity,
+                                  height: double.infinity,
+                                  errorBuilder: (context, error, stackTrace) {
+                                    return const Center(
+                                      child: Icon(
+                                        Icons.image_not_supported,
+                                        size: 50,
+                                        color: Colors.grey,
+                                      ),
+                                    );
+                                  },
+                                );
+                              },
                             ),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                )
-              : const Center(
-                  child: Icon(
-                    Icons.image_not_supported,
-                    size: 50,
-                    color: Colors.grey,
-                  ),
-                ),
-        ],
-      ),
-    ),
-  ),
-),
 
-                  // Ícone de edição posicionado no topo direito, sobre o PageView
-                  Positioned(
-                    top: 5,
-                    right: 5,
-                    child: GestureDetector(
-                      onTap:  () async {
-                        await Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => ProductImagesPage(product: widget.product),
-                          ),
-                        );
-                        
-                        // Recarrega as imagens do banco de dados
-                        _loadProductImage();
-                      },
-                      child: Container(
-                        margin: const EdgeInsets.all(8),
-                        decoration: const BoxDecoration(
-                          shape: BoxShape.circle,
-                          color: Colors.blueAccent, // black54
-                        ),
-                        padding: const EdgeInsets.all(6),
-                        child: const Icon(
-                          Icons.edit,
-                          color: Colors.white,
-                          size: 32,
+                            // Texto do nome do produto
+                            Positioned(
+                              top: 0,
+                              left: 1,
+                              right: 1,
+                              child: SingleChildScrollView(
+                                scrollDirection: Axis.horizontal,
+                                child: Container(
+                                  color: Colors.black.withAlpha(179), // Fundo preto com transparência opcional
+                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                  child: Text(
+                                    widget.product.name,
+                                    style: const TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 16,
+                                      color: Colors.white,
+                                    ),
+                                    overflow: TextOverflow.visible,
+                                    softWrap: false,
+                                  ),
+                                ),
+                              ),
+                            ),
+
+                            // Indicadores (bolinhas) na parte inferior
+                            Positioned(
+                              bottom: 10,
+                              left: 0,
+                              right: 0,
+                              child: Center(
+                                child: SmoothPageIndicator(
+                                  controller: _pageController,
+                                  count: imagens.length,
+                                  effect: const WormEffect(
+                                    dotColor: Colors.white54,
+                                    activeDotColor: Colors.blueAccent,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
                       ),
-                    ),
+                    )
                   ),
                 ],
               ),
@@ -282,38 +260,6 @@ Container(
                   }
                 },
               )
-
-              /*buildExpansionTile("Informações do Produto", [ // buscar da tabela tableProducts
-                textRow("Código", "139600"), // columnItemId
-                textRow("Descrição", "PRATO RASO 26CM - JARDIM SECRETO - A02D-5953"), // columnName
-              ]),
-              buildExpansionTile("Dimensões e Peso", [ // buscar da tabela tableProducts
-                textRow("Peso Bruto", "9,14 kg"),   // columnGrossWeight
-                textRow("Peso Líquido", "8,88 kg"), // columnItemNetWeight
-                textRow("Tara", "0,26 kg"),         // columnTaraWeight
-                textRow("Profundidade", "0,266 m"), // columnGrossDepth
-                textRow("Largura", "0,180 m"),      // columnGrossWidth
-                textRow("Altura", "0,288 m"),       // columnGrossHeight
-                textRow("Volume", "0,014 m³"),      // columnUnitVolumeML
-                textRow("Qt Peças Interna", "12"),  // columnNrOfItems
-              ]),
-              buildExpansionTile("Código de Barras", [ // buscar da tabela tableProducts
-                textRow("Master", "7891361391387"), // columnItemBarCode
-              ]),
-              buildExpansionTile("Classificação Fiscal", [ // buscar da tabela tableProducts
-                textRow("Classificação Fiscal", "123456789"), // columnTaxFiscalClassification
-              ]),
-              buildExpansionTile("Família e Marca", [ // buscar da tabela tableProducts
-                textRow("Família", "0002 - PRODUTO ACABADO"), // columnProdFamilyDescription
-                textRow("Marca", "OXFORD DAILY"),             // columnProdBrandDescriptionId
-                textRow("Linha", "UNNI"),                     // columnProdLinesDescriptionId
-                textRow("Decoração", "JARDIM SECRETO"),       // columnProdDecorationDescriptionId
-              ]),
-
-              buildExpansionTile("Características", [
-                textRow("Características", "Borboleta, Flor, Verde, Laranja, Rosa"),
-                // Buscar da tabela tableProductTags
-              ]),*/
             ],
           ),
         ),
@@ -321,22 +267,39 @@ Container(
       bottomNavigationBar: BottomAppBar(
         color: Colors.white,
         shape: const CircularNotchedRectangle(),
-        height: 64, // Altura
-        child: IconButton(
-          icon: const Icon(Icons.home, size: 30),
-          padding: EdgeInsets.zero,
-          constraints: const BoxConstraints(), // Remove restrições de tamanho extra
-          onPressed: () {
-            Navigator.pushNamed(context, '/');
-          },
+        height: 64,
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceAround,
+          children: [
+            IconButton(
+              icon: const Icon(Icons.home, size: 30),
+              onPressed: () {
+                Navigator.pushNamed(context, '/');
+              },
+            ),
+            IconButton(
+              icon: const Icon(Icons.edit, size: 30, color: Colors.blueAccent),
+              onPressed: () async {
+                await Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => ProductImagesPage(product: widget.product),
+                  ),
+                );
+                _loadProductImage(); // Recarrega imagens após edição
+              },
+              tooltip: 'Editar imagens',
+            ),
+          ],
         ),
       ),
+
     );
   }
 
   Widget buildExpansionTile(String title, List<Widget> children) {
     return Card(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
       elevation: 2, 
       child: ExpansionTile(
         title: Container(

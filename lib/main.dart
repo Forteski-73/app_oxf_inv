@@ -16,8 +16,9 @@ import 'menu/menu.dart';
 import 'pages/home.dart';
 import 'pages/inventory.dart';
 import 'pages/inventRecords.dart';
-import 'pages/teste.dart';
 import 'models/product.dart';
+import 'pages/teste.dart';
+import 'pages/texte2.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -78,6 +79,7 @@ class MyApp extends StatelessWidget {
           );
         },
         '/teste': (context) => const PaginaComAcoesFlutuantes(),
+        '/texte2': (context) => ExpandableNestedCards(),
       },
     );
   }

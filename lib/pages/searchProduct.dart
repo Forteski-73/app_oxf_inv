@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:app_oxf_inv/operator/db_product.dart';
+import 'dart:io';
 
 class SearchProduct extends StatefulWidget {
   final Function(String) onProductSelected;
@@ -144,15 +145,21 @@ class _SearchProductState extends State<SearchProduct> {
       child: Row(
         children: [
           Expanded(
-            flex: 2, // Quanto de espaço por rótulo
+            flex: 2,
             child: Text(
               label,
               style: const TextStyle(fontWeight: FontWeight.bold),
+              overflow: TextOverflow.ellipsis,
+              softWrap: false,
             ),
           ),
           Expanded(
-            flex: 3, // Ocupa o restante do espaço
-            child: Text(value),
+            flex: 3,
+            child: Text(
+              value,
+              overflow: TextOverflow.ellipsis,
+              softWrap: false,
+            ),
           ),
         ],
       ),
@@ -168,11 +175,11 @@ class _SearchProductState extends State<SearchProduct> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Aplicativo de Consulta de Estrutura de Produtos. ACEP',
+              '',
               style: TextStyle(color: Colors.white, fontSize: 12),
             ),
             SizedBox(height: 2),
-            Text('Pesquisar Produtos 1', style: TextStyle(color: Colors.white)),
+            Text('Pesquisar Produtos', style: TextStyle(color: Colors.white)), //Pesquisa rápida
           ],
         ),
         backgroundColor: Colors.black,
@@ -207,7 +214,7 @@ class _SearchProductState extends State<SearchProduct> {
                   itemBuilder: (context, index) {
                     final product = _filteredProducts[index];
                     return Card(
-                      margin: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 16.0),
+                      margin: const EdgeInsets.symmetric(vertical:6.0, horizontal: 10.0),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(8),
                       ),
@@ -220,13 +227,48 @@ class _SearchProductState extends State<SearchProduct> {
                             style: const TextStyle(fontWeight: FontWeight.bold),
                           ),
                         ),
-                        subtitle: Column(
+                        subtitle: Row(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            _alignRow('Código de Barras:',  product['ItemBarCode']),
-                            _alignRow('Item:',              product['ItemID']),
-                            _alignRow('Linha:',             '${product['ProdLinesId'] ?? ''} - ${product['ProdLinesDescriptionId'] ?? ''}'),
-                            _alignRow('Decoração:',         product['ProdDecorationDescriptionId'] ?? ''),
+                            Transform.scale(
+                              scale: 1.2, // Aumenta a imagem visualmente em 20%
+                              child: ClipRRect(
+                                borderRadius: BorderRadius.circular(8),
+                                child: product['path'] != null && product['path'].isNotEmpty
+                                    ? product['path'].toString().startsWith('http')
+                                        ? Image.network(
+                                            product['path'],
+                                            height: 100,
+                                            width: 100,
+                                            fit: BoxFit.cover,
+                                            errorBuilder: (context, error, stackTrace) {
+                                              return const Icon(Icons.broken_image, size: 100, color: Colors.grey);
+                                            },
+                                          )
+                                        : Image.file(
+                                            File(product['path']),
+                                            height: 100,
+                                            width: 100,
+                                            fit: BoxFit.cover,
+                                            errorBuilder: (context, error, stackTrace) {
+                                              return const Icon(Icons.broken_image, size: 100, color: Colors.grey);
+                                            },
+                                          )
+                                    : const Icon(Icons.broken_image, size: 100, color: Colors.grey),
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  _alignRow('Código de Barras:',  product['ItemBarCode'] ?? ''),
+                                  _alignRow('Item:',              product['ItemID'] ?? ''),
+                                  _alignRow('Linha:',             '${product['ProdLinesId'] ?? ''} - ${product['ProdLinesDescriptionId'] ?? ''}'),
+                                  _alignRow('Decoração:',         product['ProdDecorationDescriptionId'] ?? ''),
+                                ],
+                              ),
+                            ),
                           ],
                         ),
                         onTap: () {

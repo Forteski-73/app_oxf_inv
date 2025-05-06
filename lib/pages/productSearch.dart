@@ -184,7 +184,7 @@ class _ProductSearchPage extends State<ProductSearchPage> {
           mainAxisAlignment: MainAxisAlignment.start,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Aplicativo de Consulta de Estrutura de Produtos. ACEP',
+            Text('',
               style: TextStyle(color: Colors.white,fontSize: 12,),
             ),
             SizedBox(height: 2),
