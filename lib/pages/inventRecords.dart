@@ -146,7 +146,7 @@ class InventoryPageState extends State<InventoryRecordsPage> {
     inventory = await db.queryFirstInventoryByStatus();
 
     if (inventory != null) { 
-      _totalController.text = inventory?["total"]?.toString() ?? "0";
+      _totalController.text = inventory["total"]?.toString() ?? "0";
       inventoryRecordRow = {
         DBInventory.columnInventoryId:          inventory["_id"] ?? '',
         DBInventory.columnUnitizer:             '',
@@ -485,8 +485,8 @@ class InventoryPageState extends State<InventoryRecordsPage> {
                       controllers[4].text = inventory[DBInventory.columnBlockB] ?? '';
                       controllers[5].text = inventory[DBInventory.columnLot] ?? '';
                       controllers[6].text = (inventory[DBInventory.columnFloor] ?? '').toString();
-                      controllers[7].text = (inventory[DBInventory.columnStandardStackQtd] ?? '').toString();
-                      controllers[8].text = (inventory[DBInventory.columnBarcode] ?? '').toString();
+                      controllers[7].text = (inventory[DBInventory.columnBarcode] ?? '').toString();
+                      controllers[8].text = (inventory[DBInventory.columnStandardStackQtd] ?? '').toString();
                       controllers[9].text = (inventory[DBInventory.columnNumberCompleteStacks] ?? '').toString();
                       controllers[10].text = (inventory[DBInventory.columnNumberLooseItems] ?? '').toString();
                       controllers[11].text = (inventory[DBInventory.columnDescription] ?? '').toString();
@@ -501,15 +501,43 @@ class InventoryPageState extends State<InventoryRecordsPage> {
           IconButton(
             icon: const Icon(Icons.search),
             onPressed: () {
-              if (context != null) {
+              if (context != null && id == 8) {
                 Navigator.push(
                   context,
                   MaterialPageRoute(
-                    builder: (context) => SearchProduct(
-                      onProductSelected: (selectedProduct) {
-                        controller.text = selectedProduct;
-                      },
-                    ),
+                  builder: (context) => SearchProduct(
+                    onProductSelected: (selectedProduct) async {
+                      controller.text = selectedProduct;
+                      if (id == 8) {
+                        int inventoryId = widget.inventoryId;
+                        String unitizer = controllers[0].text;
+                        String position = controllers[1].text;
+
+                        final inventory = await DBInventory.instance.getInventoryRecord(
+                          inventoryId: inventoryId,
+                          unitizer: unitizer,
+                          position: position,
+                          barcode: selectedProduct,
+                        );
+
+                        if (inventory != null) {
+                          // Atualiza os campos com os dados encontrados
+                          setState(() {
+                            controllers[2].text = inventory[DBInventory.columnDeposit] ?? '';
+                            controllers[3].text = inventory[DBInventory.columnBlockA] ?? '';
+                            controllers[4].text = inventory[DBInventory.columnBlockB] ?? '';
+                            controllers[5].text = inventory[DBInventory.columnLot] ?? '';
+                            controllers[6].text = (inventory[DBInventory.columnFloor] ?? '').toString();
+                            controllers[7].text = (inventory[DBInventory.columnBarcode] ?? '').toString();
+                            controllers[8].text = (inventory[DBInventory.columnStandardStackQtd] ?? '').toString();
+                            controllers[9].text = (inventory[DBInventory.columnNumberCompleteStacks] ?? '').toString();
+                            controllers[10].text = (inventory[DBInventory.columnNumberLooseItems] ?? '').toString();
+                            controllers[11].text = (inventory[DBInventory.columnDescription] ?? '').toString();
+                          });
+                        }
+                      }
+                    },
+                  ),
                   ),
                 );
               }
@@ -602,7 +630,7 @@ Future<String> scanBarcode(BuildContext context) async {
     ),
   );
 
-  return result != null ? result as String : 'Falha ao escanear código de barras';
+  return result != null ? result as String : '';
 }
 
 

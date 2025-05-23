@@ -2,11 +2,13 @@ import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:file_picker/file_picker.dart';
-import 'package:app_oxf_inv/operator/db_product.dart';
+import 'package:app_oxf_inv/services/remote/oxfordonlineAPI.dart';
 import 'package:csv/csv.dart';
 import 'package:app_oxf_inv/widgets/basePage.dart';
 import 'package:app_oxf_inv/widgets/customSnackBar.dart';
 import 'package:app_oxf_inv/widgets/customButton.dart';
+import '../models/product.dart'; 
+import 'package:app_oxf_inv/operator/db_product.dart';
 
 
 class ImportProduct extends StatefulWidget {
@@ -18,6 +20,7 @@ class _ImportProductPage extends State<ImportProduct> {
   String? filePath;
   final TextEditingController fileController = TextEditingController();
   bool _isImporting = false;
+  bool _isImportingCloud = false;
 
   Future<void> _pickFile(BuildContext context) async {
     FilePickerResult? result = await FilePicker.platform.pickFiles(
@@ -34,7 +37,93 @@ class _ImportProductPage extends State<ImportProduct> {
       fileController.text = filePath!.split(Platform.pathSeparator).last;
     }
   }
+  
+  Future<void> _importCsvTxtAPI(BuildContext context) async {
 
+    if (filePath == null) {
+      CustomSnackBar.show(context,
+        message: 'Nenhum arquivo selecionado',
+        duration: const Duration(seconds: 3),
+        type: SnackBarType.warning,
+      );
+      return;
+    }
+
+    try {
+      final file = File(filePath!);
+      final input = file.openRead();
+      final RegExp invalidChars = RegExp(r'[^\x20-\x7EÀ-ÖØ-öø-ÿ]');
+      List<Product> products = [];
+
+      setImporting(cloud: true, local: false);
+
+      if (filePath!.endsWith('.csv')) {
+        final fields = await input
+            .transform(utf8.decoder)
+            .transform(CsvToListConverter(eol: '\n', fieldDelimiter: ';'))
+            .toList();
+
+        for (var i = 1; i < fields.length; i++) {
+          final row = fields[i].map((e) => e.toString().trim()).toList();
+          if (!isValidRow(row, invalidChars)) continue;
+          products.add(_mapRowToProduct(row));
+        }
+      } else if (filePath!.endsWith('.txt')) {
+        final contents = await input.transform(utf8.decoder).join();
+        final lines = contents.split('\n');
+
+        for (var line in lines) {
+          if (line.trim().isEmpty) continue;
+
+          final row = line.split(';').map((e) => e.trim()).toList();
+          if (row.length < 20 || !isValidRow(row, invalidChars)) continue;
+          products.add(_mapRowToProduct(row));
+        }
+      } else {
+        CustomSnackBar.show(context,
+          message: 'O tipo do arquivo é inválido. Use *.csv ou *.txt',
+          duration: const Duration(seconds: 3),
+          type: SnackBarType.warning,
+        );
+        return;
+      }
+
+      bool allSuccessful = true;
+      for (int i = 0; i < products.length; i += 1000) {
+        final batch = products.sublist(i, i + 1000 > products.length ? products.length : i + 1000);
+        final response = await OxfordOnlineAPI.postProducts(batch);
+
+        if (response.statusCode != 200 && response.statusCode != 201) {
+          CustomSnackBar.show(context,
+            message: 'Erro na API (lote ${i ~/ 1000 + 1}): ${response.statusCode}\n${response.body}',
+            duration: const Duration(seconds: 10),
+            type: SnackBarType.error,
+          );
+          allSuccessful = false;
+          break;
+        }
+      }
+
+      if (allSuccessful) {
+        CustomSnackBar.show(context,
+          message: 'Importação finalizada com sucesso!',
+          duration: const Duration(seconds: 10),
+          type: SnackBarType.success,
+        );
+      }
+
+    } catch (e) {
+      CustomSnackBar.show(context,
+        message: 'Erro: $e',
+        duration: const Duration(seconds: 10),
+        type: SnackBarType.error,
+      );
+    } finally {
+      setImporting(cloud: false, local: false);
+    }
+  }
+
+  
   Future<void> _importCsvTxt(BuildContext context) async {
     if (filePath == null) {
       CustomSnackBar.show(context, message: 'Nenhum arquivo selecionado',
@@ -51,9 +140,7 @@ class _ImportProductPage extends State<ImportProduct> {
       final RegExp invalidChars = RegExp(r'[^\x20-\x7EÀ-ÖØ-öø-ÿ]'); // Permite ASCII visível e acentos comuns
 
 
-      setState(() {
-        _isImporting = true; // Ativa o carregamento
-      });
+      setImporting(cloud: false, local: true);
 
       if (filePath!.endsWith('.csv')) {
         final fields = await input
@@ -70,17 +157,17 @@ class _ImportProductPage extends State<ImportProduct> {
           }
 
           await db.insertProduct({
-            DBItems.columnItemBarCode:              row[0],
-            DBItems.columnItemId:                   row[1],
-            DBItems.columnName:                     row[2],
-            DBItems.columnProdBrandId:              row[3],
-            DBItems.columnProdBrandDescriptionId:   row[4],
-            DBItems.columnProdLinesId:              row[5],
-            DBItems.columnProdLinesDescriptionId:   row[6],
-            DBItems.columnProdDecorationId:         row[7],
-            DBItems.columnProdDecorationDescriptionId: row[8],
-            DBItems.columnProdFamilyId:             row[9],
-            DBItems.columnProdFamilyDescription:    row[10],
+            DBItems.columnItemBarCode:                  row[0],
+            DBItems.columnItemId:                       row[1],
+            DBItems.columnName:                         row[2],
+            DBItems.columnProdBrandId:                  row[3],
+            DBItems.columnProdBrandDescriptionId:       row[4],
+            DBItems.columnProdLinesId:                  row[5],
+            DBItems.columnProdLinesDescriptionId:       row[6],
+            DBItems.columnProdDecorationId:             row[7],
+            DBItems.columnProdDecorationDescriptionId:  row[8],
+            DBItems.columnProdFamilyId:                 row[9],
+            DBItems.columnProdFamilyDescriptionId:      row[10],
             DBItems.columnUnitVolumeML:             double.tryParse(row[11]) ?? 0.0,
             DBItems.columnItemNetWeight:            double.tryParse(row[12]) ?? 0.0,
             DBItems.columnGrossWeight:              double.tryParse(row[13]) ?? 0.0,
@@ -115,9 +202,9 @@ class _ImportProductPage extends State<ImportProduct> {
             DBItems.columnProdLinesId:              row[5],
             DBItems.columnProdLinesDescriptionId:   row[6],
             DBItems.columnProdDecorationId:         row[7],
-            DBItems.columnProdDecorationDescriptionId: row[8],
-            DBItems.columnProdFamilyId:             row[9],
-            DBItems.columnProdFamilyDescription:    row[10],
+            DBItems.columnProdDecorationDescriptionId:  row[8],
+            DBItems.columnProdFamilyId:                 row[9],
+            DBItems.columnProdFamilyDescriptionId:      row[10],
             DBItems.columnUnitVolumeML:             double.tryParse(row[11].replaceAll(',', '.')) ?? 0.0,
             DBItems.columnItemNetWeight:            double.tryParse(row[12].replaceAll(',', '.')) ?? 0.0,
             DBItems.columnGrossWeight:              double.tryParse(row[13].replaceAll(',', '.')) ?? 0.0,
@@ -144,10 +231,35 @@ class _ImportProductPage extends State<ImportProduct> {
         duration: const Duration(seconds: 3),type: SnackBarType.error,
       );
     } finally {
-      setState(() {
-        _isImporting = false; // Desativa o carregamento
-      });
+      setImporting(cloud: false, local: false);
     }
+  }
+  
+  Product _mapRowToProduct(List<String> row) {
+    double parseDouble(String val) =>
+        double.tryParse(val.replaceAll(',', '.')) ?? 0.0;
+    return Product(
+      itemBarCode:                  row[0],
+      itemId:                       row[1],
+      name:                         row[2],
+      prodBrandId:                  row[3],
+      prodBrandDescriptionId:       row[4],
+      prodLinesId:                  row[5],
+      prodLinesDescriptionId:       row[6],
+      prodDecorationId:             row[7],
+      prodDecorationDescriptionId:  row[8],
+      prodFamilyId:                 row[9],
+      prodFamilyDescriptionId:      row[10].isEmpty ? '' : row[10],
+      unitVolumeML:                 parseDouble(row[11]),
+      itemNetWeight:                parseDouble(row[12]),
+      prodGrossWeight:              parseDouble(row[13]),
+      prodTaraWeight:               parseDouble(row[14]),
+      prodGrossDepth:               parseDouble(row[15]),
+      prodGrossWidth:               parseDouble(row[16]),
+      prodGrossHeight:              parseDouble(row[17]),
+      prodNrOfItems:                parseDouble(row[18]),
+      prodTaxFiscalClassification:  row[19],
+    );
   }
 
   bool isValidRow(List<String> row, RegExp invalidChars) {
@@ -157,6 +269,13 @@ class _ImportProductPage extends State<ImportProduct> {
       }
     }
     return true;
+  }
+
+  void setImporting({bool cloud = false, bool local = false}) {
+    setState(() {
+      _isImporting = local;
+      _isImportingCloud = cloud;
+    });
   }
 
   @override
@@ -170,11 +289,11 @@ class _ImportProductPage extends State<ImportProduct> {
           children: [
             CustomButton.processButton(
               context,
-              "Selecionar arquivo .CSV ou .TXT", // texto
+              "Selecionar arquivo .CSV ou .TXT",
               1, // tamanho (1 = largura total)
               null, // icone (sem ícone no botão original)
               () => _pickFile(context), // função onPressed
-              Colors.blue, // cor do botão
+              Colors.blue,
             ),
             const SizedBox(height: 10),
             TextField(
@@ -188,7 +307,7 @@ class _ImportProductPage extends State<ImportProduct> {
             const SizedBox(height: 20),
             CustomButton.processButton(
               context,
-              "Importar",
+              "Importar no dispositivo local",
               1,
               null,
               _isImporting ? () {} : () => _importCsvTxt(context),
@@ -203,11 +322,31 @@ class _ImportProductPage extends State<ImportProduct> {
                       ],
                     )
                   : null,
+            ),
+            const SizedBox(height: 20),
+            CustomButton.processButton(
+              context,
+              "Importar para a nuvem",
+              1,
+              null,
+              _isImportingCloud ? () {} : () => _importCsvTxtAPI(context),
+              filePath != null ? Colors.green : Colors.grey,
+              childCustom: _isImportingCloud
+                  ? const Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        CircularProgressIndicator(color: Colors.white),
+                        SizedBox(width: 10),
+                        Text('Importando..', style: TextStyle(color: Colors.white)),
+                      ],
+                    )
+                  : null,
             )
+            
           ],
         ),
       ),
-      floatingButtons: null, // Se desejar, adicione os botões flutuantes aqui
+      floatingButtons: null,
     );
   }
 }

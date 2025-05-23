@@ -12,7 +12,7 @@ class Product {
   final double unitVolumeML;
   final double itemNetWeight;
   final String prodFamilyId;
-  final String prodFamilyDescription;
+  final String prodFamilyDescriptionId;
 
   final double prodGrossWeight;
   final double prodTaraWeight;
@@ -37,7 +37,7 @@ class Product {
     this.unitVolumeML                 = 0.0,
     this.itemNetWeight                = 0.0,
     this.prodFamilyId                 = "",
-    this.prodFamilyDescription        = "",
+    this.prodFamilyDescriptionId      = "",
     this.prodGrossWeight              = 0.0,
     this.prodTaraWeight               = 0.0,
     this.prodGrossDepth               = 0.0,
@@ -63,8 +63,7 @@ class Product {
       'UnitVolumeML': unitVolumeML,
       'ItemNetWeight': itemNetWeight,
       'ProdFamilyId': prodFamilyId,
-      'ProdFamilyDescription': prodFamilyDescription,
-
+      'ProdFamilyDescriptionId': prodFamilyDescriptionId,
       'GrossWeight': prodGrossWeight,
       'TaraWeight': prodTaraWeight,
       'GrossDepth': prodGrossDepth,
@@ -92,7 +91,7 @@ class Product {
       unitVolumeML:                 map['UnitVolumeML']?.toDouble() ?? 0.0,
       itemNetWeight:                map['ItemNetWeight']?.toDouble() ?? 0.0,
       prodFamilyId:                 map['ProdFamilyId'] ?? '',
-      prodFamilyDescription:        map['ProdFamilyDescription'] ?? '',
+      prodFamilyDescriptionId:      map['ProdFamilyDescriptionId'] ?? '',
 
       prodGrossWeight:              map['GrossWeight'] ?? '',
       prodTaraWeight:               map['TaraWeight'] ?? '',

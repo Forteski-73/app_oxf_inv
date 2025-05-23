@@ -1,10 +1,11 @@
 import 'dart:convert';
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:app_oxf_inv/operator/db_product.dart';
 import '../models/product.dart';
 import 'productDetail.dart';
-import 'dart:io';
+import '../main.dart';
 
 class ProductSearchPage extends StatefulWidget {
   const ProductSearchPage({super.key});
@@ -13,22 +14,53 @@ class ProductSearchPage extends StatefulWidget {
   _ProductSearchPage createState() => _ProductSearchPage();
 }
 
-class _ProductSearchPage extends State<ProductSearchPage> {
+class _ProductSearchPage extends State<ProductSearchPage> with RouteAware, SingleTickerProviderStateMixin {
   final TextEditingController _searchController = TextEditingController();
-  List<Map<String, dynamic>> _allProducts       = [];
-  List<Map<String, dynamic>> _filteredProducts  = [];
-  final String _apiUrl  = "http://wsintegrador.oxfordporcelanas.com.br:90/api/produtoEstrutura/";
-  //final String _apiUrl  = "http://wsintegradordev.oxfordporcelanas.com.br:92/v1/produtos/GetAPIProdutos?familia=0002&marca=oxford&linha=FLAMINGO&decoracao=FLAMINGO&situacao=FORA&ordem=0&pagina=0&qtpagina=1";
-  final String _token   = "4d24e4ff-85d62cca-d0cad84f-440e706e";
+  List<Map<String, dynamic>> _allProducts = [];
+  List<Map<String, dynamic>> _filteredProducts = [];
+  final String _apiUrl = "http://wsintegrador.oxfordporcelanas.com.br:90/api/produtoEstrutura/";
+  final String _token = "4d24e4ff-85d62cca-d0cad84f-440e706e";
   bool _isLoading = true;
+  late AnimationController _controller;
 
   @override
   void initState() {
     super.initState();
+    _loadProducts();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(seconds: 1),
+    )..repeat();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final route = ModalRoute.of(context);
+    if (route != null) {
+      routeObserver.subscribe(this, route);
+    }
+  }
+
+  @override
+  void dispose() {
+    routeObserver.unsubscribe(this);
+    _controller.dispose();
+    super.dispose();
+  }
+
+  /// Quando volta para a tela
+  @override
+  void didPopNext() {
+    _loadProducts(); // Recarrega os produtos ao voltar
+  }
+
+  // Quando carrega a primeira vez
+  @override
+  void didPush() {
     _loadProducts(); 
   }
 
-  /// Carregar todos os produtos
   Future<void> _loadProducts() async {
     try {
       final products = await DBItems.instance.getAllProducts1();
@@ -88,7 +120,7 @@ class _ProductSearchPage extends State<ProductSearchPage> {
             DBItems.columnUnitVolumeML:                 data['UnitVolumeML'],
             DBItems.columnItemNetWeight:                data['ItemNetWeight'],
             DBItems.columnProdFamilyId:                 data['ProdFamilyId'],
-            DBItems.columnProdFamilyDescription:        data['ProdFamilyDescription'],
+            DBItems.columnProdFamilyDescriptionId:      data['ProdFamilyDescriptionId'],
             //DBItems.columnImageUrl:                     data['ImageUrl'],
           };
 
@@ -185,11 +217,11 @@ class _ProductSearchPage extends State<ProductSearchPage> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text('',
-              style: TextStyle(color: Colors.white,fontSize: 12,),
+              style: TextStyle(color: Colors.white,fontSize: 12),
             ),
             SizedBox(height: 2),
             Text('Pesquisar Produtos',
-              style: TextStyle(color: Colors.white, fontSize: 20, ),
+              style: TextStyle(color: Colors.white, fontSize: 20),
             ),
           ],
         ),
@@ -203,216 +235,137 @@ class _ProductSearchPage extends State<ProductSearchPage> {
           ),
         ],
       ),
-      body: Column(
+      body: Stack(
         children: [
-          Padding(
-            padding: const EdgeInsets.all(8.0),
-            child: TextField(
-              controller: _searchController,
-              onChanged: (value) {
-                _filterProducts(value);
-              },
-              decoration: InputDecoration(
-                labelText: 'Pesquisar',
-                border: const OutlineInputBorder(),
-                prefixIcon: InkWell(
-                  onTap: () {
-                    _searchProduct(_searchController.text);
-                  },
-                  child: const Icon(Icons.search),
-                ),
-              ),
-            ),
-          ),
-
-          _isLoading
-          ? const Expanded(
-              child: Center(
-                child: CircularProgressIndicator(
-                  valueColor: AlwaysStoppedAnimation<Color>(Colors.black),
-                ),
-              ),
-            )
-          : Expanded(
-              child: ListView.builder(
-                itemCount: _filteredProducts.length,
-                itemBuilder: (context, index) {
-                  final product = _filteredProducts[index];
-                  return Card(
-                    margin: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 16.0),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
+          Column(
+            children: [
+              Padding(
+                padding: const EdgeInsets.all(8.0),
+                child: TextField(
+                  controller: _searchController,
+                  onChanged: (value) => _filterProducts(value),
+                  decoration: InputDecoration(
+                    labelText: 'Pesquisar',
+                    border: const OutlineInputBorder(),
+                    prefixIcon: InkWell(
+                      onTap: () => _searchProduct(_searchController.text),
+                      child: const Icon(Icons.search),
                     ),
-                    elevation: 4,
-                    child: ListTile(
-                      contentPadding: const EdgeInsets.only(left: 8.0, right: 8.0, bottom: 8.0),
-                      title: SingleChildScrollView(
-                        scrollDirection: Axis.horizontal,
-                        child: Text(
-                          product['Name'],
-                          style: const TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                ),
+              ),
+              Expanded(
+                child: ListView.builder(
+                  itemCount: _filteredProducts.length,
+                  itemBuilder: (context, index) {
+                    final product = _filteredProducts[index];
+                    return Card(
+                      margin: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 16.0),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      elevation: 4,
+                      child: ListTile(
+                        contentPadding: const EdgeInsets.only(left: 8.0, right: 8.0, bottom: 8.0),
+                        title: SingleChildScrollView(
+                          scrollDirection: Axis.horizontal,
+                          child: Text(
+                            product['Name'],
+                            style: const TextStyle(fontWeight: FontWeight.bold),
+                          ),
                         ),
-                      ),
-                      subtitle: Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          ClipRRect(
-                            borderRadius: BorderRadius.circular(8),
-                            child: product['path'] != null && product['path'].isNotEmpty
-                                ? product['path'].startsWith('http')
-                                    ? Image.network(
-                                        product['path'],
-                                        height: 100,
-                                        width: 100,
-                                        fit: BoxFit.cover,
-                                        errorBuilder: (context, error, stackTrace) {
-                                          return const Icon(Icons.broken_image, size: 100, color: Colors.grey);
-                                        },
-                                      )
-                                    : Image.file(
-                                        File(product['path']),
-                                        height: 100,
-                                        width: 100,
-                                        fit: BoxFit.cover,
-                                        errorBuilder: (context, error, stackTrace) {
-                                          return const Icon(Icons.broken_image, size: 100, color: Colors.grey);
-                                        },
-                                      )
-                                : const Icon(Icons.broken_image, size: 100, color: Colors.grey),
-                          ),
-                          /*
-                          ***************USAR ESSE QUANDO O CAMINHO DA IMAGEM FOR HTTP OU HTTPS .... IMAGEM DE SERVER WEB ******************
-                          ClipRRect(
-                            borderRadius: BorderRadius.circular(8),
-                            child: product['path'] != null && product['path'].isNotEmpty
-                                ? Image.network(
-                                    product['path'],
-                                    height: 100,
-                                    width: 100,
-                                    fit: BoxFit.cover,
-                                    errorBuilder: (context, error, stackTrace) {
-                                      return const Icon(Icons.broken_image, size: 100, color: Colors.grey);
-                                    },
-                                  )
-                                : const Icon(Icons.broken_image, size: 100, color: Colors.grey),
-                          ),
-                          */
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Row(
-                                  children: [
-                                    const SizedBox(
-                                      width: 110,
-                                      child: Text(
-                                        'Cód. de Barras:',
-                                        style: TextStyle(fontWeight: FontWeight.bold),
-                                      ),
-                                    ),
-                                    Expanded(
-                                      child: Text(
-                                        product['ItemBarCode'] ?? '',
-                                        overflow: TextOverflow.ellipsis,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                                Row(
-                                  children: [
-                                    const SizedBox(
-                                      width: 110,
-                                      child: Text(
-                                        'Item:',
-                                        style: TextStyle(fontWeight: FontWeight.bold),
-                                      ),
-                                    ),
-                                    Expanded(
-                                      child: Text(
-                                        product['ItemID'] ?? '',
-                                        overflow: TextOverflow.ellipsis,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                                Row(
-                                  children: [
-                                    const SizedBox(
-                                      width: 110,
-                                      child: Text(
-                                        'Linha:',
-                                        style: TextStyle(fontWeight: FontWeight.bold),
-                                      ),
-                                    ),
-                                    Expanded(
-                                      child: Text(
-                                        '${product['ProdLinesId'] ?? ''} - ${product['ProdLinesDescriptionId'] ?? ''}',
-                                        overflow: TextOverflow.ellipsis,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                                Row(
-                                  children: [
-                                    const SizedBox(
-                                      width: 110,
-                                      child: Text(
-                                        'Decoração:',
-                                        style: TextStyle(fontWeight: FontWeight.bold),
-                                      ),
-                                    ),
-                                    Expanded(
-                                      child: Text(
-                                        product['ProdDecorationDescriptionId'] ?? '',
-                                        overflow: TextOverflow.ellipsis,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ],
+                        subtitle: Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            ClipRRect(
+                              borderRadius: BorderRadius.circular(8),
+                              child: product['path'] != null && product['path'].isNotEmpty
+                                  ? product['path'].startsWith('http')
+                                      ? Image.network(
+                                          product['path'],
+                                          height: 100,
+                                          width: 100,
+                                          fit: BoxFit.cover,
+                                          errorBuilder: (_, __, ___) => const Icon(Icons.broken_image, size: 100, color: Colors.grey),
+                                        )
+                                      : Image.file(
+                                          File(product['path']),
+                                          height: 100,
+                                          width: 100,
+                                          fit: BoxFit.cover,
+                                          errorBuilder: (_, __, ___) => const Icon(Icons.broken_image, size: 100, color: Colors.grey),
+                                        )
+                                  : const Icon(Icons.broken_image, size: 100, color: Colors.grey),
                             ),
-                          ),
-                        ],
-                      ),
-                      onTap: () async {
-                        final productObj = Product(
-                          itemBarCode: product['ItemBarCode'],
-                          itemId: product['ItemID'],
-                          name: product['Name'],
-                          prodLinesId: product['ProdLinesId'],
-                          prodLinesDescriptionId: product['ProdLinesDescriptionId'],
-                          prodDecorationDescriptionId: product['ProdDecorationDescriptionId'],
-                          unitVolumeML: product['UnitVolumeML'],
-                          itemNetWeight: product['ItemNetWeight'],
-                          prodFamilyId: product['ProdFamilyId'],
-                          prodFamilyDescription: product['ProdFamilyDescription'],
-                          prodBrandDescriptionId: product['ProdBrandDescriptionId'],
-                        );
-                        
-                        final updatedProduct = await Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => ProductDetailsPage(product: productObj),
-                          ),
-                        );
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  _buildInfoRow('Cód. de Barras:',  product['ItemBarCode']),
+                                  _buildInfoRow('Item:',            product['ItemID']),
+                                  _buildInfoRow('Linha:',           '${product['ProdLinesId'] ?? ''} - ${product['ProdLinesDescriptionId'] ?? ''}'),
+                                  _buildInfoRow('Decoração:',       product['ProdDecorationDescriptionId']),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                        onTap: () async {
+                          final productObj = Product(
+                            itemBarCode:                  product['ItemBarCode'],
+                            itemId:                       product['ItemID'],
+                            name:                         product['Name'],
+                            prodLinesId:                  product['ProdLinesId'],
+                            prodLinesDescriptionId:       product['ProdLinesDescriptionId'],
+                            prodDecorationDescriptionId:  product['ProdDecorationDescriptionId'],
+                            unitVolumeML:                 product['UnitVolumeML'],
+                            itemNetWeight:                product['ItemNetWeight'],
+                            prodFamilyId:                 product['ProdFamilyId'],
+                            prodFamilyDescriptionId:      product['ProdFamilyDescriptionId'],
+                            prodBrandDescriptionId:       product['ProdBrandDescriptionId'],
+                          );
 
-                        if (updatedProduct != null) {
-                          setState(() {
-                            // Encontra o índice do produto na lista
-                            int index = _filteredProducts.indexWhere((p) => p['ItemID'] == product['ItemID']);
-                            if (index != -1) {
-                              setState(() {
-                                _filteredProducts = List.from(_filteredProducts); // Copia o objeto pra não ficar dando pau de ReadOnly
-                                _filteredProducts[index] = Map.from(_filteredProducts[index])..['path'] = updatedProduct.path;
-                              });
-                            }
-                          });
-                        }
-                      },
-                    ),
-                  );
-                },
+                          final updatedProduct = await Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => ProductDetailsPage(product: productObj),
+                            ),
+                          );
+
+                          if (updatedProduct != null) {
+                            setState(() {
+                              // Atualiza na lista original
+                              final indexInAll = _allProducts.indexWhere((p) => p['ItemID'] == updatedProduct['ItemID']);
+                              if (indexInAll != -1) _allProducts[indexInAll] = updatedProduct;
+
+                              // Atualiza na lista filtrada
+                              final indexInFiltered = _filteredProducts.indexWhere((p) => p['ItemID'] == updatedProduct['ItemID']);
+                              if (indexInFiltered != -1) _filteredProducts[indexInFiltered] = updatedProduct;
+                            });
+                          }
+                        },
+                      ),
+                    );
+                  },
+                ),
+              ),
+            ],
+          ),
+          if (_isLoading)
+            Container(
+              color: Colors.black.withAlpha((0.6 * 255).round()),
+              child: Center(
+                child: AnimatedBuilder(
+                  animation: _controller,
+                  builder: (context, child) {
+                    return Transform.rotate(
+                      angle: _controller.value * 2 * 3.1416,
+                      child: child,
+                    );
+                  },
+                  child: const Icon(Icons.rotate_right, size: 50, color: Colors.white),
+                ),
               ),
             ),
         ],
@@ -420,16 +373,29 @@ class _ProductSearchPage extends State<ProductSearchPage> {
       bottomNavigationBar: BottomAppBar(
         color: Colors.white,
         shape: const CircularNotchedRectangle(),
-        height: 64, // Altura
+        height: 64,
         child: IconButton(
           icon: const Icon(Icons.home, size: 30),
           padding: EdgeInsets.zero,
-          constraints: const BoxConstraints(), // Remove restrições de tamanho extra
-          onPressed: () {
-            Navigator.pushNamed(context, '/');
-          },
+          constraints: const BoxConstraints(),
+          onPressed: () => Navigator.pushNamed(context, '/'),
         ),
       ),
+    );
+  }
+
+  // Método auxiliar para reduzir duplicação de código
+  Widget _buildInfoRow(String label, String? value) {
+    return Row(
+      children: [
+        SizedBox(
+          width: 110,
+          child: Text(label, style: const TextStyle(fontWeight: FontWeight.bold)),
+        ),
+        Expanded(
+          child: Text(value ?? '', overflow: TextOverflow.ellipsis),
+        ),
+      ],
     );
   }
 }

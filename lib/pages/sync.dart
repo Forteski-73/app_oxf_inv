@@ -76,7 +76,7 @@ class _SyncPageState extends State<SyncPage> with SingleTickerProviderStateMixin
             DBItems.columnName: item['NameAlias'],
             DBItems.columnUnitVolumeML: item['UnitVolumeML'] ?? 0,
             DBItems.columnProdFamilyId: item['MSBProdFamilyId'],
-            DBItems.columnProdFamilyDescription: item['MSBProdFamilyDescriptionId'],
+            DBItems.columnProdFamilyDescriptionId: item['MSBProdFamilyDescriptionId'],
             DBItems.columnItemBarCode: item['ItemBarCode'],
             DBItems.columnItemNetWeight: item['NetWeight'],
           };

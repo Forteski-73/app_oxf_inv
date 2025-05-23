@@ -156,6 +156,7 @@ class _InventoryPageState extends State<InventoryPage> {
       DBInventory.columnSector: sector,
       DBInventory.columnStatus: 'NÃO INICIADO',
       DBInventory.columnProfile: profile,
+      DBInventory.columnTotal: 0,
     };
 
     DBInventory db = DBInventory.instance;

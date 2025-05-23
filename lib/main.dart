@@ -17,11 +17,18 @@ import 'pages/home.dart';
 import 'pages/inventory.dart';
 import 'pages/inventRecords.dart';
 import 'models/product.dart';
+import 'package:flutter/widgets.dart';
 import 'pages/teste.dart';
 import 'pages/texte2.dart';
+import 'package:app_oxf_inv/utils/network.dart';
 
-void main() {
+
+final RouteObserver<ModalRoute<void>> routeObserver = RouteObserver<ModalRoute<void>>(); // <-- Global
+
+
+void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await checkInternetConnection();
   // Inicializar o databaseFactory para sqflite_common_ffi
   if (kIsWeb || !kIsWeb && (defaultTargetPlatform == TargetPlatform.windows || defaultTargetPlatform == TargetPlatform.linux || defaultTargetPlatform == TargetPlatform.macOS)) {
     // Inicialize para desktop
@@ -34,6 +41,7 @@ void main() {
 
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
+  
 
   @override
   Widget build(BuildContext context) {
@@ -41,6 +49,7 @@ class MyApp extends StatelessWidget {
       theme: ThemeData.light(),
       debugShowCheckedModeBanner: false,
       initialRoute: '/',
+      navigatorObservers: [routeObserver], 
       routes: {
         '/':                (context) => const HomePage(),                // Página inicial (HomePage)
         '/menu':            (context) => const MenuPage(),                // Página inicial (Menu)
@@ -78,8 +87,8 @@ class MyApp extends StatelessWidget {
             inventoryId: args['inventoryId'],
           );
         },
-        '/teste': (context) => const PaginaComAcoesFlutuantes(),
-        '/texte2': (context) => ExpandableNestedCards(),
+        //'/teste': (context) => const PaginaComAcoesFlutuantes(),
+        //'/texte2': (context) => ExpandableNestedCards(),
       },
     );
   }

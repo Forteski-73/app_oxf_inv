@@ -22,7 +22,7 @@ class DBItems {
   static const columnUnitVolumeML                 = 'UnitVolumeML';
   static const columnItemNetWeight                = 'ItemNetWeight';
   static const columnProdFamilyId                 = 'ProdFamilyId';
-  static const columnProdFamilyDescription        = 'ProdFamilyDescription';
+  static const columnProdFamilyDescriptionId      = 'ProdFamilyDescriptionId';
   
   static const columnGrossWeight                  = 'GrossWeight';
   static const columnTaraWeight                   = 'TaraWeight';
@@ -86,7 +86,7 @@ class DBItems {
         $columnUnitVolumeML                 REAL,
         $columnItemNetWeight                REAL,
         $columnProdFamilyId                 TEXT,
-        $columnProdFamilyDescription        TEXT,
+        $columnProdFamilyDescriptionId        TEXT,
 
         $columnGrossWeight                  REAL,
         $columnTaraWeight                   REAL,
@@ -105,7 +105,7 @@ class DBItems {
     await db.execute('CREATE INDEX idx_prod_decoration_id ON $tableProducts ($columnProdDecorationId);');
     await db.execute('CREATE INDEX idx_prod_decoration_desc_id ON $tableProducts ($columnProdDecorationDescriptionId);');
     await db.execute('CREATE INDEX idx_prod_family_id ON $tableProducts ($columnProdFamilyId);');
-    await db.execute('CREATE INDEX idx_prod_family_desc ON $tableProducts ($columnProdFamilyDescription);');
+    await db.execute('CREATE INDEX idx_prod_family_desc ON $tableProducts ($columnProdFamilyDescriptionId);');
     await db.execute('CREATE INDEX idx_item_barcode ON $tableProducts ($columnItemBarCode);');
 
     // Criando a tabela de imagens de produto

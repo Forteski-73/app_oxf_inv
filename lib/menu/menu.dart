@@ -78,12 +78,12 @@ class MenuPage extends StatelessWidget {
                 label: "DEV",
                 routeName: '/teste', // Rota para teste
               ),*/
-              _menuItem(
+              /*_menuItem(
                 context,
                 icon: Icons.settings_outlined,
                 label: "DEV",
                 routeName: '/texte2', // Rota para teste
-              ),
+              ),*/
             ],
           ),
 

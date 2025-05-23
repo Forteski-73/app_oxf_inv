@@ -73,7 +73,7 @@ class _InventoryHistoryDetailState extends State<InventoryHistoryDetail> {
             ),
           ),
           Expanded(
-            flex: 3,
+            flex: 4,
             child: valueWidget,
           ),
         ],
@@ -255,11 +255,11 @@ class _InventoryHistoryDetailState extends State<InventoryHistoryDetail> {
                                 : Column(
                                     crossAxisAlignment: CrossAxisAlignment.start,
                                     children: [
-                                      _alignRow('Código do Inventário:', Text('${_inventory[DBInventory.columnCode]}')),
-                                      _alignRow('Data de criação:',      Text('${_inventory[DBInventory.columnDate]}')),
-                                      _alignRow('Nome do Inventário:',   Text('${_inventory[DBInventory.columnName]}')),
-                                      _alignRow('Setor:',                Text('${_inventory[DBInventory.columnSector]}')),
-                                      _alignRow('Total:',                Text('${_inventory[DBInventory.columnTotal] ?? 0}')),
+                                      _alignRow('Código:',  Text('${_inventory[DBInventory.columnCode]}')),
+                                      _alignRow('Data:',    Text('${_inventory[DBInventory.columnDate]}')),
+                                      _alignRow('Nome:',    Text('${_inventory[DBInventory.columnName]}')),
+                                      _alignRow('Setor:',   Text('${_inventory[DBInventory.columnSector]}')),
+                                      _alignRow('Total:',   Text('${_inventory[DBInventory.columnTotal] ?? 0}')),
                                     ],
                                   ),
                             trailing: Row(

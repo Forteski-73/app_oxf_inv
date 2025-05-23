@@ -5,20 +5,18 @@ import 'package:ftpconnect/ftpconnect.dart';
 import 'package:mysql1/mysql1.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart' as path;
+import '../models/product_image.dart'; 
+import 'package:app_oxf_inv/services/remote/oxfordonlineAPI.dart';
+import '../models/product_tag.dart';
 
 class FTPUploader {
-  Future<void> saveTagsImages(String remoteDir, String itemId, List<File> imagens, BuildContext context) async {
-        
-    final parts; // Divide o caminho em partes
-    String currentPath = ""; 
-
+  Future<void> saveTagsImagesFTP(String remoteDir, String itemId, List<File> imagens, List<ProductTag> tags, BuildContext context) async {
     final ftpConnect = FTPConnect(
       "ftp.oxfordtec.com.br",
       user: "u700242432.oxfordftp",
       pass: "OxforEstrutur@25",
       timeout: 60,
     );
-
 
     final dbSettings = ConnectionSettings(
       host: '193.203.175.198',
@@ -28,36 +26,35 @@ class FTPUploader {
       db: 'u700242432_appprodutos',
     );
 
+    List<ProductImage> imagesForAPI = [];
     MySqlConnection? conn;
 
-    conn = await MySqlConnection.connect(dbSettings);
-    //createDatabaseAndTables(dbSettings);
-
     try {
+      //conn = await MySqlConnection.connect(dbSettings);
 
       bool changed = await ftpConnect.connect();
       await ftpConnect.setTransferType(TransferType.binary);
 
       remoteDir = remoteDir.replaceAll(" ", "_");
-      parts = remoteDir.split("/");
+      final parts = remoteDir.split("/");
+      String currentPath = "";
 
       changed = await ftpConnect.changeDirectory(remoteDir);
       if (!changed) {
         for (var part in parts) {
-            currentPath = currentPath.isNotEmpty ? "$currentPath/$part" : part; // Constrói o caminho progressivamente
-            try {
-                await ftpConnect.makeDirectory(currentPath);
-            } catch (error) {
-                const SnackBar(content: Text('❌ Erro ao criar diretório'));
-            }
+          currentPath = currentPath.isNotEmpty ? "$currentPath/$part" : part;
+          try {
+            await ftpConnect.makeDirectory(currentPath);
+
+          } catch (_) {
+            // Diretório já pode existir, ignore o erro
+          }
         }
-        changed = await ftpConnect.makeDirectory(remoteDir);
         changed = await ftpConnect.changeDirectory(remoteDir);
       }
 
-      
-
-      for (File image in imagens) {
+      for (int i = 0; i < imagens.length; i++) {
+        File image = imagens[i];
         File resizedImage = await _resizeImage(image);
 
         String fileName = path.basename(resizedImage.path);
@@ -65,22 +62,31 @@ class FTPUploader {
 
         bool uploaded = await ftpConnect.uploadFile(resizedImage);
 
-        if (uploaded) {
-          // Inserir no banco de dados
-          /*var result = await conn.query(
-            'INSERT INTO oxf_image (caminho) VALUES (?)',
-            [imagePath],
-          );*/
-          var result = await conn.query(
-            'INSERT INTO oxf_image (item_id, path) VALUES (?, ?)',
-            [itemId, imagePath], // Certifique-se de passar o itemId correto
-          );
+        imagesForAPI.add(
+          ProductImage(
+            //imageId: 0,
+            imagePath: imagePath,
+            imageSequence: i + 1,
+            productId: itemId,
+          ),
+        );
+      }
 
-        } else {
-          ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('❌ Falha no upload da imagem.')),);
+      final response = await OxfordOnlineAPI.postImages(imagesForAPI);
 
-        }
+      if (response.statusCode == 200) {
+        debugPrint('Imagens enviadas com sucesso para a API');
+      } else {
+        debugPrint('Erro ao enviar imagens para a API: ${response.statusCode}');
+      }
+
+      // Envia tags para a API
+      final tagResponse = await OxfordOnlineAPI.postTags(tags);
+      if (tagResponse.statusCode == 200 || tagResponse.statusCode == 201) {
+        debugPrint('🏷️ Tags enviadas com sucesso para a API.');
+      } else {
+        debugPrint('❌ Erro ao enviar tags para a API: ${tagResponse.statusCode}');
+        debugPrint('Body: ${tagResponse.body}');
       }
 
       ScaffoldMessenger.of(context).showSnackBar(
@@ -91,12 +97,37 @@ class FTPUploader {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Erro ao enviar imagens: $e')),
       );
-
     } finally {
       await ftpConnect.disconnect();
-      print("🔌 Desconectado do servidor FTP.");
+      if (conn != null) {
+        await conn.close();
+      }
+      debugPrint("🔌 Desconectado do servidor FTP e banco de dados.");
     }
   }
+    
+  Future<bool> sendTagsToAPI(String productId, List<String> tags) async {
+    try {
+      // Cria lista de ProductTag com base nas tags e no productId informado
+      List<ProductTag> productTags = tags.map((tag) => ProductTag(tag: tag, productId: productId)).toList();
+
+      // Envia para a API
+      final response = await OxfordOnlineAPI.postTags(productTags);
+
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        print('Tags enviadas para API com sucesso.');
+        return true;
+      } else {
+        print('Erro ao enviar tags para API. Status: ${response.statusCode}');
+        print('Resposta: ${response.body}');
+        return false;
+      }
+    } catch (e) {
+      print('Erro ao enviar tags para API: $e');
+      return false;
+    }
+  }
+
 
   Future<File> _resizeImage(File imageFile) async {
     final bytes = await imageFile.readAsBytes();

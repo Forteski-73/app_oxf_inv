@@ -103,7 +103,7 @@ class _SearchProductState extends State<SearchProduct> {
             DBItems.columnUnitVolumeML:                 data['UnitVolumeML'],
             DBItems.columnItemNetWeight:                data['ItemNetWeight'],
             DBItems.columnProdFamilyId:                 data['ProdFamilyId'],
-            DBItems.columnProdFamilyDescription:        data['ProdFamilyDescription'],
+            DBItems.columnProdFamilyDescriptionId:        data['ProdFamilyDescriptionId'],
           };
 
           // Salvar o produto no banco
