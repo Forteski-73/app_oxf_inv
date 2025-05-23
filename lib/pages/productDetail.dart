@@ -10,6 +10,7 @@ import 'package:app_oxf_inv/models/product_image.dart';
 import 'package:app_oxf_inv/models/product_tag.dart';
 import 'package:app_oxf_inv/models/product.dart';
 import '../utils/globals.dart' as globals;
+import '../ftp/ftp.dart';
 
 class ProductDetailsPage extends StatefulWidget {
   final Product product;
@@ -62,11 +63,15 @@ class _ProductDetailsPageState extends State<ProductDetailsPage> {
   Future<void> _loadProductImage() async {
     try {
 
+      FTPUploader ftpUploader = FTPUploader();
       List<ProductImage> imagensData = [];
+      List<File> ImagesFromFTP = [];
 
       if (globals.isOnline) {
         // Busca imagens do produto pelo seu ID usando oxfordonlineAPI.dart
         imagensData = await OxfordOnlineAPI.getImagesByProductId(widget.product.itemId);
+
+        ImagesFromFTP = await ftpUploader.fetchImagesFromFTP('${widget.product.itemId}');
 
       } else {
         // Busca imagens do produto pelo seu ID usando OxfordLocalLite.dart

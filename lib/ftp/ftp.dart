@@ -7,16 +7,25 @@ import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart' as path;
 import '../models/product_image.dart'; 
 import 'package:app_oxf_inv/services/remote/oxfordonlineAPI.dart';
+import 'package:ftpconnect/ftpconnect.dart';
 import '../models/product_tag.dart';
 
 class FTPUploader {
+
+  final ftpConnect = FTPConnect(
+    "ftp.oxfordtec.com.br",
+    user: "u700242432.oxfordftp",
+    pass: "OxforEstrutur@25",
+    timeout: 60,
+  );
+
   Future<void> saveTagsImagesFTP(String remoteDir, String itemId, List<File> imagens, List<ProductTag> tags, BuildContext context) async {
-    final ftpConnect = FTPConnect(
+    /*final ftpConnect = FTPConnect(
       "ftp.oxfordtec.com.br",
       user: "u700242432.oxfordftp",
       pass: "OxforEstrutur@25",
       timeout: 60,
-    );
+    );*/
 
     final dbSettings = ConnectionSettings(
       host: '193.203.175.198',
@@ -193,6 +202,62 @@ class FTPUploader {
       }
     }
   
+  Future<List<File>> fetchImagesFromFTP(String remoteDir) async {
+
+    List<File> localImages = [];
+
+    try {
+      print("🔄 Conectando ao servidor FTP para baixar imagens...");
+      await ftpConnect.connect();
+      await ftpConnect.setTransferType(TransferType.binary);
+
+      final changed = await ftpConnect.changeDirectory(remoteDir);
+      if (!changed) {
+        throw Exception("❌ Diretório remoto não encontrado: $remoteDir");
+      }
+
+      final files = await ftpConnect.listDirectoryContent();
+      final imageFiles = files.where((f) => _isImageFile(f.name)).toList();
+
+      final tempDir = await getTemporaryDirectory();
+
+      for (final file in imageFiles) {
+        final localFile = File(path.join(tempDir.path, file.name));
+        final success = await ftpConnect.downloadFile(file.name, localFile);
+
+        if (success) {
+          localImages.add(localFile);
+          print("✅ Imagem baixada: ${file.name}");
+        } else {
+          print("⚠️ Falha ao baixar imagem: ${file.name}");
+        }
+      }
+    } catch (e) {
+      print("❌ Erro ao buscar imagens no FTP: $e");
+    } finally {
+      await ftpConnect.disconnect();
+      print("🔌 Desconectado do servidor FTP.");
+    }
+
+    return localImages;
+  }
+
+  bool _isImageFile(String filename) {
+    final lower = filename.toLowerCase();
+    return lower.endsWith('.jpg') || lower.endsWith('.jpeg') || lower.endsWith('.png') || lower.endsWith('.gif');
+  }
+
+
+  List<ProductImage> toProductImageList(List<File> files, String itemId, String remoteDir) {
+    return List.generate(files.length, (index) {
+      final fileName = path.basename(files[index].path);
+      return ProductImage(
+        imagePath: "$remoteDir/$fileName",
+        imageSequence: index + 1,
+        productId: itemId,
+      );
+    });
+  }
 
  /*
       print("📂 Diretório remoto definido: $remoteDir");
