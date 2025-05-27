@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../models/product.dart';
+import '../models/product_all.dart';
 import 'dart:io';
 //import 'package:app_oxf_inv/operator/db_product.dart';
 import 'productImages.dart';
@@ -10,10 +11,12 @@ import 'package:app_oxf_inv/models/product_image.dart';
 import 'package:app_oxf_inv/models/product_tag.dart';
 import 'package:app_oxf_inv/models/product.dart';
 import '../utils/globals.dart' as globals;
+import 'package:path/path.dart' as path;
 import '../ftp/ftp.dart';
+import 'package:image/image.dart' as img;
 
 class ProductDetailsPage extends StatefulWidget {
-  final Product product;
+  final ProductAll product;
 
   const ProductDetailsPage({super.key, required this.product});
 
@@ -62,35 +65,42 @@ class _ProductDetailsPageState extends State<ProductDetailsPage> {
 
   Future<void> _loadProductImage() async {
     try {
-
+      bool status = true;
       FTPUploader ftpUploader = FTPUploader();
       List<ProductImage> imagensData = [];
       List<File> ImagesFromFTP = [];
 
       if (globals.isOnline) {
-        // Busca imagens do produto pelo seu ID usando oxfordonlineAPI.dart
-        imagensData = await OxfordOnlineAPI.getImagesByProductId(widget.product.itemId);
-
-        ImagesFromFTP = await ftpUploader.fetchImagesFromFTP('${widget.product.itemId}');
-
-      } else {
-        // Busca imagens do produto pelo seu ID usando OxfordLocalLite.dart
-        imagensData =
-            await OxfordLocalLite().getProductImages(widget.product.itemId);
+        //final directory = path.dirname(widget.product.path);
+        //List<ProductImage> imgs = await ftpUploader.fetchImagesFromFTP(directory,widget.product.itemId);
+        
+    
       }
+
+      // Busca imagens do produto pelo seu ID usando OxfordLocalLite.dart
+      imagensData = await OxfordLocalLite().getProductImages(widget.product.itemId);
+      
 
       setState(() {
         imagens = imagensData.map((image) {
-          // Converte o caminho da imagem para um arquivo
-          return File(image.imagePath);
-        }).toList();
+          final file = File(image.imagePath);
 
-        // Exibe a primeira imagem, se houver
-        if (imagens.isNotEmpty) {
-          imagePath = imagens[0].path;
-          widget.product.setPath(imagePath.toString());
-        }
+          // Lê bytes da imagem
+          final bytes = file.readAsBytesSync();
+
+          // Decodifica a imagem para obter informações
+          final decodedImage = img.decodeImage(bytes);
+
+          if (decodedImage != null) {
+            print('Imagem: ${image.imagePath} - Largura: ${decodedImage.width}, Altura: ${decodedImage.height}');
+          } else {
+            print('Não foi possível decodificar a imagem: ${image.imagePath}');
+          }
+
+          return file;
+        }).toList();
       });
+
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
         content: Text('Erro ao carregar imagens: $e'),
@@ -140,6 +150,7 @@ class _ProductDetailsPageState extends State<ProductDetailsPage> {
 
   @override
   Widget build(BuildContext context) {
+    final product = widget.product;
     return Scaffold(
       appBar: AppBar(
         title: Column(
@@ -257,148 +268,59 @@ class _ProductDetailsPageState extends State<ProductDetailsPage> {
                   ),
                 ],
               ),
-              FutureBuilder<Product?>(
-                future: OxfordLocalLite().getProductDetails(widget.product.itemId), // agora retorna Product
-                builder: (context, snapshot) {
-                  if (snapshot.connectionState == ConnectionState.waiting) {
-                    return Container(
-                      color: Colors.black.withAlpha((0.6 * 255).round()),
-                      height: 200,
-                      child: const Center(
-                        child: Icon(Icons.rotate_right, size: 48, color: Colors.white),
-                      ),
-                    );
-                  } else if (snapshot.hasError) {
-                    return Text('Erro: ${snapshot.error}');
-                  } else if (!snapshot.hasData || snapshot.data == null) {
-                    return const Text('Produto não encontrado');
-                  } else {
-                    final product = snapshot.data!;
+              //FutureBuilder<Product?>(
+                //future: OxfordLocalLite().getProductDetails(widget.product.itemId), // agora retorna Product
+              
 
-                    return Column(
-                      children: [
-                        buildExpansionTile("Informações do Produto", [
-                          textRow("Código",     product.itemId),
-                          textRow("Descrição",  product.name),
-                        ]),
-                        buildExpansionTile("Dimensões e Peso", [
-                          textRow("Peso Bruto",       "${product.prodGrossWeight} kg"),
-                          textRow("Peso Líquido",     "${product.itemNetWeight} kg"),
-                          textRow("Tara",             "${product.prodTaraWeight} kg"),
-                          textRow("Profundidade",     "${product.prodGrossDepth} m"),
-                          textRow("Largura",          "${product.prodGrossWidth} m"),
-                          textRow("Altura",           "${product.prodGrossHeight} m"),
-                          textRow("Volume",           "${product.unitVolumeML} m³"),
-                          textRow("Qt Peças Interna", "${product.prodNrOfItems}"),
-                        ]),
-                        buildExpansionTile("Código de Barras", [
-                          textRow("Master", product.itemBarCode),
-                        ]),
-                        buildExpansionTile("Classificação Fiscal", [
-                          textRow("Classificação Fiscal", product.prodTaxFiscalClassification),
-                        ]),
-                        buildExpansionTile("Família e Marca", [
-                          textRow("Família",    product.prodFamilyDescriptionId),
-                          textRow("Marca",      product.prodBrandDescriptionId),
-                          textRow("Linha",      product.prodLinesDescriptionId),
-                          textRow("Decoração",  product.prodDecorationDescriptionId),
-                        ]),
-                        buildExpansionTile("Características", [
-                          FutureBuilder<List<ProductTag>>(
-                            future: OxfordLocalLite().getProductTags(product.itemId),
-                            builder: (context, tagsSnapshot) {
-                              if (tagsSnapshot.connectionState == ConnectionState.waiting) {
-                                return const CircularProgressIndicator();
-                              } else if (tagsSnapshot.hasError) {
-                                return Text('Erro: ${tagsSnapshot.error}');
-                              } else if (!tagsSnapshot.hasData || tagsSnapshot.data!.isEmpty) {
-                                return const Text('Sem características');
-                              } else {
-                                final tags = tagsSnapshot.data!;
-                                return Column(
-                                  children: tags.map((tag) => textRow("Características", tag.tag)).toList(),
-                                );
-                              }
-                            },
-                          ),
-                        ]),
-                      ],
-                    );
-                  }
-                },
-              )
-
-              /*
-              FutureBuilder<Map<String, dynamic>>(
-                future: getProductDetails(widget.product.itemId), // Recupere os detalhes do produto
-                builder: (context, snapshot) {
-                  if (snapshot.connectionState == ConnectionState.waiting) {
-                    return Container(
-                      color: Colors.black.withAlpha((0.6 * 255).round()),
-                      height: 200, // ajuste a altura se quiser
-                      child: const Center( child: Icon( Icons.rotate_right, size: 48, color: Colors.white,),
-                      ),
-                    );
-                  } else if (snapshot.hasError) {
-                    return Text('Erro: ${snapshot.error}');
-                  } else if (!snapshot.hasData) {
-                    return const Text('Produto não encontrado');
-                  } else {
-                    final product = snapshot.data!;
-
-                    return Column(
-                      children: [
-                        buildExpansionTile("Informações do Produto", [
-                          textRow("Código",     product[DBItems.columnItemId]),
-                          textRow("Descrição",  product[DBItems.columnName] ?? ''),
-                        ]),
-                        buildExpansionTile("Dimensões e Peso", [
-                          textRow("Peso Bruto",       "${product[DBItems.columnGrossWeight]   ?? ''} kg"),
-                          textRow("Peso Líquido",     "${product[DBItems.columnItemNetWeight] ?? ''} kg"),
-                          textRow("Tara",             "${product[DBItems.columnTaraWeight]    ?? ''} kg"),
-                          textRow("Profundidade",     "${product[DBItems.columnGrossDepth]    ?? ''} m"),
-                          textRow("Largura",          "${product[DBItems.columnGrossWidth]    ?? ''} m"),
-                          textRow("Altura",           "${product[DBItems.columnGrossHeight]   ?? ''} m"),
-                          textRow("Volume",           "${product[DBItems.columnUnitVolumeML]  ?? ''} m³"),
-                          textRow("Qt Peças Interna", "${product[DBItems.columnNrOfItems]     ?? ''}"),
-                        ]),
-                        buildExpansionTile("Código de Barras", [
-                          textRow("Master", product[DBItems.columnItemBarCode] ?? ''),
-                        ]),
-                        buildExpansionTile("Classificação Fiscal", [
-                          textRow("Classificação Fiscal", product[DBItems.columnTaxFiscalClassification] ?? ''),
-                        ]),
-                        buildExpansionTile("Família e Marca", [
-                          textRow("Família",    product[DBItems.columnProdFamilyDescriptionId]        ?? ''),
-                          textRow("Marca",      product[DBItems.columnProdBrandDescriptionId]       ?? ''),
-                          textRow("Linha",      product[DBItems.columnProdLinesDescriptionId]       ?? ''),
-                          textRow("Decoração",  product[DBItems.columnProdDecorationDescriptionId]  ?? ''),
-                        ]),
-                        buildExpansionTile("Características", [
-                          FutureBuilder<List<Map<String, dynamic>>>(
-                            future: DBItems.instance.getProductTags(product[DBItems.columnItemId]), // Buscar as tags do produto
-                            builder: (context, tagsSnapshot) {
-                              if (tagsSnapshot.connectionState == ConnectionState.waiting) {
-                                return const CircularProgressIndicator(); // Exibe o carregando enquanto aguarda as tags
-                              } else if (tagsSnapshot.hasError) {
-                                return Text('Erro: ${tagsSnapshot.error}');
-                              } else if (!tagsSnapshot.hasData || tagsSnapshot.data!.isEmpty) {
-                                return const Text('Sem características');
-                              } else {
-                                final tags = tagsSnapshot.data!;
-                                return (tags != null && tags.isNotEmpty) 
-                                    ? Column(
-                                        children: tags.map((tag) => textRow("Características", tag[DBItems.columnTag])).toList(),
-                                      ) : SizedBox.shrink();
-                              }
-                            },
-                          ),
-                        ]),
-                      ],
-                    );
-                  }
-                },
-              )*/
+              Column(
+                children: [
+                  buildExpansionTile("Informações do Produto", [
+                    textRow("Código",     product.itemId),
+                    textRow("Descrição",  product.name),
+                  ]),
+                  buildExpansionTile("Dimensões e Peso", [
+                    textRow("Peso Bruto",       "${product.prodGrossWeight} kg"),
+                    textRow("Peso Líquido",     "${product.itemNetWeight} kg"),
+                    textRow("Tara",             "${product.prodTaraWeight} kg"),
+                    textRow("Profundidade",     "${product.prodGrossDepth} m"),
+                    textRow("Largura",          "${product.prodGrossWidth} m"),
+                    textRow("Altura",           "${product.prodGrossHeight} m"),
+                    textRow("Volume",           "${product.unitVolumeML} m³"),
+                    textRow("Qt Peças Interna", "${product.prodNrOfItems}"),
+                  ]),
+                  buildExpansionTile("Código de Barras", [
+                    textRow("Master", product.itemBarCode),
+                  ]),
+                  buildExpansionTile("Classificação Fiscal", [
+                    textRow("Classificação Fiscal", product.prodTaxFiscalClassification),
+                  ]),
+                  buildExpansionTile("Família e Marca", [
+                    textRow("Família",    product.prodFamilyDescriptionId),
+                    textRow("Marca",      product.prodBrandDescriptionId),
+                    textRow("Linha",      product.prodLinesDescriptionId),
+                    textRow("Decoração",  product.prodDecorationDescriptionId),
+                  ]),
+                  buildExpansionTile("Características", [
+                    FutureBuilder<List<ProductTag>>(
+                      future: OxfordLocalLite().getProductTags(product.itemId),
+                      builder: (context, tagsSnapshot) {
+                        if (tagsSnapshot.connectionState == ConnectionState.waiting) {
+                          return const CircularProgressIndicator();
+                        } else if (tagsSnapshot.hasError) {
+                          return Text('Erro: ${tagsSnapshot.error}');
+                        } else if (!tagsSnapshot.hasData || tagsSnapshot.data!.isEmpty) {
+                          return const Text('Sem características');
+                        } else {
+                          final tags = tagsSnapshot.data!;
+                          return Column(
+                            children: tags.map((tag) => textRow("Características", tag.tag)).toList(),
+                          );
+                        }
+                      },
+                    ),
+                  ]),
+                ],
+              ),
             ],
           ),
         ),

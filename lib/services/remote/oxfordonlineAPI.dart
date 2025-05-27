@@ -2,7 +2,9 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import '../../models/product_image.dart';
 import '../../models/product.dart';
-import '../../models/product_tag.dart'; 
+import '../../models/product_all.dart';
+import '../../models/product_tag.dart';
+import 'package:app_oxf_inv/operator/db_product.dart';
 
 class OxfordOnlineAPI {
   static const String _baseUrl = 'https://oxfordonline.fly.dev/api';
@@ -51,6 +53,7 @@ static Future<http.Response> postProducts(List<Product> products) async {
     return null;
   }
 
+  /*
   /// Busca todas as imagens de um produto e retorna uma lista de ProductImage.
   static Future<List<ProductImage>> getImagesByProductId(String productId) async {
     final url = Uri.parse('$_baseUrl/Image/Product/$productId');
@@ -59,6 +62,36 @@ static Future<http.Response> postProducts(List<Product> products) async {
     if (response.statusCode == 200) {
       final List<dynamic> list = jsonDecode(response.body);
       return list.map((json) => ProductImage.fromMap(json)).toList();
+    }
+
+    return [];
+  }
+  */
+
+  /// Busca todas as imagens de um produto, salva no banco local e retorna uma lista de ProductImage.
+  static Future<List<ProductImage>> getImagesByProductId(String productId) async {
+    final url = Uri.parse('$_baseUrl/Image/Product/$productId');
+    final response = await http.get(url, headers: _headers);
+
+    if (response.statusCode == 200) {
+      final List<dynamic> list = jsonDecode(response.body);
+      final List<ProductImage> images = list.map((json) => ProductImage.fromMap(json)).toList();
+
+      final db = DBItems.instance;
+
+      // Apaga imagens antigas do produto
+      await db.deleteProductImagesByProduct(productId);
+
+      // Insere cada imagem no banco local
+      for (final image in images) {
+        await db.insertProductImage({
+          DBItems.columnImagePath: image.imagePath,
+          DBItems.columnImageSequence: image.imageSequence,
+          DBItems.columnProductId: image.productId,
+        });
+      }
+
+      return images;
     }
 
     return [];
@@ -89,4 +122,30 @@ static Future<http.Response> postProducts(List<Product> products) async {
     return [];
   }
 
+  static Future<List<ProductAll>> getProducts({
+    String? itemId,
+    String? itemBarCode,
+    String? name,
+  }) async {
+    final queryParameters = {
+      if (itemId != null) 'ItemId': itemId,
+      if (itemBarCode != null) 'ItemBarCode': itemBarCode,
+      if (name != null) 'Name': name,
+    };
+
+    final uri = Uri.parse('$_baseUrl/Product/ProductAll')
+        .replace(queryParameters: queryParameters);
+
+    final response = await http.get(uri, headers: _headers);
+
+    if (response.statusCode == 200) {
+      final List<dynamic> list = jsonDecode(response.body);
+
+      return list.map((json) => ProductAll.fromMap(json)).toList();
+    } else {
+      print('Erro ao buscar produtos: ${response.statusCode}');
+      return [];
+    }
+  }
+  
 }

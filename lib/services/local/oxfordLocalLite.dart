@@ -3,6 +3,9 @@ import 'package:app_oxf_inv/operator/db_product.dart';
 import 'package:app_oxf_inv/models/product_image.dart';
 import 'package:app_oxf_inv/models/product_tag.dart';
 import 'package:app_oxf_inv/models/product.dart';
+import 'package:app_oxf_inv/models/product_all.dart';
+import 'package:app_oxf_inv/ftp/ftp.dart';
+import 'package:path/path.dart' as path;
 
 class OxfordLocalLite {
   static final OxfordLocalLite _instance = OxfordLocalLite._internal();
@@ -87,4 +90,61 @@ class OxfordLocalLite {
     return result.map((map) => ProductTag.fromMap(map)).toList();
   }
 
+  Future<void> saveAllProductsLocally(List<ProductAll> products) async {
+    final db = await DBItems.instance.database;
+    FTPUploader ftp = FTPUploader();
+
+    // Transação para garantir atomicidade
+    await db.transaction((txn) async {
+      for (final product in products) {
+
+        // Pega o diretório baseado na primeira imagem, por exemplo
+        final directory = product.productImages.isNotEmpty
+            ? path.dirname(product.productImages.first.imagePath)
+            : '';
+            
+        // Baixa todas as imagens de uma vez só
+        List<ProductImage> imgs = [];
+        if (directory.isNotEmpty) {
+          imgs = await ftp.fetchImagesFromFTP(directory, product.itemId);
+        }
+
+        // Inserindo ou atualizando produto principal
+        
+        if (imgs.isNotEmpty) {
+          product.path = imgs.first.imagePath;
+        }
+
+        await txn.insert(
+          DBItems.tableProducts,
+          product.toMapProduct(),
+          conflictAlgorithm: ConflictAlgorithm.replace,
+        );
+
+        for (final image in imgs) {
+          await txn.insert(
+            DBItems.tableProductImages,
+            {
+              DBItems.columnImagePath: image.imagePath,
+              DBItems.columnImageSequence: image.imageSequence,
+              DBItems.columnProductId: image.productId,
+            },
+            conflictAlgorithm: ConflictAlgorithm.replace,
+          );
+        }
+
+        // Inserindo ou atualizando tags do produto
+        for (final tag in product.productTags) {
+          await txn.insert(
+            DBItems.tableProductTags,
+            {
+              DBItems.columnTag: tag.tag,
+              DBItems.columnTagProductId: product.itemId,
+            },
+            conflictAlgorithm: ConflictAlgorithm.replace,
+          );
+        }
+      }
+    });
+  }
 }

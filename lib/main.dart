@@ -17,6 +17,7 @@ import 'pages/home.dart';
 import 'pages/inventory.dart';
 import 'pages/inventRecords.dart';
 import 'models/product.dart';
+import 'models/product_all.dart';
 import 'package:flutter/widgets.dart';
 import 'pages/teste.dart';
 import 'pages/texte2.dart';
@@ -66,11 +67,11 @@ class MyApp extends StatelessWidget {
           return SearchProduct(onProductSelected: onProductSelected);
         },
         '/ProductImages':   (context) {
-          Product product = Product();
+          ProductAll product = ProductAll();
           return ProductImagesPage(product: product);  // Passe o produto para o construtor
         },
         '/productDetails':  (context) {                // Rota para Consultar Detalhes do Inventário
-          Product product = Product();
+          ProductAll product = ProductAll();
           return ProductDetailsPage(product: product); // Passe o produto para o construtor
         },
         '/settingsProfile':         (context) => const SettingsProfilePage(), // Rota para Configurações

@@ -202,10 +202,8 @@ class FTPUploader {
       }
     }
   
-  Future<List<File>> fetchImagesFromFTP(String remoteDir) async {
-
-    List<File> localImages = [];
-
+  /*
+  Future<bool> fetchImagesFromFTP(String remoteDir) async {
     try {
       print("🔄 Conectando ao servidor FTP para baixar imagens...");
       await ftpConnect.connect();
@@ -220,31 +218,92 @@ class FTPUploader {
       final imageFiles = files.where((f) => _isImageFile(f.name)).toList();
 
       final tempDir = await getTemporaryDirectory();
+      bool peloMenosUmaImagemBaixada = false;
 
       for (final file in imageFiles) {
         final localFile = File(path.join(tempDir.path, file.name));
+
+        // ⚠️ Use apenas o nome do arquivo, pois já entrou no diretório com changeDirectory
         final success = await ftpConnect.downloadFile(file.name, localFile);
 
         if (success) {
-          localImages.add(localFile);
+          peloMenosUmaImagemBaixada = true;
           print("✅ Imagem baixada: ${file.name}");
         } else {
           print("⚠️ Falha ao baixar imagem: ${file.name}");
         }
       }
+
+      return peloMenosUmaImagemBaixada;
     } catch (e) {
       print("❌ Erro ao buscar imagens no FTP: $e");
+      return false;
     } finally {
       await ftpConnect.disconnect();
       print("🔌 Desconectado do servidor FTP.");
     }
+  }*/
 
-    return localImages;
+  // Fiz pra não trazer sujeira
+  bool _isImageFile(String name) {
+    final ext = name.toLowerCase();
+    return ext.endsWith('.jpg') ||
+          ext.endsWith('.jpeg') ||
+          ext.endsWith('.png') ||
+          ext.endsWith('.gif') ||
+          ext.endsWith('.bmp') ||
+          ext.endsWith('.webp');
   }
 
-  bool _isImageFile(String filename) {
-    final lower = filename.toLowerCase();
-    return lower.endsWith('.jpg') || lower.endsWith('.jpeg') || lower.endsWith('.png') || lower.endsWith('.gif');
+  Future<List<ProductImage>> fetchImagesFromFTP(String remoteDir, String productId) async {
+    try {
+      print("🔄 Conectando ao servidor FTP para baixar imagens...");
+      await ftpConnect.connect();
+      await ftpConnect.setTransferType(TransferType.binary);
+
+      final changed = await ftpConnect.changeDirectory(remoteDir);
+      if (!changed) {
+        throw Exception("❌ Diretório remoto não encontrado: $remoteDir");
+      }
+
+      final files = await ftpConnect.listDirectoryContent();
+
+      // Filtra apenas arquivos de imagem, ignorando diretórios '.' e '..'
+      final imageFiles = files.where((f) {
+        final name = f.name.toLowerCase();
+        return name != '.' && name != '..' && _isImageFile(name);
+      }).toList();
+
+      final tempDir = await getTemporaryDirectory();
+      final List<ProductImage> imgs = [];
+
+      int sequence = 1;
+      for (final file in imageFiles) {
+        final localPath = path.join(tempDir.path, file.name);
+        final localFile = File(localPath);
+
+        final success = await ftpConnect.downloadFile(file.name, localFile);
+        if (success) {
+          print("✅ Imagem baixada: ${file.name}");
+          imgs.add(ProductImage(
+            imagePath: localPath,
+            imageSequence: sequence++,
+            productId: productId,
+          ));
+        } else {
+          print("⚠️ Falha ao baixar imagem: ${file.name}");
+        }
+      }
+
+      return imgs;
+
+    } catch (e) {
+      print("❌ Erro ao buscar imagens no FTP: $e");
+      return [];
+    } finally {
+      await ftpConnect.disconnect();
+      print("🔌 Desconectado do servidor FTP.");
+    }
   }
 
 
@@ -257,6 +316,41 @@ class FTPUploader {
         productId: itemId,
       );
     });
+  }
+
+  Future<File?> downloadImageToLocal(String remoteFilePath) async {
+    try {
+      print("🔄 Conectando ao FTP para baixar imagem: $remoteFilePath");
+      await ftpConnect.connect();
+      await ftpConnect.setTransferType(TransferType.binary);
+
+      // Extrai o diretório e o nome do arquivo
+      final directory = path.dirname(remoteFilePath);
+      final fileName = path.basename(remoteFilePath);
+
+      final changed = await ftpConnect.changeDirectory(directory);
+      if (!changed) {
+        throw Exception("❌ Diretório remoto não encontrado: $directory");
+      }
+
+      final tempDir = await getTemporaryDirectory();
+      final localFile = File(path.join(tempDir.path, fileName));
+
+      final success = await ftpConnect.downloadFile(fileName, localFile);
+      if (success) {
+        print("✅ Imagem baixada com sucesso: $fileName");
+        return localFile;
+      } else {
+        print("⚠️ Falha ao baixar imagem: $fileName");
+        return null;
+      }
+    } catch (e) {
+      print("❌ Erro ao baixar imagem: $e");
+      return null;
+    } finally {
+      await ftpConnect.disconnect();
+      print("🔌 Desconectado do servidor FTP.");
+    }
   }
 
  /*

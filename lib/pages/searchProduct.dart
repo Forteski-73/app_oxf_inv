@@ -68,9 +68,9 @@ class _SearchProductState extends State<SearchProduct> {
         String name = product['Name'].toString();*/
 
 
-        return regex.hasMatch(product['ItemBarCode'].toString()) ||
-              regex.hasMatch(product['ItemID'].toString()) ||
-              regex.hasMatch(product['Name'].toString());
+        return regex.hasMatch(product['itemBarCode'].toString()) ||
+              regex.hasMatch(product['itemID'].toString()) ||
+              regex.hasMatch(product['name'].toString());
       }).toList();
     });
   }
@@ -91,19 +91,19 @@ class _SearchProductState extends State<SearchProduct> {
           final Map<String, dynamic> data = json.decode(response.body);
           
           final Map<String, dynamic> product = {
-            DBItems.columnItemBarCode:                  data['ItemBarCode'],
-            DBItems.columnProdBrandId:                  data['ProdBrandId'],
-            DBItems.columnProdBrandDescriptionId:       data['ProdBrandDescriptionId'],
-            DBItems.columnProdLinesId:                  data['ProdLinesId'],
-            DBItems.columnProdLinesDescriptionId:       data['EditProdLinesDescription'],
-            DBItems.columnProdDecorationId:             data['ProdDecorationId'],
-            DBItems.columnProdDecorationDescriptionId:  data['EditProdDecorationDescription'],
-            DBItems.columnItemId:                       data['ItemID'],
-            DBItems.columnName:                         data['Name'],
-            DBItems.columnUnitVolumeML:                 data['UnitVolumeML'],
-            DBItems.columnItemNetWeight:                data['ItemNetWeight'],
-            DBItems.columnProdFamilyId:                 data['ProdFamilyId'],
-            DBItems.columnProdFamilyDescriptionId:        data['ProdFamilyDescriptionId'],
+            DBItems.columnItemBarCode:                  data['itemBarCode'],
+            DBItems.columnProdBrandId:                  data['prodBrandId'],
+            DBItems.columnProdBrandDescriptionId:       data['prodBrandDescriptionId'],
+            DBItems.columnProdLinesId:                  data['prodLinesId'],
+            DBItems.columnProdLinesDescriptionId:       data['editProdLinesDescription'],
+            DBItems.columnProdDecorationId:             data['prodDecorationId'],
+            DBItems.columnProdDecorationDescriptionId:  data['editProdDecorationDescription'],
+            DBItems.columnItemId:                       data['itemID'],
+            DBItems.columnName:                         data['name'],
+            DBItems.columnUnitVolumeML:                 data['unitVolumeML'],
+            DBItems.columnItemNetWeight:                data['itemNetWeight'],
+            DBItems.columnProdFamilyId:                 data['prodFamilyId'],
+            DBItems.columnProdFamilyDescriptionId:        data['prodFamilyDescriptionId'],
           };
 
           // Salvar o produto no banco
@@ -262,10 +262,10 @@ class _SearchProductState extends State<SearchProduct> {
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  _alignRow('Código de Barras:',  product['ItemBarCode'] ?? ''),
-                                  _alignRow('Item:',              product['ItemID'] ?? ''),
-                                  _alignRow('Linha:',             '${product['ProdLinesId'] ?? ''} - ${product['ProdLinesDescriptionId'] ?? ''}'),
-                                  _alignRow('Decoração:',         product['ProdDecorationDescriptionId'] ?? ''),
+                                  _alignRow('Código de Barras:',  product['itemBarCode'] ?? ''),
+                                  _alignRow('Item:',              product['itemID'] ?? ''),
+                                  _alignRow('Linha:',             '${product['prodLinesId'] ?? ''} - ${product['prodLinesDescriptionId'] ?? ''}'),
+                                  _alignRow('Decoração:',         product['prodDecorationDescriptionId'] ?? ''),
                                 ],
                               ),
                             ),
@@ -273,7 +273,7 @@ class _SearchProductState extends State<SearchProduct> {
                         ),
                         onTap: () {
                           // Retorna o produto selecionado para a página requisitante
-                          widget.onProductSelected(product['ItemBarCode']);
+                          widget.onProductSelected(product['itemBarCode']);
                           Navigator.pop(context);
                         },
                       ),

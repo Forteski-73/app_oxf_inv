@@ -7,11 +7,12 @@ import 'package:reorderables/reorderables.dart';
 import 'package:app_oxf_inv/operator/db_product.dart';
 import '../models/product_image.dart';
 import '../models/product_tag.dart';
+import '../models/product_all.dart';
 import '../ftp/ftp.dart';
 import 'package:app_oxf_inv/services/remote/oxfordonlineAPI.dart';
 
 class ProductImagesPage extends StatefulWidget {
-  final Product product;
+  final ProductAll product;
 
   const ProductImagesPage({super.key, required this.product});
 
@@ -146,7 +147,7 @@ class _ProductImagesPageState extends State<ProductImagesPage> with TickerProvid
     FTPUploader ftpUploader = FTPUploader();
     
     String remoteDir = '${widget.product.prodFamilyDescriptionId}/${widget.product.prodBrandDescriptionId}/'+
-    '${widget.product.prodLinesDescriptionId}/${widget.product.prodDecorationDescriptionId}';
+    '${widget.product.prodLinesDescriptionId}/${widget.product.prodDecorationDescriptionId}/${widget.product.itemId}';
     await ftpUploader.saveTagsImagesFTP(remoteDir, widget.product.itemId, imagens, tag, context);
   } 
   

@@ -1,6 +1,11 @@
 import 'dart:async'; 
 import 'package:sqflite/sqflite.dart';
 import 'package:path/path.dart';
+import '../../models/product_all.dart';
+import '../../models/product_image.dart';
+import '../../models/product.dart';
+import '../../models/product_all.dart';
+import '../../models/product_tag.dart';
 
 class DBItems {
   static const _databaseName        = "product.db";
@@ -10,27 +15,28 @@ class DBItems {
   static const tableProductTags    = 'product_tags';
 
   // Campos da tabela products
-  static const columnItemBarCode                  = 'ItemBarCode';
-  static const columnProdBrandId                  = 'ProdBrandId';
-  static const columnProdBrandDescriptionId       = 'ProdBrandDescriptionId';
-  static const columnProdLinesId                  = 'ProdLinesId';
-  static const columnProdLinesDescriptionId       = 'ProdLinesDescriptionId';
-  static const columnProdDecorationId             = 'ProdDecorationId';
-  static const columnProdDecorationDescriptionId  = 'ProdDecorationDescriptionId';
-  static const columnItemId                       = 'ItemID';
-  static const columnName                         = 'Name';
-  static const columnUnitVolumeML                 = 'UnitVolumeML';
-  static const columnItemNetWeight                = 'ItemNetWeight';
-  static const columnProdFamilyId                 = 'ProdFamilyId';
-  static const columnProdFamilyDescriptionId      = 'ProdFamilyDescriptionId';
+  static const columnItemBarCode                  = 'itemBarCode';
+  static const columnProdBrandId                  = 'prodBrandId';
+  static const columnProdBrandDescriptionId       = 'prodBrandDescriptionId';
+  static const columnProdLinesId                  = 'prodLinesId';
+  static const columnProdLinesDescriptionId       = 'prodLinesDescriptionId';
+  static const columnProdDecorationId             = 'prodDecorationId';
+  static const columnProdDecorationDescriptionId  = 'prodDecorationDescriptionId';
+  static const columnItemId                       = 'itemId';
+  static const columnName                         = 'name';
+  static const columnPath                         = 'path';
+  static const columnUnitVolumeML                 = 'unitVolumeML';
+  static const columnItemNetWeight                = 'itemNetWeight';
+  static const columnProdFamilyId                 = 'prodFamilyId';
+  static const columnProdFamilyDescriptionId      = 'prodFamilyDescriptionId';
   
-  static const columnGrossWeight                  = 'GrossWeight';
-  static const columnTaraWeight                   = 'TaraWeight';
-  static const columnGrossDepth                   = 'GrossDepth';
-  static const columnGrossWidth                   = 'GrossWidth';
-  static const columnGrossHeight                  = 'GrossHeight';
-  static const columnNrOfItems                    = 'NrOfItems';
-  static const columnTaxFiscalClassification      = 'TaxFiscalClassification';
+  static const columnGrossWeight                  = 'grossWeight';
+  static const columnTaraWeight                   = 'taraWeight';
+  static const columnGrossDepth                   = 'grossDepth';
+  static const columnGrossWidth                   = 'grossWidth';
+  static const columnGrossHeight                  = 'grossHeight';
+  static const columnNrOfItems                    = 'nrOfItems';
+  static const columnTaxFiscalClassification      = 'taxFiscalClassification';
 
     // Campos da tabela product_images
   static const columnImageId           = '_id';
@@ -67,10 +73,6 @@ class DBItems {
   }
 
   Future _onCreate(Database db, int version) async {
-    //await db.execute('''DROP TABLE IF EXISTS $tableProductTags;''');
-    //await db.execute('''DROP TABLE IF EXISTS $tableProductImages;''');
-    //await db.execute('''DROP TABLE IF EXISTS $tableProducts;''');
-
     // Criando a tabela de produtos
     await db.execute('''
       CREATE TABLE $tableProducts (
@@ -83,10 +85,11 @@ class DBItems {
         $columnProdDecorationDescriptionId  TEXT,
         $columnItemId                       TEXT PRIMARY KEY,
         $columnName                         TEXT,
+        $columnPath                         TEXT,
         $columnUnitVolumeML                 REAL,
         $columnItemNetWeight                REAL,
         $columnProdFamilyId                 TEXT,
-        $columnProdFamilyDescriptionId        TEXT,
+        $columnProdFamilyDescriptionId      TEXT,
 
         $columnGrossWeight                  REAL,
         $columnTaraWeight                   REAL,
@@ -148,20 +151,59 @@ class DBItems {
     return List<Map<String, dynamic>>.from(await db.query(tableProducts));
   }
 
-Future<List<Map<String, dynamic>>> getAllProducts1() async {
-  Database db = await instance.database;
-  
-  // Consulta que retorna todos os produtos junto com o caminho da imagem da sequência 1
-  final List<Map<String, dynamic>> products = await db.rawQuery('''
-    SELECT p.*, COALESCE(i.$columnImagePath, '') AS $columnImagePath
-    FROM $tableProducts p
-    LEFT JOIN $tableProductImages i 
-      ON p.$columnItemId = i.$columnProductId 
-      AND i.$columnImageSequence = 1
-  ''');
-  
-  return products;
-}
+  Future<List<ProductAll>> getAllProducts1() async {
+    final Database db = await instance.database;
+
+    // Consulta os produtos com imagem da sequência 1
+    final List<Map<String, dynamic>> productMaps = await db.rawQuery('''
+      SELECT p.*, COALESCE(i.$columnImagePath, '') AS $columnImagePath
+      FROM $tableProducts p
+      LEFT JOIN $tableProductImages i 
+        ON p.$columnItemId = i.$columnProductId 
+        AND i.$columnImageSequence = 1
+      LIMIT 10
+    ''');
+
+    List<ProductAll> productAllList = [];
+
+    for (var productMap in productMaps) {
+      final String itemId = productMap[columnItemId];
+
+      // Busca imagens adicionais do produto
+      final List<Map<String, dynamic>> imageMaps = await db.query(
+        tableProductImages,
+        where: '$columnProductId = ?',
+        whereArgs: [itemId],
+      );
+
+      final List<ProductImage> images = imageMaps
+          .map((imgMap) => ProductImage.fromMap(imgMap))
+          .toList();
+
+      // Busca tags do produto
+      final List<Map<String, dynamic>> tagMaps = await db.query(
+        tableProductTags,
+        where: '$columnProductId = ?',
+        whereArgs: [itemId],
+      );
+
+      final List<ProductTag> tags = tagMaps
+          .map((tagMap) => ProductTag.fromMap(tagMap))
+          .toList();
+
+      // Cria o ProductAll combinando produto base, imagens e tags
+      final productAll = ProductAll.fromMap({
+        ...productMap,
+        'productImages': images.map((e) => e.toMap()).toList(),
+        'productTags': tags.map((e) => e.toMap()).toList(),
+      });
+
+      productAllList.add(productAll);
+    }
+
+    return productAllList;
+  }
+
 
   Future<int> updateProduct(Map<String, dynamic> product) async {
     Database db = await instance.database;
