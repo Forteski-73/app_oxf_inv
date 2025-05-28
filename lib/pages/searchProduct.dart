@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:app_oxf_inv/operator/db_product.dart';
+import 'package:app_oxf_inv/widgets/customSnackBar.dart';
 import 'dart:io';
 
 class SearchProduct extends StatefulWidget {
@@ -40,7 +41,7 @@ class _SearchProductState extends State<SearchProduct> {
       final products = await DBItems.instance.getAllProducts();
       setState(() {
         _allProducts = products;
-        _filteredProducts = products; // Exibe todos os produtos.
+        _filteredProducts = products;
         isLoading = false;
       });
     } catch (e) {
@@ -58,16 +59,6 @@ class _SearchProductState extends State<SearchProduct> {
       _filteredProducts = _allProducts.where((product) {
         // Expressão regular para buscar apenas do início
         final regex = RegExp('^${RegExp.escape(query)}', caseSensitive: false);
-
-        // Expressão regular
-        //final regex = RegExp(query, caseSensitive: false);
-
-              // Obtendo os valores para comparação
-        /*String itemBarCode = product['ItemBarCode'].toString();
-        String itemID = product['ItemID'].toString();
-        String name = product['Name'].toString();*/
-
-
         return regex.hasMatch(product['itemBarCode'].toString()) ||
               regex.hasMatch(product['itemID'].toString()) ||
               regex.hasMatch(product['name'].toString());
@@ -124,7 +115,9 @@ class _SearchProductState extends State<SearchProduct> {
   }
 
   void _showError(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message, style: const TextStyle(fontSize: 18))));
+    CustomSnackBar.show(context, message: message,
+      duration: const Duration(seconds: 4),type: SnackBarType.error,
+      );
   }
 
   void _searchProduct(String productId) {

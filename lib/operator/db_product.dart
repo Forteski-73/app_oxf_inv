@@ -3,8 +3,7 @@ import 'package:sqflite/sqflite.dart';
 import 'package:path/path.dart';
 import '../../models/product_all.dart';
 import '../../models/product_image.dart';
-import '../../models/product.dart';
-import '../../models/product_all.dart';
+import 'dart:io';
 import '../../models/product_tag.dart';
 
 class DBItems {
@@ -355,5 +354,35 @@ class DBItems {
       return null;
     }
   }
+
+  Future<void> deleteProductImageFiles(String productId) async {
+    final db = await database;
+    final List<Map<String, dynamic>> images = await db.query(
+      tableProductImages,
+      columns: [columnImagePath, columnImageId],
+      where: '$columnProductId = ?',
+      whereArgs: [productId],
+    );
+
+    for (var img in images) {
+      final String? imagePath = img[columnImagePath] as String?;
+      if (imagePath == null || imagePath.isEmpty) continue;
+
+      final file = File(imagePath);
+      if (await file.exists()) {
+        await file.delete();
+      }
+    }
+    await deleteImagesByProductId(productId);
+  }
+
+  Future<int> deleteImagesByProductId(String productId) async {
+  final db = await database;
+  return await db.delete(
+    tableProductImages,
+    where: '$columnProductId = ?',
+    whereArgs: [productId],
+  );
+}
 
 }

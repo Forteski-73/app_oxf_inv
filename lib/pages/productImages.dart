@@ -1,15 +1,13 @@
 import 'package:flutter/material.dart';
-import '../models/product.dart';
 import 'package:image_picker/image_picker.dart';
 import 'dart:io';
-//import 'package:path_provider/path_provider.dart';
+import 'package:app_oxf_inv/widgets/customSnackBar.dart';
 import 'package:reorderables/reorderables.dart';
 import 'package:app_oxf_inv/operator/db_product.dart';
 import '../models/product_image.dart';
 import '../models/product_tag.dart';
 import '../models/product_all.dart';
 import '../ftp/ftp.dart';
-import 'package:app_oxf_inv/services/remote/oxfordonlineAPI.dart';
 
 class ProductImagesPage extends StatefulWidget {
   final ProductAll product;
@@ -101,8 +99,6 @@ class _ProductImagesPageState extends State<ProductImagesPage> with TickerProvid
       await DBItems.instance.deleteProductImagesByProduct(widget.product.itemId);
       await DBItems.instance.deleteProductTagsByProduct(widget.product.itemId);
 
-      List<ProductImage> imagesForAPI = [];
-
       // Salvar as imagens no banco de dados e preparar para envio à API
       for (int i = 0; i < imagens.length; i++) {
         final imagePath = imagens[i].path;
@@ -127,15 +123,11 @@ class _ProductImagesPageState extends State<ProductImagesPage> with TickerProvid
       // Executar rotina adicional
       await saveTagsImagesDirFTP();
 
-      // Mensagem de sucesso
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-        content: Text('Imagens e tags salvas com sucesso no banco de dados.'),
-      ));
+
     } catch (e) {
-      // Mensagem de erro
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: Text('Erro ao salvar imagens e tags: $e'),
-      ));
+      CustomSnackBar.show(context, message: 'Erro ao salvar imagens e tags: $e',
+        duration: const Duration(seconds: 4),type: SnackBarType.error,
+      );
     } finally {
       setLoading(false);
     }
@@ -179,9 +171,9 @@ class _ProductImagesPageState extends State<ProductImagesPage> with TickerProvid
       });
       
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: Text('Erro ao carregar imagens: $e'),
-      ));
+      CustomSnackBar.show(context, message: 'Erro ao carregar imagens: $e',
+        duration: const Duration(seconds: 4),type: SnackBarType.error,
+      );
     }
   }
 
@@ -198,9 +190,9 @@ class _ProductImagesPageState extends State<ProductImagesPage> with TickerProvid
       });
 
     } catch (e) {
-
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Erro ao carregar características: $e'),
-      ));
+      CustomSnackBar.show(context, message: 'Erro ao carregar características: $e',
+        duration: const Duration(seconds: 4),type: SnackBarType.error,
+      );
     }
   }
 

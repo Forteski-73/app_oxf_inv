@@ -5,6 +5,7 @@ import '../../models/product.dart';
 import '../../models/product_all.dart';
 import '../../models/product_tag.dart';
 import 'package:app_oxf_inv/operator/db_product.dart';
+import 'package:flutter/foundation.dart';
 
 class OxfordOnlineAPI {
   static const String _baseUrl = 'https://oxfordonline.fly.dev/api';
@@ -33,6 +34,10 @@ static Future<http.Response> postProducts(List<Product> products) async {
   static Future<http.Response> postImages(List<ProductImage> images) async {
     final url = Uri.parse('$_baseUrl/Image');
     final body = jsonEncode(images.map((img) => img.toMap()).toList());
+
+    debugPrint('POST URL: $url');
+    debugPrint('HEADERS: ${jsonEncode(_headers)}');
+    debugPrint('BODY: $body');
 
     return await http.post(
       url,

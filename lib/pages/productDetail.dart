@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import '../models/product.dart';
 import '../models/product_all.dart';
 import 'dart:io';
-//import 'package:app_oxf_inv/operator/db_product.dart';
+import 'package:app_oxf_inv/widgets/customSnackBar.dart';
 import 'productImages.dart';
 import 'package:smooth_page_indicator/smooth_page_indicator.dart';
 import 'package:app_oxf_inv/services/local/oxfordLocalLite.dart';
@@ -85,26 +85,14 @@ class _ProductDetailsPageState extends State<ProductDetailsPage> {
         imagens = imagensData.map((image) {
           final file = File(image.imagePath);
 
-          // Lê bytes da imagem
-          final bytes = file.readAsBytesSync();
-
-          // Decodifica a imagem para obter informações
-          final decodedImage = img.decodeImage(bytes);
-
-          if (decodedImage != null) {
-            print('Imagem: ${image.imagePath} - Largura: ${decodedImage.width}, Altura: ${decodedImage.height}');
-          } else {
-            print('Não foi possível decodificar a imagem: ${image.imagePath}');
-          }
-
           return file;
         }).toList();
       });
 
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: Text('Erro ao carregar imagens: $e'),
-      ));
+      CustomSnackBar.show(context, message: 'Erro ao carregar imagens: $e',
+        duration: const Duration(seconds: 4),type: SnackBarType.error,
+      );
     }
   }
 
