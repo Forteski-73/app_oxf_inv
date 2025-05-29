@@ -89,9 +89,9 @@ class ProductAll extends Product {
     );
   }
 
-Map<String, dynamic> toMapProduct() {
-  return super.toMap(); // Apenas os campos da tabela 'products'
-}
+  Map<String, dynamic> toMapProduct() {
+    return super.toMap(); // Apenas os campos da tabela 'products'
+  }
 
   Map<String, dynamic> toMap() {
     final map = super.toMap();

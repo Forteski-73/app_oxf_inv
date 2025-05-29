@@ -7,6 +7,7 @@ import 'package:app_oxf_inv/models/product.dart';
 import 'package:app_oxf_inv/models/product_all.dart';
 import 'package:app_oxf_inv/ftp/ftp.dart';
 import 'package:path/path.dart' as path;
+import 'package:app_oxf_inv/operator/db_product.dart';
 
 class OxfordLocalLite {
   static final OxfordLocalLite _instance = OxfordLocalLite._internal();
@@ -92,65 +93,99 @@ class OxfordLocalLite {
   }
 
   Future<void> saveAllProductsLocally(List<ProductAll> products, context) async {
+    final dbprod = DBItems.instance;
     final db = await DBItems.instance.database;
     final ftp = FTPUploader();
-    List<ProductImage> imgs = [];
+    List<ProductImage> listImgs = [];
 
-    for (final product in products) {
-      try {
+      for (final product in products) {
 
-        imgs.clear();
-        // Determina o diretório a partir da primeira imagem
-        final directory = product.productImages.isNotEmpty
-            ? path.dirname(product.productImages.first.imagePath)
-            : '';
-        
-        if (directory.isNotEmpty) {
-          await DBItems.instance.deleteProductImageFiles(product.itemId);
-          imgs = await ftp.fetchImagesFromFTP(directory, product.itemId, context);
-        }
+        try {
 
-        // Se houver imagens, define a primeira como imagem principal
-        if (imgs.isNotEmpty) product.path = imgs.first.imagePath;
-        
-        await db.transaction((txn) async {
-          // Insere ou atualiza o produto principal
-          await txn.insert(
-            DBItems.tableProducts,
-            product.toMapProduct(),
-            conflictAlgorithm: ConflictAlgorithm.replace,
+          //await dbprod.deleteProductImageFiles(product.itemId);
+          //await dbprod.deleteProductTagsByProduct(product.itemId);
+          await dbprod.deleteProductImageFiles(product.itemId);
+          await dbprod.deleteProduct(product.itemId);
+
+          listImgs.clear();
+          //await db.transaction((txn) async {
+            final directory = product.productImages.isNotEmpty
+                ? path.dirname(product.productImages.first.imagePath)
+                : '';
+
+            if (directory.isNotEmpty) { // Determina o diretório a partir da primeira imagem
+              listImgs = await ftp.fetchImagesFromFTP(directory, product.itemId, context);
+            }
+
+            // Se houver imagens, define a primeira como imagem principal
+            if (listImgs.isNotEmpty) product.path = listImgs.first.imagePath;
+
+            int insertedId = await dbprod.insertProduct(product.toMapProduct());
+            if (insertedId > 0) {
+              for (final image in listImgs) {
+                await dbprod.insertProductImage(image.toMap());
+              }
+
+              for (final tag in product.productTags) {
+                await dbprod.insertProductTag(tag.toMap());
+              }
+            } else {
+              throw Exception("Erro ao inserir o produto: ${product.itemId} - ${product.name}");
+            }
+    
+          //});
+          /*
+          imgs.clear();
+          // Determina o diretório a partir da primeira imagem
+          final directory = product.productImages.isNotEmpty
+              ? path.dirname(product.productImages.first.imagePath)
+              : '';
+
+          if (directory.isNotEmpty) {
+            imgs = await ftp.fetchImagesFromFTP(directory, product.itemId, context);
+          }
+
+          // Se houver imagens, define a primeira como imagem principal
+          if (imgs.isNotEmpty) product.path = imgs.first.imagePath;
+          
+          await db.transaction((txn) async {
+            // Insere ou atualiza o produto principal
+            await txn.insert(
+              DBItems.tableProducts,
+              product.toMapProduct(),
+              conflictAlgorithm: ConflictAlgorithm.replace,
+            );
+
+            // Insere ou atualiza imagens do produto
+            for (final image in imgs) {
+              await txn.insert(
+                DBItems.tableProductImages,
+                {
+                  DBItems.columnImagePath: image.imagePath,
+                  DBItems.columnImageSequence: image.imageSequence,
+                  DBItems.columnProductId: image.productId,
+                },
+                conflictAlgorithm: ConflictAlgorithm.replace,
+              );
+            }
+
+            // Insere ou atualiza tags do produto
+            for (final tag in product.productTags) {
+              await txn.insert(
+                DBItems.tableProductTags,
+                {
+                  DBItems.columnTag: tag.tag,
+                  DBItems.columnTagProductId: product.itemId,
+                },
+                conflictAlgorithm: ConflictAlgorithm.replace,
+              );
+            }
+          });*/
+        } catch (e) {
+          CustomSnackBar.show(context, message: 'Erro ao salvar produto ${product.itemId}: $e',
+            duration: const Duration(seconds: 4),type: SnackBarType.error,
           );
-
-          // Insere ou atualiza imagens do produto
-          for (final image in imgs) {
-            await txn.insert(
-              DBItems.tableProductImages,
-              {
-                DBItems.columnImagePath: image.imagePath,
-                DBItems.columnImageSequence: image.imageSequence,
-                DBItems.columnProductId: image.productId,
-              },
-              conflictAlgorithm: ConflictAlgorithm.replace,
-            );
-          }
-
-          // Insere ou atualiza tags do produto
-          for (final tag in product.productTags) {
-            await txn.insert(
-              DBItems.tableProductTags,
-              {
-                DBItems.columnTag: tag.tag,
-                DBItems.columnTagProductId: product.itemId,
-              },
-              conflictAlgorithm: ConflictAlgorithm.replace,
-            );
-          }
-        });
-      } catch (e) {
-        CustomSnackBar.show(context, message: 'Erro ao salvar produto ${product.itemId}: $e',
-          duration: const Duration(seconds: 4),type: SnackBarType.error,
-        );
+        }
       }
-    }
   }
 }

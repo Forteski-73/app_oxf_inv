@@ -17,10 +17,11 @@ class FTPUploader {
     timeout: 60,
   );
 
-  Future<void> saveTagsImagesFTP(String remoteDir, String itemId, List<File> imagens, List<ProductTag> tags, BuildContext context) async {
+  Future<void> saveTagsImagesFTP(String remoteDir, String itemId, List<ProductImage> imagens, List<ProductTag> tags, BuildContext context) async {
     List<ProductImage> imagesForAPI = [];
 
     try {
+
       bool changed = await ftpConnect.connect();
       await ftpConnect.setTransferType(TransferType.binary);
 
@@ -40,7 +41,7 @@ class FTPUploader {
       }
 
       for (int i = 0; i < imagens.length; i++) {
-        File image = imagens[i];
+        File image = File(imagens[i].imagePath);
         File resizedImage = await _resizeImage(image);
 
         // Obter nome original e extensão
@@ -171,7 +172,7 @@ class FTPUploader {
 
       await ftpConnect.setTransferType(TransferType.binary);
 
-      final tempDir = await getTemporaryDirectory();
+      final tempDir = await createTempProductDirectory(productId); //await getTemporaryDirectory();
       int sequence = 1;
 
       for (final file in files) {
@@ -206,6 +207,22 @@ class FTPUploader {
     } finally {
       await ftpConnect.disconnect();
     }
+  }
+
+  Future<Directory> createTempProductDirectory(String productId) async {
+    // Obtém o diretório temporário do app
+    final tempDir = await getTemporaryDirectory();
+
+    // Cria o novo caminho com o nome do produto
+    final productDirPath = path.join(tempDir.path, productId);
+
+    // Cria a pasta (se não existir)
+    final productDir = Directory(productDirPath);
+    if (!(await productDir.exists())) {
+      await productDir.create(recursive: true); // Cria com permissões adequadas
+    }
+
+    return productDir;
   }
 
   /*

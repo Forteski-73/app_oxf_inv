@@ -19,7 +19,7 @@ class ProductTag {
   factory ProductTag.fromMap(Map<String, dynamic> map) {
     return ProductTag(
       tag: map['valueTag'] ?? '',
-      productId: map['productId'] ?? '',
+      productId: map['productId'] ?? map['productId'],
     );
   }
 }

@@ -87,11 +87,9 @@ class _ProductSearchPageState extends State<ProductSearchPage>
 
         await OxfordLocalLite().saveAllProductsLocally(products, context);
 
+      } 
         products = await DBItems.instance.getAllProducts1();
-        
-      } else {
-        products = await DBItems.instance.getAllProducts1();
-      }
+
       
       if (!mounted) return;
       setState(() {

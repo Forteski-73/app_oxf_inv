@@ -41,12 +41,12 @@ class DBItems {
   static const columnImageId           = '_id';
   static const columnImagePath         = 'path';
   static const columnImageSequence     = 'sequence';
-  static const columnProductId         = 'product_id';
+  static const columnProductId         = 'productId';
 
     // Campos da tabela product_tags
   static const columnTagId        = '_id';
-  static const columnTag          = 'path';
-  static const columnTagProductId = 'product_id';
+  static const columnTag          = 'valueTag';
+  static const columnTagProductId = 'productId';
 
     // Instancia o construtor DB
   DBItems._privateConstructor();
@@ -61,17 +61,26 @@ class DBItems {
   }
 
   Future<Database> _initDatabase() async {
-    var databasesPath = await getDatabasesPath(); // Diretório do banco de dados
+    var databasesPath = await getDatabasesPath();
     String path = join(databasesPath, _databaseName);
 
-    return await openDatabase(
+    // Use a factory configurada globalmente, que pode ser a do ffi ou a padrão do sqflite
+    return await databaseFactory.openDatabase(
       path,
-      version: _databaseVersion,
-      onCreate: _onCreate,
-    ); // Abrindo ou criando a tabela
+      options: OpenDatabaseOptions(
+        version: _databaseVersion,
+        onConfigure: (db) async {
+          await db.execute('PRAGMA foreign_keys = ON');
+        },
+        onCreate: _onCreate,
+      ),
+    );
   }
 
   Future _onCreate(Database db, int version) async {
+
+    //await db.execute('DROP TABLE IF EXISTS $tableProductImages');
+    //await db.execute('DROP TABLE IF EXISTS $tableProductTags');
     // Criando a tabela de produtos
     await db.execute('''
       CREATE TABLE $tableProducts (
@@ -120,7 +129,7 @@ class DBItems {
         FOREIGN KEY ($columnProductId) REFERENCES $tableProducts($columnItemId) ON DELETE CASCADE
       );
     ''');
-    await db.execute('CREATE INDEX idx_product_images_product_id ON $tableProductImages ($columnProductId);');
+    await db.execute('CREATE INDEX idx_product_images_productId ON $tableProductImages ($columnProductId);');
 
     // Criando a tabela de tags do produto
     await db.execute('''
@@ -131,7 +140,7 @@ class DBItems {
         FOREIGN KEY ($columnTagProductId) REFERENCES $tableProducts($columnItemId) ON DELETE CASCADE
       );
     ''');
-    await db.execute('CREATE INDEX idx_product_tags_product_id ON $tableProductTags ($columnTagProductId);');
+    await db.execute('CREATE INDEX idx_product_tags_productId ON $tableProductTags ($columnTagProductId);');
 
   }
 
@@ -356,33 +365,66 @@ class DBItems {
   }
 
   Future<void> deleteProductImageFiles(String productId) async {
-    final db = await database;
-    final List<Map<String, dynamic>> images = await db.query(
-      tableProductImages,
-      columns: [columnImagePath, columnImageId],
-      where: '$columnProductId = ?',
-      whereArgs: [productId],
-    );
+    
+    try {
+      
+      final List<Map<String, dynamic>> images = await getProductImages(productId);
 
-    for (var img in images) {
-      final String? imagePath = img[columnImagePath] as String?;
-      if (imagePath == null || imagePath.isEmpty) continue;
+      for (var img in images) {
+        final String? imagePath = img[columnImagePath] as String?;
+        if (imagePath == null || imagePath.isEmpty) continue;
 
-      final file = File(imagePath);
-      if (await file.exists()) {
-        await file.delete();
+        final file = File(imagePath);
+        if (await file.exists()) {
+          try {
+            await file.delete();
+          } catch (e) {
+            print('Erro ao deletar o arquivo $imagePath: $e');
+          }
+        }
       }
+    } catch (e) {
+      print('Erro ao acessar o banco ou listar imagens: $e');
     }
-    await deleteImagesByProductId(productId);
   }
 
   Future<int> deleteImagesByProductId(String productId) async {
-  final db = await database;
-  return await db.delete(
-    tableProductImages,
-    where: '$columnProductId = ?',
-    whereArgs: [productId],
-  );
-}
+    final db = await database;
+    return await db.delete(
+      tableProductImages,
+      where: '$columnProductId = ?',
+      whereArgs: [productId],
+    );
+  }
+
+  Future<void> saveCompleteProduct(ProductAll productAll) async {
+    final db = DBItems.instance;
+
+    // 1. Insere/atualiza o produto base na tabela 'products'
+    await db.insertProduct(productAll.toMapProduct());
+
+    // 2. Remove imagens antigas do produto
+    await db.deleteProductImagesByProduct(productAll.itemId);
+
+    // 3. Insere novas imagens
+    for (int i = 0; i < productAll.productImages.length; i++) {
+      await db.insertProductImage({
+        DBItems.columnImagePath: productAll.productImages[i].imagePath,
+        DBItems.columnImageSequence: productAll.productImages[i].imageSequence,
+        DBItems.columnProductId: productAll.itemId,
+      });
+    }
+
+    // 4. Remove tags antigas do produto
+    await db.deleteProductTagsByProduct(productAll.itemId);
+
+    // 5. Insere novas tags
+    for (final tag in productAll.productTags) {
+      await db.insertProductTag({
+        DBItems.columnTag: tag.tag,
+        DBItems.columnTagProductId: productAll.itemId,
+      });
+    }
+  }
 
 }

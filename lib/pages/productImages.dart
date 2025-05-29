@@ -22,7 +22,8 @@ class _ProductImagesPageState extends State<ProductImagesPage> with TickerProvid
   Map<String, bool> expandedStates = {};
   List<ProductTag> tag = [];
   final TextEditingController _caracteristicaController = TextEditingController();
-  List<File> imagens = [];
+  //List<File> imagens = [];
+  List<ProductImage> imagens = [];
   int? imagemPrincipalIndex;
   bool isLoading = false;
   bool isZoomed = false;
@@ -67,7 +68,11 @@ class _ProductImagesPageState extends State<ProductImagesPage> with TickerProvid
                 final List<XFile>? pickedFiles = await picker.pickMultiImage();
                 if (pickedFiles != null && pickedFiles.isNotEmpty) {
                   setState(() {
-                    imagens.addAll(pickedFiles.map((file) => File(file.path)));
+                    imagens.addAll(pickedFiles.map((file) => ProductImage(
+                      imagePath: file.path,
+                      imageSequence: imagens.length + 1,
+                      productId: widget.product.itemId,
+                    )));
                   });
                 }
               },
@@ -80,7 +85,13 @@ class _ProductImagesPageState extends State<ProductImagesPage> with TickerProvid
                 final XFile? photo = await picker.pickImage(source: ImageSource.camera);
                 if (photo != null) {
                   setState(() {
-                    imagens.add(File(photo.path));
+                    imagens.add(
+                      ProductImage(
+                        imagePath: photo.path,
+                        imageSequence: imagens.length + 1,
+                        productId: widget.product.itemId,
+                      ),
+                    );
                   });
                 }
               },
@@ -92,15 +103,19 @@ class _ProductImagesPageState extends State<ProductImagesPage> with TickerProvid
   }
 
   Future<void> saveTagsImages() async {
+    final dbprod = DBItems.instance;
     try {
       //final directory = await getTemporaryDirectory();
       setLoading(true);
       // Excluir as imagens e tags antigas
-      await DBItems.instance.deleteProductImagesByProduct(widget.product.itemId);
-      await DBItems.instance.deleteProductTagsByProduct(widget.product.itemId);
+      //await dbprod.deleteProductImagesByProduct(widget.product.itemId);
+      //await dbprod.deleteProductTagsByProduct(widget.product.itemId);
+
+      //await dbprod.deleteProductImageFiles(widget.product.itemId);
+      //await dbprod.deleteProduct(widget.product.itemId);
 
       // Salvar as imagens no banco de dados e preparar para envio à API
-      for (int i = 0; i < imagens.length; i++) {
+      /*for (int i = 0; i < imagens.length; i++) {
         final imagePath = imagens[i].path;
 
         await DBItems.instance.insertProductImage({
@@ -117,10 +132,10 @@ class _ProductImagesPageState extends State<ProductImagesPage> with TickerProvid
           DBItems.columnTag: t.tag,
           DBItems.columnTagProductId: widget.product.itemId,
         });
-      }
+      }*/
 
+      await dbprod.saveCompleteProduct(widget.product);
 
-      // Executar rotina adicional
       await saveTagsImagesDirFTP();
 
 
@@ -132,7 +147,6 @@ class _ProductImagesPageState extends State<ProductImagesPage> with TickerProvid
       setLoading(false);
     }
 
-    
   }
   
   Future<void> saveTagsImagesDirFTP() async {
@@ -140,7 +154,8 @@ class _ProductImagesPageState extends State<ProductImagesPage> with TickerProvid
     
     String remoteDir = '${widget.product.prodFamilyDescriptionId}/${widget.product.prodBrandDescriptionId}/'+
     '${widget.product.prodLinesDescriptionId}/${widget.product.prodDecorationDescriptionId}/${widget.product.itemId}';
-    await ftpUploader.saveTagsImagesFTP(remoteDir, widget.product.itemId, imagens, tag, context);
+    await ftpUploader.saveTagsImagesFTP(remoteDir, widget.product.itemId, imagens, tag, context); 
+    //await ftpUploader.saveTagsImagesFTP(remoteDir, widget.product.itemId, imagens, tag, context); //ProductAll productAll
   } 
   
   @override
@@ -165,8 +180,12 @@ class _ProductImagesPageState extends State<ProductImagesPage> with TickerProvid
 
       setState(() {
         imagens = imagensData.map((imageData) {
-          // Converte o caminho da imagem para um arquivo
-          return File(imageData[DBItems.columnImagePath]);
+          return ProductImage(
+            imageId: imageData['id'] ?? 0,
+            imagePath: imageData[DBItems.columnImagePath],
+            imageSequence: imageData[DBItems.columnImageSequence] ?? 0,
+            productId: imageData[DBItems.columnProductId],
+          );
         }).toList();
       });
       
@@ -395,9 +414,8 @@ class _ProductImagesPageState extends State<ProductImagesPage> with TickerProvid
                                       });
                                     },
                                     scrollDirection: Axis.horizontal,
-                                    children:
-                                        List.generate(imagens.length, (index) {
-                                      File imagem = imagens[index];
+                                    children: List.generate(imagens.length, (index) {
+                                      File imagem = File(imagens[index].imagePath);
                                       bool isSelected =
                                           isZoomed && zoomedIndex == index;
                                       return Stack(

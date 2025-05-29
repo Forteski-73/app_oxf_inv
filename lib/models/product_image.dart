@@ -27,7 +27,7 @@ class ProductImage {
       imageId:        map['id']         ?? 0,
       imagePath:      map['path']       ?? '',
       imageSequence:  map['sequence']   ?? 0,
-      productId:      map['productId'] ?? '',
+      productId:      map['productId'] ?? map['productId'] ,
     );
   }
 }
