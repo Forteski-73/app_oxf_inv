@@ -104,35 +104,10 @@ class _ProductImagesPageState extends State<ProductImagesPage> with TickerProvid
 
   Future<void> saveTagsImages() async {
     final dbprod = DBItems.instance;
+    
     try {
-      //final directory = await getTemporaryDirectory();
+
       setLoading(true);
-      // Excluir as imagens e tags antigas
-      //await dbprod.deleteProductImagesByProduct(widget.product.itemId);
-      //await dbprod.deleteProductTagsByProduct(widget.product.itemId);
-
-      //await dbprod.deleteProductImageFiles(widget.product.itemId);
-      //await dbprod.deleteProduct(widget.product.itemId);
-
-      // Salvar as imagens no banco de dados e preparar para envio à API
-      /*for (int i = 0; i < imagens.length; i++) {
-        final imagePath = imagens[i].path;
-
-        await DBItems.instance.insertProductImage({
-          DBItems.columnImagePath: imagePath,
-          DBItems.columnImageSequence: i + 1,
-          DBItems.columnProductId: widget.product.itemId,
-        });
-
-      }
-
-      // Salvar as tags no banco de dados
-      for (ProductTag t in tag) {
-        await DBItems.instance.insertProductTag({
-          DBItems.columnTag: t.tag,
-          DBItems.columnTagProductId: widget.product.itemId,
-        });
-      }*/
 
       await dbprod.saveCompleteProduct(widget.product);
 

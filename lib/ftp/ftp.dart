@@ -8,6 +8,8 @@ import '../models/product_image.dart';
 import 'package:app_oxf_inv/services/remote/oxfordonlineAPI.dart';
 import '../models/product_tag.dart';
 import 'package:app_oxf_inv/widgets/customSnackBar.dart';
+import 'package:path/path.dart' as path;
+import 'package:ftpconnect/ftpconnect.dart';
 
 class FTPUploader {
   final FTPConnect ftpConnect = FTPConnect(
@@ -39,6 +41,8 @@ class FTPUploader {
         }
         changed = await ftpConnect.changeDirectory(remoteDir);
       }
+
+      await deleteObsoleteImages(remoteDir, itemId, imagens);
 
       for (int i = 0; i < imagens.length; i++) {
         File image = File(imagens[i].imagePath);
@@ -73,11 +77,14 @@ class FTPUploader {
         );
       }
 
-      final response = await OxfordOnlineAPI.postImages(imagesForAPI);
+      if (imagesForAPI.isNotEmpty) {
+        final response = await OxfordOnlineAPI.postImages(imagesForAPI);
 
-      if (response.statusCode == 200) {
-      } else {
-        throw Exception('Erro ao enviar imagens para a API: ${response.statusCode}');
+        if (response.statusCode == 200) {
+          // sucesso
+        } else {
+          throw Exception('Erro ao enviar imagens para a API: ${response.statusCode}');
+        }
       }
 
       if (tags.isNotEmpty) {
@@ -101,47 +108,71 @@ class FTPUploader {
     }
   }
 
-  /*
-  Future<bool> sendTagsToAPI(String productId, List<String> tags, BuildContext context) async {
-    try {
-      List<ProductTag> productTags = tags.map((tag) => ProductTag(tag: tag, productId: productId)).toList();
-      final response = await OxfordOnlineAPI.postTags(productTags);
+  Future<void> deleteObsoleteImages(String remoteDir, String itemId, List<ProductImage> images) async {
+    /*final changed = await ftpConnect.changeDirectory(remoteDir);
+    if (!changed) {
+      throw Exception("Diretório remoto $remoteDir não encontrado ou não acessível.");
+    }*/
 
-      if (response.statusCode == 200 || response.statusCode == 201) {
-        print('Tags enviadas para API com sucesso.');
-        return true;
-      } else {
-        print('Erro ao enviar tags para API. Status: ${response.statusCode}');
-        print('Resposta: ${response.body}');
-        return false;
+    final remoteFiles = await ftpConnect.listDirectoryContent();
+
+    final expectedNames = images.map((img) {
+      String name = path.basename(img.imagePath);
+      return name.toUpperCase().startsWith("${itemId}_".toUpperCase())
+          ? name
+          : "${itemId}_${name.toUpperCase()}";
+    }).toList();
+
+    for (var file in remoteFiles) {
+      final fileName = file.name ?? '';
+      
+      if (file.type.toString() == 'FTPEntryType.FILE' && !expectedNames.contains(fileName)) {
+        await ftpConnect.deleteFile(fileName);
       }
-    } catch (e) {
-      print('Erro ao enviar tags para API: $e');
-      CustomSnackBar.show(context, message: 'Erro ao salvar: $e',
-        duration: const Duration(seconds: 4),type: SnackBarType.error,
-      );
-      return false;
     }
   }
-  */
 
   Future<File> _resizeImage(File imageFile) async {
-
     if (!await imageFile.exists()) {
       throw Exception("Arquivo não encontrado: ${imageFile.path}");
     }
 
     final bytes = await imageFile.readAsBytes();
+    if (bytes.isEmpty) {
+      throw Exception("Arquivo está vazio: ${imageFile.path}");
+    }
+
     img.Image? originalImage = img.decodeImage(bytes);
     if (originalImage == null) {
       throw Exception("Falha ao carregar imagem");
     }
 
-    img.Image resized = img.copyResize(originalImage, width: 500, height: 500);
+    const int targetWidth = 500;
+    const int targetHeight = 500;
+
+    img.Image resized;
+
+    bool isClose(int value, int target, [int tolerance = 5]) {
+      return (value - target).abs() <= tolerance;
+    }
+
+    if (isClose(originalImage.width, targetWidth) && isClose(originalImage.height, targetHeight)) {
+      resized = originalImage;
+    } else {
+      resized = img.copyResize(originalImage, width: targetWidth, height: targetHeight);
+    }
 
     final tempDir = await getTemporaryDirectory();
     final resizedImagePath = path.join(tempDir.path, path.basename(imageFile.path));
-    File resizedFile = File(resizedImagePath)..writeAsBytesSync(img.encodeJpg(resized, quality: 85));
+    final resizedFile = File(resizedImagePath);
+
+    // Se já existir, retorna sem sobrescrever
+    if (await resizedFile.exists()) {
+      return resizedFile;
+    }
+
+    // Caso contrário, salva o redimensionado
+    await resizedFile.writeAsBytes(img.encodeJpg(resized, quality: 85));
 
     return resizedFile;
   }
@@ -161,7 +192,8 @@ class FTPUploader {
 
     try {
       await ftpConnect.connect();
-      await ftpConnect.setTransferType(TransferType.ascii);
+      //await ftpConnect.setTransferType(TransferType.ascii);
+      await ftpConnect.setTransferType(TransferType.binary);
 
       final changed = await ftpConnect.changeDirectory(remoteDir);
       if (!changed) {
@@ -225,51 +257,4 @@ class FTPUploader {
     return productDir;
   }
 
-  /*
-  List<ProductImage> toProductImageList(List<File> files, String itemId, String remoteDir) {
-    return List.generate(files.length, (index) {
-      final fileName = path.basename(files[index].path);
-      return ProductImage(
-        imagePath: "$remoteDir/$fileName",
-        imageSequence: index + 1,
-        productId: itemId,
-      );
-    });
-  }
-  */
-  /*
-  Future<File?> downloadImageToLocal(String remoteFilePath) async {
-    try {
-      print("🔄 Conectando ao FTP para baixar imagem: $remoteFilePath");
-      await ftpConnect.connect();
-      await ftpConnect.setTransferType(TransferType.binary);
-
-      final directory = path.dirname(remoteFilePath);
-      final fileName = path.basename(remoteFilePath);
-
-      final changed = await ftpConnect.changeDirectory(directory);
-      if (!changed) {
-        throw Exception("❌ Diretório remoto não encontrado: $directory");
-      }
-
-      final tempDir = await getTemporaryDirectory();
-      final localFile = File(path.join(tempDir.path, fileName));
-
-      final success = await ftpConnect.downloadFile(fileName, localFile);
-      if (success) {
-        print("✅ Imagem baixada com sucesso: $fileName");
-        return localFile;
-      } else {
-        print("⚠️ Falha ao baixar imagem: $fileName");
-        return null;
-      }
-    } catch (e) {
-      print("❌ Erro ao baixar imagem do FTP: $e");
-      return null;
-    } finally {
-      await ftpConnect.disconnect();
-      print("🔌 Conexão com o FTP encerrada.");
-    }
-  }
-  */
 }
