@@ -19,50 +19,83 @@ class FTPUploader {
     timeout: 60,
   );
 
-  Future<void> saveTagsImagesFTP(String remoteDir, String itemId, List<ProductImage> imagens, List<ProductTag> tags, BuildContext context) async {
+  Future<void> saveTagsImagesFTP(
+    String remoteDir,
+    String itemId,
+    List<ProductImage> imagens,
+    List<ProductTag> tags,
+    BuildContext context,
+  ) async {
     List<ProductImage> imagesForAPI = [];
 
     try {
-
+      // Conectar ao FTP e setar tipo binário
       bool changed = await ftpConnect.connect();
       await ftpConnect.setTransferType(TransferType.binary);
 
+      // Ajustar remoteDir para não ter espaços
       remoteDir = remoteDir.replaceAll(" ", "_");
       final parts = remoteDir.split("/");
       String currentPath = "";
 
+      // Tentar trocar para diretório remoto
       changed = await ftpConnect.changeDirectory(remoteDir);
       if (!changed) {
+        // Se não existe, criar diretórios hierarquicamente
         for (var part in parts) {
           currentPath = currentPath.isNotEmpty ? "$currentPath/$part" : part;
           try {
             await ftpConnect.makeDirectory(currentPath);
-          } catch (_) {}
+          } catch (_) {
+            // Ignorar erro se pasta já existir
+          }
         }
         changed = await ftpConnect.changeDirectory(remoteDir);
       }
 
+      // Deletar imagens obsoletas (supondo que esta função esteja correta)
       await deleteObsoleteImages(remoteDir, itemId, imagens);
+
+      // Criar diretório temporário com código do produto
+      final tempDir = await getTemporaryDirectory();
+      final productTempDir = Directory('${tempDir.path}/$itemId');
+      if (!await productTempDir.exists()) {
+        await productTempDir.create(recursive: true);
+      }
 
       for (int i = 0; i < imagens.length; i++) {
         File image = File(imagens[i].imagePath);
         File resizedImage = await _resizeImage(image);
 
-        // Obter nome original e extensão
+        // Log para checar se o resize gerou arquivo válido
+        int resizedLength = await resizedImage.length();
+        print("Tamanho do arquivo redimensionado: $resizedLength bytes");
+        if (resizedLength == 0) {
+          throw Exception("Imagem redimensionada está vazia: ${resizedImage.path}");
+        }
+
         String originalName = path.basenameWithoutExtension(resizedImage.path);
         String extension = path.extension(resizedImage.path);
 
-        // Novo nome mantendo a extensão original
+        // Criar novo nome com o padrão correto
         String newFileName = originalName.toUpperCase().startsWith("${itemId}_".toUpperCase())
-          ? "$originalName$extension"
-          : "${itemId}_${originalName.toUpperCase()}$extension";
+            ? "$originalName$extension"
+            : "${itemId}_${originalName.toUpperCase()}$extension";
 
-        // Criar arquivo temporário com novo nome
-        final tempDir = await getTemporaryDirectory();
-        final renamedImage = await resizedImage.copy('${tempDir.path}/$newFileName');
+        // Copiar arquivo para o diretório temporário específico do produto
+        final renamedImage = await resizedImage.copy('${productTempDir.path}/$newFileName');
+
+        int renamedLength = await renamedImage.length();
+        
+        print("Arquivo temporário criado em: ${renamedImage.path} - tamanho: $renamedLength bytes");
+        
+        if (renamedLength == 0) {
+          throw Exception("Arquivo temporário criado está vazio: ${renamedImage.path}");
+        }
 
         String imagePath = "$remoteDir/$newFileName";
 
+        // Fazer upload para o FTP
         bool uploaded = await ftpConnect.uploadFile(renamedImage);
         if (!uploaded) {
           throw Exception("Falha ao enviar a imagem: $newFileName");
@@ -77,6 +110,7 @@ class FTPUploader {
         );
       }
 
+      // Enviar lista de imagens para API, se houver
       if (imagesForAPI.isNotEmpty) {
         final response = await OxfordOnlineAPI.postImages(imagesForAPI);
 
@@ -87,21 +121,26 @@ class FTPUploader {
         }
       }
 
+      // Enviar tags para API, se houver
       if (tags.isNotEmpty) {
         final tagResponse = await OxfordOnlineAPI.postTags(tags);
         if (tagResponse.statusCode == 200 || tagResponse.statusCode == 201) {
+          CustomSnackBar.show(
+            context,
+            message: 'Imagens enviadas com sucesso!',
+            duration: const Duration(seconds: 3),
+            type: SnackBarType.success,
+          );
         } else {
           throw Exception("Erro ao enviar tags para a API: ${tagResponse.statusCode}");
         }
-
-        CustomSnackBar.show(context, message: 'Imagens enviadas com sucesso!',
-          duration: const Duration(seconds: 3),type: SnackBarType.success,
-        );
-        
       }
     } catch (e) {
-      CustomSnackBar.show(context, message: 'Erro ao salvar: $e',
-        duration: const Duration(seconds: 4),type: SnackBarType.error,
+      CustomSnackBar.show(
+        context,
+        message: 'Erro ao salvar: $e',
+        duration: const Duration(seconds: 4),
+        type: SnackBarType.error,
       );
     } finally {
       await ftpConnect.disconnect();
@@ -187,53 +226,64 @@ class FTPUploader {
         ext.endsWith('.webp');
   }
 
-  Future<List<ProductImage>> fetchImagesFromFTP(String remoteDir, String productId, BuildContext context) async {
-    final List<ProductImage> images = [];
+  Future<List<ProductImage>> fetchImagesFromFTP(
+    String remoteDir,
+    String productId,
+    List<ProductImage> imagens, // lista com imagePaths remotos que queremos baixar
+    BuildContext context,
+  ) async {
+    final List<ProductImage> downloadedImages = [];
 
     try {
       await ftpConnect.connect();
-      //await ftpConnect.setTransferType(TransferType.ascii);
-      await ftpConnect.setTransferType(TransferType.binary);
+      //await ftpConnect.setTransferType(TransferType.binary);
+      await ftpConnect.setTransferType(TransferType.ascii);
 
       final changed = await ftpConnect.changeDirectory(remoteDir);
       if (!changed) {
         throw Exception("Diretório remoto não encontrado: $remoteDir");
       }
 
+      final tempDir = await createTempProductDirectory(productId); // diretório local temporário
+
+      // Pegamos a lista dos arquivos no FTP, para validar existência
       final files = await ftpConnect.listDirectoryContent();
+      final ftpFileNames = files.where((f) => f.type.toString().endsWith('FILE')).map((f) => f.name).toSet();
 
-      await ftpConnect.setTransferType(TransferType.binary);
-
-      final tempDir = await createTempProductDirectory(productId); //await getTemporaryDirectory();
       int sequence = 1;
+      
+      await ftpConnect.setTransferType(TransferType.binary);
+      // Para cada imagem da lista que você passou, extrair o nome do arquivo e baixar se existir no FTP
+      for (final img in imagens) {
+        final fileName = path.basename(img.imagePath);
 
-      for (final file in files) {
-        final name = file.name;
+        if (ftpFileNames.contains(fileName)) {
+          final localFile = File(path.join(tempDir.path, fileName));
 
-        if (file.type.toString().endsWith('FILE') &&
-            name != '.' &&
-            name != '..' &&
-            _isImageFile(name.toLowerCase())) {
-
-          bool success = await ftpConnect.downloadFile(name, File(path.join(tempDir.path, name)));
+          bool success = await ftpConnect.downloadFile(fileName, localFile);
 
           if (success) {
-            images.add(ProductImage(
-              imagePath: path.join(tempDir.path, name),
+            downloadedImages.add(ProductImage(
+              imagePath: localFile.path, // caminho local onde foi salvo
               imageSequence: sequence++,
               productId: productId,
             ));
           } else {
-            throw Exception("Falha definitiva ao baixar arquivo: $name");
+            throw Exception("Falha ao baixar arquivo: $fileName");
           }
+        } else {
+          // Opcional: se o arquivo não existir no FTP, você pode optar por lançar erro ou ignorar
+          print("Arquivo $fileName não encontrado no FTP em $remoteDir");
         }
       }
 
-      return images;
-      
+      return downloadedImages;
     } catch (e) {
-      CustomSnackBar.show(context, message: 'Erro ao baixar imagem: $e',
-        duration: const Duration(seconds: 3),type: SnackBarType.error,
+      CustomSnackBar.show(
+        context,
+        message: 'Erro ao baixar imagem: $e',
+        duration: const Duration(seconds: 3),
+        type: SnackBarType.error,
       );
       return [];
     } finally {

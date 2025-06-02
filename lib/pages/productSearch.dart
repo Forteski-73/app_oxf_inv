@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:io';
+import 'package:app_oxf_inv/models/product_image.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:app_oxf_inv/widgets/customSnackBar.dart';
@@ -10,6 +11,7 @@ import '../models/product.dart';
 import '../models/product_all.dart';
 import 'productDetail.dart';
 import '../utils/globals.dart' as globals;
+
 
 // RouteObserver para detectar retorno da tela de detalhes
 final RouteObserver<PageRoute> routeObserver = RouteObserver<PageRoute>();
@@ -83,6 +85,10 @@ class _ProductSearchPageState extends State<ProductSearchPage>
       List<ProductAll> products = [];
 
       if (globals.isOnline) {
+
+        // Verifica se tem itens para sincronizar
+        //await OxfordOnlineAPI.getProducts();
+
         products = await OxfordOnlineAPI.getProducts();
 
         await OxfordLocalLite().saveAllProductsLocally(products, context);
@@ -398,27 +404,27 @@ class _ProductSearchPageState extends State<ProductSearchPage>
                           ],
                         ),
                         onTap: () async {
-                          
                           ProductAll productSelect = product;
 
-                          final result = await Navigator.push(
+                          await Navigator.push(
                             context,
                             MaterialPageRoute(
                               builder: (context) => ProductDetailsPage(product: productSelect),
                             ),
                           );
+                          final result = globals.imagesData;
+                          final index = _allProducts.indexWhere((p) => p.itemId == result.first.productId);
+                          if (index != -1) {
+                            setState(() {
+                              // Atualiza o caminho da imagem
+                              _allProducts[index].path = result.first.imagePath;
 
-                          if (result != null && result is Product) {
-                            final index =
-                                _allProducts.indexWhere((p) => p.itemId == result.itemId);
-                            if (index != -1) {
-                              setState(() {
-                                _allProducts[index] = ProductAll.fromMap(result.toMap());
-                                _filteredProducts = List.from(_allProducts);
-                              });
-                            }
+                              // Atualiza também a lista filtrada
+                              _filteredProducts = List.from(_allProducts);
+                            });
                           }
-                        },
+                        
+                        }
                       ),
                     );
                   },

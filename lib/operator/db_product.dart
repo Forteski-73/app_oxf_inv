@@ -5,6 +5,7 @@ import '../../models/product_all.dart';
 import '../../models/product_image.dart';
 import 'dart:io';
 import '../../models/product_tag.dart';
+import '../utils/globals.dart' as globals;
 
 class DBItems {
   static const _databaseName        = "product.db";
@@ -47,6 +48,8 @@ class DBItems {
   static const columnTagId        = '_id';
   static const columnTag          = 'valueTag';
   static const columnTagProductId = 'productId';
+
+  static const columnSync         = 'sync'; // sincronizado com a nuvem?
 
     // Instancia o construtor DB
   DBItems._privateConstructor();
@@ -125,6 +128,7 @@ class DBItems {
         $columnImageId           INTEGER PRIMARY KEY AUTOINCREMENT,
         $columnImagePath         TEXT UNIQUE,
         $columnImageSequence     INTEGER,
+        $columnSync              INTEGER,
         $columnProductId         TEXT,
         FOREIGN KEY ($columnProductId) REFERENCES $tableProducts($columnItemId) ON DELETE CASCADE
       );
@@ -136,6 +140,7 @@ class DBItems {
       CREATE TABLE $tableProductTags (
         $columnTagId        INTEGER PRIMARY KEY AUTOINCREMENT,
         $columnTag          TEXT UNIQUE,
+        $columnSync         INTEGER,
         $columnTagProductId TEXT,
         FOREIGN KEY ($columnTagProductId) REFERENCES $tableProducts($columnItemId) ON DELETE CASCADE
       );
@@ -411,6 +416,7 @@ class DBItems {
       await db.insertProductImage({
         DBItems.columnImagePath: productAll.productImages[i].imagePath,
         DBItems.columnImageSequence: productAll.productImages[i].imageSequence,
+        DBItems.columnSync: globals.isOnline ? 1 : 0,
         DBItems.columnProductId: productAll.itemId,
       });
     }
@@ -422,9 +428,75 @@ class DBItems {
     for (final tag in productAll.productTags) {
       await db.insertProductTag({
         DBItems.columnTag: tag.tag,
+        DBItems.columnSync: globals.isOnline ? 1 : 0,
         DBItems.columnTagProductId: productAll.itemId,
       });
     }
   }
+
+
+  //-----------------------MÉTODO PARA NÃO SINCRONIZADOS//------------------------
+
+  Future<Map<String, List<ProductImage>>> getUnsyncedImages() async {
+    final db = await database;
+
+    // Usando db.query e selecionando colunas explicitamente
+    final List<Map<String, dynamic>> results = await db.query(
+      tableProductImages,
+      columns: [
+        columnImageId,
+        columnProductId,
+        columnImagePath,
+        columnImageSequence,
+      ],
+      where: '$columnSync = ?',
+      whereArgs: [0],
+      orderBy: '$columnProductId, $columnImageSequence',
+    );
+
+    // Agrupando com fold para manter o padrão funcional
+    final images = results.fold<Map<String, List<ProductImage>>>(
+      {},
+      (map, row) {
+        final productId = row[columnProductId] as String;
+        final image = ProductImage.fromMap(row);
+        map.putIfAbsent(productId, () => []).add(image);
+        return map;
+      },
+    );
+
+    return images;
+  }
+
+  Future<Map<String, List<ProductTag>>> getUnsyncedTags() async {
+    final db = await database;
+
+    final List<Map<String, dynamic>> results = await db.query(
+      tableProductTags,
+      columns: [
+        columnTagId,
+        columnTag,
+        columnTagProductId,
+      ],
+      where: '$columnSync = ?',
+      whereArgs: [0],
+      orderBy: '$columnTagProductId',
+    );
+
+    final tags = results.fold<Map<String, List<ProductTag>>>(
+      {},
+      (map, row) {
+        final productId = row[columnTagProductId] as String;
+        final tag = ProductTag.fromMap(row);
+        map.putIfAbsent(productId, () => []).add(tag);
+        return map;
+      },
+    );
+
+    return tags;
+  }
+
+
+  //------------------------------------------------------------------------------
 
 }

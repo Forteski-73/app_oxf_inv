@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:app_oxf_inv/main.dart'; 
 import '../models/product.dart';
 import '../models/product_all.dart';
 import 'dart:io';
@@ -24,50 +25,34 @@ class ProductDetailsPage extends StatefulWidget {
   _ProductDetailsPageState createState() => _ProductDetailsPageState();
 }
 
-class _ProductDetailsPageState extends State<ProductDetailsPage> {
+class _ProductDetailsPageState extends State<ProductDetailsPage> with RouteAware {
   final PageController _pageController = PageController();
   String? imagePath;
   List<File> imagens = [];
+  //List<ProductImage> imagensData = [];
 
   @override
   void initState() {
     super.initState();
     _loadProductImage();
   }
-  /*
-  Future<void> _loadProductImage() async {
-    try {
-      // Busca imagens do produto pelo seu ID
-      final List<Map<String, dynamic>> imagensData = await DBItems.instance.getProductImages(widget.product.itemId);
 
-      // Ordena as imagens pelo campo 'columnImageSequence' de forma crescente
-      imagensData.sort((a, b) => a[DBItems.columnImageSequence].compareTo(b[DBItems.columnImageSequence]));
-
-      setState(() {
-        imagens = imagensData.map((imageData) {
-          // Converte o caminho da imagem para um arquivo
-          return File(imageData[DBItems.columnImagePath]);
-        }).toList();
-
-        // Exibe a primeira imagem, se houver
-        if (imagens.isNotEmpty) {
-          imagePath = imagens[0].path;
-          widget.product.setPath(imagePath.toString());
-        }
-      });
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: Text('Erro ao carregar imagens: $e'),
-      ));
-    }
+  @override
+  void dispose() {
+    routeObserver.unsubscribe(this); // se estiver usando routeObserver
+    super.dispose();
   }
- */
+
+  @override
+  void didPopNext() {
+    // Página voltou ao foco (ex: após editar imagens)
+    _loadProductImage(); // Atualiza as imagens
+  }
 
   Future<void> _loadProductImage() async {
     try {
       bool status = true;
       FTPUploader ftpUploader = FTPUploader();
-      List<ProductImage> imagensData = [];
       List<File> ImagesFromFTP = [];
 
       if (globals.isOnline) {
@@ -78,11 +63,11 @@ class _ProductDetailsPageState extends State<ProductDetailsPage> {
       }
 
       // Busca imagens do produto pelo seu ID usando OxfordLocalLite.dart
-      imagensData = await OxfordLocalLite().getProductImages(widget.product.itemId);
+      globals.imagesData = await OxfordLocalLite().getProductImages(widget.product.itemId);
       
 
       setState(() {
-        imagens = imagensData.map((image) {
+        imagens = globals.imagesData.map((image) {
           final file = File(image.imagePath);
 
           return file;
@@ -329,13 +314,18 @@ class _ProductDetailsPageState extends State<ProductDetailsPage> {
             IconButton(
               icon: const Icon(Icons.edit, size: 30, color: Colors.blueAccent),
               onPressed: () async {
-                await Navigator.push(
+                final imagensAtualizadas = await Navigator.push(
                   context,
                   MaterialPageRoute(
                     builder: (context) => ProductImagesPage(product: widget.product),
                   ),
                 );
-                _loadProductImage(); // Recarrega imagens após edição
+
+                if (imagensAtualizadas != null && imagensAtualizadas is List<ProductImage>) {
+                  setState(() {
+                    imagens = imagensAtualizadas.map((img) => File(img.imagePath)).toList();
+                  });
+                }
               },
               tooltip: 'Editar imagens',
             ),

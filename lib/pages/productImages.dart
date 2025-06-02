@@ -7,6 +7,7 @@ import 'package:app_oxf_inv/operator/db_product.dart';
 import '../models/product_image.dart';
 import '../models/product_tag.dart';
 import '../models/product_all.dart';
+import '../utils/globals.dart' as globals;
 import '../ftp/ftp.dart';
 
 class ProductImagesPage extends StatefulWidget {
@@ -23,7 +24,7 @@ class _ProductImagesPageState extends State<ProductImagesPage> with TickerProvid
   List<ProductTag> tag = [];
   final TextEditingController _caracteristicaController = TextEditingController();
   //List<File> imagens = [];
-  List<ProductImage> imagens = [];
+  //List<ProductImage> imagens = [];
   int? imagemPrincipalIndex;
   bool isLoading = false;
   bool isZoomed = false;
@@ -40,7 +41,7 @@ class _ProductImagesPageState extends State<ProductImagesPage> with TickerProvid
 
   void removerImagem(int index) {
     setState(() {
-      imagens.removeAt(index);
+      globals.imagesData.removeAt(index);
       if (imagemPrincipalIndex == index) {
         imagemPrincipalIndex = null;
       }
@@ -68,9 +69,9 @@ class _ProductImagesPageState extends State<ProductImagesPage> with TickerProvid
                 final List<XFile>? pickedFiles = await picker.pickMultiImage();
                 if (pickedFiles != null && pickedFiles.isNotEmpty) {
                   setState(() {
-                    imagens.addAll(pickedFiles.map((file) => ProductImage(
+                    globals.imagesData.addAll(pickedFiles.map((file) => ProductImage(
                       imagePath: file.path,
-                      imageSequence: imagens.length + 1,
+                      imageSequence: globals.imagesData.length + 1,
                       productId: widget.product.itemId,
                     )));
                   });
@@ -85,10 +86,10 @@ class _ProductImagesPageState extends State<ProductImagesPage> with TickerProvid
                 final XFile? photo = await picker.pickImage(source: ImageSource.camera);
                 if (photo != null) {
                   setState(() {
-                    imagens.add(
+                    globals.imagesData.add(
                       ProductImage(
                         imagePath: photo.path,
-                        imageSequence: imagens.length + 1,
+                        imageSequence: globals.imagesData.length + 1,
                         productId: widget.product.itemId,
                       ),
                     );
@@ -109,10 +110,13 @@ class _ProductImagesPageState extends State<ProductImagesPage> with TickerProvid
 
       setLoading(true);
 
-      await dbprod.saveCompleteProduct(widget.product);
+      await dbprod.saveCompleteProduct(widget.product); 
 
-      await saveTagsImagesDirFTP();
+      if (globals.isOnline) {
+        await saveTagsImagesDirFTP();
+      }
 
+      Navigator.pop(context, globals.imagesData); // Retorna true para a tela anterior
 
     } catch (e) {
       CustomSnackBar.show(context, message: 'Erro ao salvar imagens e tags: $e',
@@ -121,7 +125,6 @@ class _ProductImagesPageState extends State<ProductImagesPage> with TickerProvid
     } finally {
       setLoading(false);
     }
-
   }
   
   Future<void> saveTagsImagesDirFTP() async {
@@ -129,7 +132,7 @@ class _ProductImagesPageState extends State<ProductImagesPage> with TickerProvid
     
     String remoteDir = '${widget.product.prodFamilyDescriptionId}/${widget.product.prodBrandDescriptionId}/'+
     '${widget.product.prodLinesDescriptionId}/${widget.product.prodDecorationDescriptionId}/${widget.product.itemId}';
-    await ftpUploader.saveTagsImagesFTP(remoteDir, widget.product.itemId, imagens, tag, context); 
+    await ftpUploader.saveTagsImagesFTP(remoteDir, widget.product.itemId, globals.imagesData, tag, context); 
     //await ftpUploader.saveTagsImagesFTP(remoteDir, widget.product.itemId, imagens, tag, context); //ProductAll productAll
   } 
   
@@ -154,7 +157,7 @@ class _ProductImagesPageState extends State<ProductImagesPage> with TickerProvid
       imagensData.sort((a, b) => a[DBItems.columnImageSequence].compareTo(b[DBItems.columnImageSequence]));
 
       setState(() {
-        imagens = imagensData.map((imageData) {
+        globals.imagesData = imagensData.map((imageData) {
           return ProductImage(
             imageId: imageData['id'] ?? 0,
             imagePath: imageData[DBItems.columnImagePath],
@@ -384,13 +387,13 @@ class _ProductImagesPageState extends State<ProductImagesPage> with TickerProvid
                                   child: ReorderableWrap(
                                     onReorder: (oldIndex, newIndex) {
                                       setState(() {
-                                        final imagem = imagens.removeAt(oldIndex);
-                                        imagens.insert(newIndex, imagem);
+                                        final imagem = globals.imagesData.removeAt(oldIndex);
+                                        globals.imagesData.insert(newIndex, imagem);
                                       });
                                     },
                                     scrollDirection: Axis.horizontal,
-                                    children: List.generate(imagens.length, (index) {
-                                      File imagem = File(imagens[index].imagePath);
+                                    children: List.generate(globals.imagesData.length, (index) {
+                                      File imagem = File(globals.imagesData[index].imagePath);
                                       bool isSelected =
                                           isZoomed && zoomedIndex == index;
                                       return Stack(
