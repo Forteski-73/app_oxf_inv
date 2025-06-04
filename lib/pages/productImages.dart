@@ -132,7 +132,7 @@ class _ProductImagesPageState extends State<ProductImagesPage> with TickerProvid
     
     String remoteDir = '${widget.product.prodFamilyDescriptionId}/${widget.product.prodBrandDescriptionId}/'+
     '${widget.product.prodLinesDescriptionId}/${widget.product.prodDecorationDescriptionId}/${widget.product.itemId}';
-    await ftpUploader.saveTagsImagesFTP(remoteDir, widget.product.itemId, globals.imagesData, tag, context); 
+    await ftpUploader.saveTagsImagesFTP(remoteDir, widget.product.itemId, globals.imagesData, tag); 
     //await ftpUploader.saveTagsImagesFTP(remoteDir, widget.product.itemId, imagens, tag, context); //ProductAll productAll
   } 
   

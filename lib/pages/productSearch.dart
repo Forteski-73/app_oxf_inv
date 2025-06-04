@@ -87,13 +87,13 @@ class _ProductSearchPageState extends State<ProductSearchPage>
       if (globals.isOnline) {
 
         // Verifica se tem itens para sincronizar
-        //await OxfordOnlineAPI.getProducts();
+        await OxfordOnlineAPI.syncUnsyncedData();
 
         products = await OxfordOnlineAPI.getProducts();
 
         await OxfordLocalLite().saveAllProductsLocally(products, context);
 
-      } 
+      }
         products = await DBItems.instance.getAllProducts1();
 
       

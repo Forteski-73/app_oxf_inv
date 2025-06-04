@@ -24,7 +24,6 @@ class FTPUploader {
     String itemId,
     List<ProductImage> imagens,
     List<ProductTag> tags,
-    BuildContext context,
   ) async {
     List<ProductImage> imagesForAPI = [];
 
@@ -125,23 +124,24 @@ class FTPUploader {
       if (tags.isNotEmpty) {
         final tagResponse = await OxfordOnlineAPI.postTags(tags);
         if (tagResponse.statusCode == 200 || tagResponse.statusCode == 201) {
-          CustomSnackBar.show(
+          /*CustomSnackBar.show(
             context,
             message: 'Imagens enviadas com sucesso!',
             duration: const Duration(seconds: 3),
             type: SnackBarType.success,
-          );
+          );*/
         } else {
           throw Exception("Erro ao enviar tags para a API: ${tagResponse.statusCode}");
         }
       }
     } catch (e) {
-      CustomSnackBar.show(
+      /*CustomSnackBar.show(
         context,
         message: 'Erro ao salvar: $e',
         duration: const Duration(seconds: 4),
         type: SnackBarType.error,
-      );
+      );*/
+      throw Exception("Erro ao salvar: $e");
     } finally {
       await ftpConnect.disconnect();
     }

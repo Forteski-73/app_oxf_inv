@@ -497,6 +497,26 @@ class DBItems {
   }
 
 
+  Future<void> markImageAsSynced(ProductImage image) async {
+    final db = await database;
+    await db.update(
+      'product_images',
+      {'is_synced': 1},
+      where: 'id = ? AND productId = ?',
+      whereArgs: [image.imageId, image.productId],
+    );
+  }
+
+  Future<void> markTagAsSynced(ProductTag tag) async {
+    final db = await database;
+    await db.update(
+      'product_tags',
+      {'is_synced': 1},
+      where: 'valueTag = ? AND productId = ?',
+      whereArgs: [tag.tag, tag.productId],
+    );
+  }
+
   //------------------------------------------------------------------------------
 
 }

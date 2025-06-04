@@ -6,6 +6,8 @@ import '../../models/product_all.dart';
 import '../../models/product_tag.dart';
 import 'package:app_oxf_inv/operator/db_product.dart';
 import 'package:flutter/foundation.dart';
+import 'package:app_oxf_inv/operator/db_product.dart';
+import 'package:app_oxf_inv/ftp/ftp.dart';
 
 class OxfordOnlineAPI {
   static const String _baseUrl = 'https://oxfordonline.fly.dev/api';
@@ -57,21 +59,6 @@ static Future<http.Response> postProducts(List<Product> products) async {
     }
     return null;
   }
-
-  /*
-  /// Busca todas as imagens de um produto e retorna uma lista de ProductImage.
-  static Future<List<ProductImage>> getImagesByProductId(String productId) async {
-    final url = Uri.parse('$_baseUrl/Image/Product/$productId');
-    final response = await http.get(url, headers: _headers);
-
-    if (response.statusCode == 200) {
-      final List<dynamic> list = jsonDecode(response.body);
-      return list.map((json) => ProductImage.fromMap(json)).toList();
-    }
-
-    return [];
-  }
-  */
 
   /// Busca todas as imagens de um produto, salva no banco local e retorna uma lista de ProductImage.
   static Future<List<ProductImage>> getImagesByProductId(String productId) async {
@@ -153,4 +140,44 @@ static Future<http.Response> postProducts(List<Product> products) async {
     }
   }
   
+    
+  static Future<void> syncUnsyncedData() async {
+    final db = DBItems.instance;
+    final ftpUploader = FTPUploader();
+
+    // Obtém dados não sincronizados
+    final Map<String, List<ProductImage>> imagesMap = await db.getUnsyncedImages();
+    final Map<String, List<ProductTag>> tagsMap = await db.getUnsyncedTags();
+
+    // Para cada produto (itemId), envia as imagens e tags usando FTPUploader.saveTagsImagesFTP
+    for (final itemId in imagesMap.keys) {
+      final images = imagesMap[itemId] ?? [];
+      final tags = tagsMap[itemId] ?? [];
+
+      if (images.isEmpty && tags.isEmpty) {
+        continue; // Nada para enviar para este itemId
+      }
+
+      try {
+        // Ajuste do diretório remoto, pode ser customizado conforme sua regra
+        final remoteDir = 'remote_images/$itemId';
+
+        // Envia via FTP + API
+        await ftpUploader.saveTagsImagesFTP(remoteDir, itemId, images, tags);
+
+        // Se chegou aqui, marcou com sucesso, então marca os dados como sincronizados no banco local
+        for (final image in images) {
+          await db.markImageAsSynced(image);
+        }
+        for (final tag in tags) {
+          await db.markTagAsSynced(tag);
+        }
+
+      } catch (e) {
+        debugPrint('Erro ao sincronizar item $itemId: $e');
+        // Você pode optar por mostrar uma mensagem no UI ou continuar a próxima iteração
+      }
+    }
+  }
+
 }
