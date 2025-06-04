@@ -3,12 +3,14 @@ class ProductImage {
   final String  imagePath;
   final int     imageSequence;
   final String  productId;
+  final int     sync;
 
   ProductImage({
     this.imageId        = 0,
     this.imagePath      = '',
     this.imageSequence  = 0,
     this.productId      = '',
+    this.sync           = 0,
   });
 
   // Converte para Map (para inserção no banco)
@@ -18,6 +20,7 @@ class ProductImage {
       'path':       imagePath,
       'sequence':   imageSequence,
       'productId':  productId,
+      'sync':       sync,
     };
   }
 
@@ -28,6 +31,7 @@ class ProductImage {
       imagePath:      map['path']       ?? '',
       imageSequence:  map['sequence']   ?? 0,
       productId:      map['productId'] ?? map['productId'] ,
+      sync:           map['sync']       ?? 0,
     );
   }
 }

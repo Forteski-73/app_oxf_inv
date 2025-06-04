@@ -402,7 +402,7 @@ class DBItems {
     );
   }
 
-  Future<void> saveCompleteProduct(ProductAll productAll) async {
+  Future<void> saveCompleteProduct(ProductAll productAll, List<ProductImage> imagens) async {
     final db = DBItems.instance;
 
     // 1. Insere/atualiza o produto base na tabela 'products'
@@ -412,10 +412,10 @@ class DBItems {
     await db.deleteProductImagesByProduct(productAll.itemId);
 
     // 3. Insere novas imagens
-    for (int i = 0; i < productAll.productImages.length; i++) {
+    for (int i = 0; i < imagens.length; i++) {
       await db.insertProductImage({
-        DBItems.columnImagePath: productAll.productImages[i].imagePath,
-        DBItems.columnImageSequence: productAll.productImages[i].imageSequence,
+        DBItems.columnImagePath: imagens[i].imagePath,
+        DBItems.columnImageSequence: imagens[i].imageSequence,
         DBItems.columnSync: globals.isOnline ? 1 : 0,
         DBItems.columnProductId: productAll.itemId,
       });
@@ -439,6 +439,10 @@ class DBItems {
 
   Future<Map<String, List<ProductImage>>> getUnsyncedImages() async {
     final db = await database;
+
+
+    final all = await db.query(tableProductImages);
+    print(all);
 
     // Usando db.query e selecionando colunas explicitamente
     final List<Map<String, dynamic>> results = await db.query(

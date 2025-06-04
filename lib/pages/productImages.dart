@@ -110,7 +110,7 @@ class _ProductImagesPageState extends State<ProductImagesPage> with TickerProvid
 
       setLoading(true);
 
-      await dbprod.saveCompleteProduct(widget.product); 
+      await dbprod.saveCompleteProduct(widget.product, globals.imagesData); 
 
       if (globals.isOnline) {
         await saveTagsImagesDirFTP();
