@@ -4,6 +4,406 @@ import 'package:image/image.dart' as img;
 import 'package:ftpconnect/ftpconnect.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart' as path;
+import 'package:app_oxf_inv/services/remote/oxfordonlineAPI.dart';
+import '../models/product_all.dart';
+import '../models/product_tag.dart';
+import '../models/product_image.dart';
+import 'package:app_oxf_inv/widgets/customSnackBar.dart';
+import 'package:app_oxf_inv/ftp/ftp_config.dart';
+import '../utils/globals.dart' as globals;
+
+
+class FTPUploader {
+  late final FTPConnect ftpConnect;
+
+  FTPUploader() {
+    ftpConnect = FTPConfigManager().createFTPConnect();
+  }
+
+  Future<void> saveTagsImagesFTP(
+    String remoteDir,
+    String itemId,
+    List<ProductImage> imagens,
+    List<ProductTag> tags,
+  ) async {
+    List<ProductImage> imagesForAPI = [];
+
+    try {
+      await ftpConnect.connect();
+      await ftpConnect.setTransferType(TransferType.binary);
+
+      // Ajustar remoteDir para não ter espaços
+      remoteDir = remoteDir.replaceAll(" ", "_");
+      final parts = remoteDir.split("/");
+      String currentPath = "";
+
+      // Criar diretórios se não existirem
+      bool changed = await ftpConnect.changeDirectory(remoteDir);
+      if (!changed) {
+        for (var part in parts) {
+          currentPath = currentPath.isNotEmpty ? "$currentPath/$part" : part;
+          try {
+            await ftpConnect.makeDirectory(currentPath);
+          } catch (_) {
+            // Ignorar se já existir
+          }
+        }
+        changed = await ftpConnect.changeDirectory(remoteDir);
+      }
+
+      await deleteObsoleteImages(remoteDir, itemId, imagens);
+
+      final tempDir = await getTemporaryDirectory();
+      final productTempDir = Directory('${tempDir.path}/$itemId');
+      if (!await productTempDir.exists()) {
+        await productTempDir.create(recursive: true);
+      }
+
+      for (int i = 0; i < imagens.length; i++) {
+        File image = File(imagens[i].imagePath);
+        File resizedImage = await _resizeImage(image);
+
+        if (await resizedImage.length() == 0) {
+          throw Exception("Imagem redimensionada está vazia: ${resizedImage.path}");
+        }
+
+        String originalName = path.basenameWithoutExtension(resizedImage.path);
+        String extension = path.extension(resizedImage.path);
+        String newFileName = originalName.toUpperCase().startsWith("${itemId}_".toUpperCase())
+            ? "$originalName$extension"
+            : "${itemId}_${originalName.toUpperCase()}$extension";
+
+        final renamedImage = await resizedImage.copy('${productTempDir.path}/$newFileName');
+
+        if (await renamedImage.length() == 0) {
+          throw Exception("Arquivo temporário criado está vazio: ${renamedImage.path}");
+        }
+
+        bool uploaded = await ftpConnect.uploadFile(renamedImage);
+        if (!uploaded) {
+          throw Exception("Falha ao enviar a imagem: $newFileName");
+        }
+
+        imagesForAPI.add(
+          ProductImage(
+            imagePath: "$remoteDir/$newFileName",
+            imageSequence: i + 1,
+            productId: itemId,
+          ),
+        );
+      }
+
+      if (imagesForAPI.isNotEmpty) {
+        final response = await OxfordOnlineAPI.postImages(imagesForAPI);
+        if (response.statusCode != 200) {
+          throw Exception('Erro ao enviar imagens para a API: ${response.statusCode}');
+        }
+      }
+
+      if (tags.isNotEmpty) {
+        final tagResponse = await OxfordOnlineAPI.postTags(tags);
+        if (tagResponse.statusCode != 200 && tagResponse.statusCode != 201) {
+          throw Exception("Erro ao enviar tags para a API: ${tagResponse.statusCode}");
+        }
+      }
+    } catch (e) {
+      throw Exception("Erro ao salvar: $e");
+    } finally {
+      await ftpConnect.disconnect();
+    }
+  }
+
+  Future<void> saveProductAllFTP(List<ProductAll> products) async {
+    try {
+      await ftpConnect.connect();
+      await ftpConnect.setTransferType(TransferType.binary);
+
+      for (final product in products) {
+        final String itemId = product.itemId;
+        final List<ProductImage> imagens = product.productImages;
+        final List<ProductTag> tags = product.productTags;
+        String remoteDir = (product.path ?? "").replaceAll(" ", "_");
+
+        if (remoteDir.isEmpty) {
+          throw Exception("O caminho remoto (path) está vazio para o itemId: $itemId");
+        }
+
+        final parts = remoteDir.split("/");
+        String currentPath = "";
+
+        // Criar diretórios se não existirem
+        bool changed = await ftpConnect.changeDirectory(remoteDir);
+        if (!changed) {
+          for (var part in parts) {
+            currentPath = currentPath.isNotEmpty ? "$currentPath/$part" : part;
+            try {
+              await ftpConnect.makeDirectory(currentPath);
+            } catch (_) {
+              // Ignorar se já existir
+            }
+          }
+          changed = await ftpConnect.changeDirectory(remoteDir);
+        }
+
+        await deleteObsoleteImages(remoteDir, itemId, imagens);
+
+        final tempDir = await getTemporaryDirectory();
+        final productTempDir = Directory('${tempDir.path}/$itemId');
+        if (!await productTempDir.exists()) {
+          await productTempDir.create(recursive: true);
+        }
+
+        List<ProductImage> imagesForAPI = [];
+
+        for (int i = 0; i < imagens.length; i++) {
+          File image = File(imagens[i].imagePath);
+          File resizedImage = await _resizeImage(image);
+
+          if (await resizedImage.length() == 0) {
+            throw Exception("Imagem redimensionada está vazia: ${resizedImage.path}");
+          }
+
+          String originalName = path.basenameWithoutExtension(resizedImage.path);
+          String extension = path.extension(resizedImage.path);
+          String newFileName = originalName.toUpperCase().startsWith("${itemId}_".toUpperCase())
+              ? "$originalName$extension"
+              : "${itemId}_${originalName.toUpperCase()}$extension";
+
+          final renamedImage = await resizedImage.copy('${productTempDir.path}/$newFileName');
+
+          if (await renamedImage.length() == 0) {
+            throw Exception("Arquivo temporário criado está vazio: ${renamedImage.path}");
+          }
+
+          bool uploaded = await ftpConnect.uploadFile(renamedImage);
+          if (!uploaded) {
+            throw Exception("Falha ao enviar a imagem: $newFileName");
+          }
+
+          imagesForAPI.add(
+            ProductImage(
+              imagePath: "$remoteDir/$newFileName",
+              imageSequence: i + 1,
+              productId: itemId,
+            ),
+          );
+        }
+
+        if (imagesForAPI.isNotEmpty) {
+          final response = await OxfordOnlineAPI.postImages(imagesForAPI);
+          if (response.statusCode != 200) {
+            throw Exception('Erro ao enviar imagens para a API: ${response.statusCode}');
+          }
+        }
+
+        if (tags.isNotEmpty) {
+          final tagResponse = await OxfordOnlineAPI.postTags(tags);
+          if (tagResponse.statusCode != 200 && tagResponse.statusCode != 201) {
+            throw Exception("Erro ao enviar tags para a API: ${tagResponse.statusCode}");
+          }
+        }
+      }
+    } catch (e) {
+      throw Exception("Erro ao salvar: $e");
+    } finally {
+      await ftpConnect.disconnect();
+    }
+  }
+
+  Future<void> deleteObsoleteImages(String remoteDir, String itemId, List<ProductImage> images) async {
+    final remoteFiles = await ftpConnect.listDirectoryContent();
+
+    final expectedNames = images.map((img) {
+      String name = path.basename(img.imagePath);
+      return name.toUpperCase().startsWith("${itemId}_".toUpperCase())
+          ? name
+          : "${itemId}_${name.toUpperCase()}";
+    }).toList();
+
+    for (var file in remoteFiles) {
+      final fileName = file.name ?? '';
+      if (file.type.toString() == 'FTPEntryType.FILE' && !expectedNames.contains(fileName)) {
+        await ftpConnect.deleteFile(fileName);
+      }
+    }
+  }
+
+  Future<File> _resizeImage(File imageFile) async {
+    if (!await imageFile.exists()) {
+      throw Exception("Arquivo não encontrado: ${imageFile.path}");
+    }
+
+    final bytes = await imageFile.readAsBytes();
+    if (bytes.isEmpty) {
+      throw Exception("Arquivo está vazio: ${imageFile.path}");
+    }
+
+    img.Image? originalImage = img.decodeImage(bytes);
+    if (originalImage == null) {
+      throw Exception("Falha ao carregar imagem");
+    }
+
+    const int targetWidth = 500;
+    const int targetHeight = 500;
+
+    bool isClose(int value, int target, [int tolerance = 5]) {
+      return (value - target).abs() <= tolerance;
+    }
+
+    img.Image resized = (isClose(originalImage.width, targetWidth) && isClose(originalImage.height, targetHeight))
+        ? originalImage
+        : img.copyResize(originalImage, width: targetWidth, height: targetHeight);
+
+    final tempDir = await getTemporaryDirectory();
+    final resizedImagePath = path.join(tempDir.path, path.basename(imageFile.path));
+    final resizedFile = File(resizedImagePath);
+
+    if (await resizedFile.exists()) {
+      return resizedFile;
+    }
+
+    await resizedFile.writeAsBytes(img.encodeJpg(resized, quality: 85));
+    return resizedFile;
+  }
+
+  Future<void> downloadImagesFromFTP(List<ProductAll> products) async {
+    try {
+      await ftpConnect.connect();
+      await ftpConnect.setTransferType(TransferType.binary);
+
+      for (final product in products) {
+        final String itemId = product.itemId;
+        final List<ProductImage> imagens = product.productImages;
+        String remoteDir = (product.path).replaceAll(" ", "_");
+
+        if (remoteDir.isEmpty) {
+          print("Aviso: O caminho remoto (path) está vazio para o itemId: $itemId");
+          continue;
+        }
+
+        final changed = await ftpConnect.changeDirectory(remoteDir);
+        if (!changed) {
+          print("Aviso: Diretório remoto não encontrado: $remoteDir");
+          continue;
+        }
+
+        final tempDir = await createTempProductDirectory(product.path);
+
+        final files = await ftpConnect.listDirectoryContent();
+        final ftpFileNames = files
+            .where((f) => f.type.toString().endsWith('FILE'))
+            .map((f) => f.name)
+            .toSet();
+
+        for (final img in imagens) {
+          final fileName = path.basename(img.imagePath);
+          if (ftpFileNames.contains(fileName)) {
+            final localFile = File(path.join(tempDir.path, fileName));
+            bool success = await ftpConnect.downloadFile(fileName, localFile);
+            if (!success) {
+              print("Erro ao baixar arquivo: $fileName para itemId: $itemId");
+            }
+          } else {
+            print("Arquivo $fileName não encontrado no FTP em $remoteDir");
+          }
+        }
+      }
+    } catch (e) {
+      print("Erro durante o download de imagens: $e");
+      rethrow; // importante manter para não mascarar falhas
+    } finally {
+      await ftpConnect.disconnect();
+    }
+  }
+
+  Future<List<ProductImage>> fetchImagesFromFTP(
+    String remoteDir,
+    String productId,
+    List<ProductImage> imagens,
+    BuildContext context,
+  ) async {
+    final List<ProductImage> downloadedImages = [];
+
+    try {
+      await ftpConnect.connect();
+      await ftpConnect.setTransferType(TransferType.binary);
+
+      final changed = await ftpConnect.changeDirectory(remoteDir);
+      if (!changed) {
+        throw Exception("Diretório remoto não encontrado: $remoteDir");
+      }
+
+      final tempDir = await createTempProductDirectory(productId);
+
+      final files = await ftpConnect.listDirectoryContent();
+      final ftpFileNames = files.where((f) => f.type.toString().endsWith('FILE')).map((f) => f.name).toSet();
+
+      int sequence = 1;
+
+      for (final img in imagens) {
+        final fileName = path.basename(img.imagePath);
+        if (ftpFileNames.contains(fileName)) {
+          final localFile = File(path.join(tempDir.path, fileName));
+          bool success = await ftpConnect.downloadFile(fileName, localFile);
+          if (success) {
+            downloadedImages.add(ProductImage(
+              imagePath: localFile.path,
+              imageSequence: sequence++,
+              productId: productId,
+            ));
+          } else {
+            throw Exception("Falha ao baixar arquivo: $fileName");
+          }
+        } else {
+          print("Arquivo $fileName não encontrado no FTP em $remoteDir");
+        }
+      }
+
+      return downloadedImages;
+    } catch (e) {
+      CustomSnackBar.show(
+        context,
+        message: 'Erro ao baixar imagem: $e',
+        duration: const Duration(seconds: 3),
+        type: SnackBarType.error,
+      );
+      return [];
+    } finally {
+      await ftpConnect.disconnect();
+    }
+  }
+  
+  /*
+  Future<Directory> createTempProductDirectory(String path) async {
+
+    final productDirPath = path.join(globals.tempDir, path);
+    final productDir = Directory(productDirPath);
+    if (!await productDir.exists()) {
+      await productDir.create(recursive: true);
+    }
+    return productDir;
+  } */
+
+  Future<Directory> createTempProductDirectory(String subDirName) async {
+    final productDirPath = path.join(globals.tempDir.path, subDirName);
+    final productDir = Directory(productDirPath);
+
+    if (!await productDir.exists()) {
+      await productDir.create(recursive: true);
+    }
+
+    return productDir;
+  }
+
+}
+
+
+/*import 'package:flutter/material.dart';
+import 'dart:io';
+import 'package:image/image.dart' as img;
+import 'package:ftpconnect/ftpconnect.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:path/path.dart' as path;
 import '../models/product_image.dart'; 
 import 'package:app_oxf_inv/services/remote/oxfordonlineAPI.dart';
 import '../models/product_tag.dart';
@@ -52,7 +452,7 @@ class FTPUploader {
         changed = await ftpConnect.changeDirectory(remoteDir);
       }
 
-      // Deletar imagens obsoletas (supondo que esta função esteja correta)
+      // Deletar imagens obsoletas 
       await deleteObsoleteImages(remoteDir, itemId, imagens);
 
       // Criar diretório temporário com código do produto
@@ -124,23 +524,12 @@ class FTPUploader {
       if (tags.isNotEmpty) {
         final tagResponse = await OxfordOnlineAPI.postTags(tags);
         if (tagResponse.statusCode == 200 || tagResponse.statusCode == 201) {
-          /*CustomSnackBar.show(
-            context,
-            message: 'Imagens enviadas com sucesso!',
-            duration: const Duration(seconds: 3),
-            type: SnackBarType.success,
-          );*/
+
         } else {
           throw Exception("Erro ao enviar tags para a API: ${tagResponse.statusCode}");
         }
       }
     } catch (e) {
-      /*CustomSnackBar.show(
-        context,
-        message: 'Erro ao salvar: $e',
-        duration: const Duration(seconds: 4),
-        type: SnackBarType.error,
-      );*/
       throw Exception("Erro ao salvar: $e");
     } finally {
       await ftpConnect.disconnect();
@@ -148,10 +537,6 @@ class FTPUploader {
   }
 
   Future<void> deleteObsoleteImages(String remoteDir, String itemId, List<ProductImage> images) async {
-    /*final changed = await ftpConnect.changeDirectory(remoteDir);
-    if (!changed) {
-      throw Exception("Diretório remoto $remoteDir não encontrado ou não acessível.");
-    }*/
 
     final remoteFiles = await ftpConnect.listDirectoryContent();
 
@@ -308,3 +693,4 @@ class FTPUploader {
   }
 
 }
+*/

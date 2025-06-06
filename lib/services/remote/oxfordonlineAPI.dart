@@ -8,6 +8,8 @@ import 'package:app_oxf_inv/operator/db_product.dart';
 import 'package:flutter/foundation.dart';
 import 'package:app_oxf_inv/operator/db_product.dart';
 import 'package:app_oxf_inv/ftp/ftp.dart';
+import 'package:app_oxf_inv/services/local/oxfordLocalLite.dart';
+import 'package:ftpconnect/ftpconnect.dart';
 
 class OxfordOnlineAPI {
   static const String _baseUrl = 'https://oxfordonline.fly.dev/api';
@@ -114,7 +116,7 @@ static Future<http.Response> postProducts(List<Product> products) async {
     return [];
   }
 
-  static Future<List<ProductAll>> getProducts({
+  /*Future<List<ProductAll>> getProducts({
     String? itemId,
     String? itemBarCode,
     String? name,
@@ -138,8 +140,44 @@ static Future<http.Response> postProducts(List<Product> products) async {
       print('Erro ao buscar produtos: ${response.statusCode}');
       return [];
     }
-  }
+  }*/
   
+  Future<List<ProductAll>> getProducts({
+    String? itemId,
+    String? itemBarCode,
+    String? name,
+    required OxfordLocalLite localDb, // recebe a instância do banco local
+  }) async {
+    final queryParameters = {
+      if (itemId != null) 'ItemId': itemId,
+      if (itemBarCode != null) 'ItemBarCode': itemBarCode,
+      if (name != null) 'Name': name,
+    };
+    
+    final ftp = FTPUploader();
+
+    final uri = Uri.parse('$_baseUrl/Product/ProductAll')
+        .replace(queryParameters: queryParameters);
+
+    final response = await http.get(uri, headers: _headers);
+
+    if (response.statusCode == 200) {
+      final List<dynamic> list = jsonDecode(response.body);
+      List<ProductAll> products = list.map((json) => ProductAll.fromMap(json)).toList();
+
+      // Faz o download das imagens
+      await ftp.downloadImagesFromFTP(products);
+
+
+      // Atualiza os paths dos produtos usando o banco local
+      products = await localDb.updateProductsWithMainImagePath(products);
+
+      return products;
+    } else {
+      print('Erro ao buscar produtos: ${response.statusCode}');
+      return [];
+    }
+  }
     
   static Future<void> syncUnsyncedData() async {
     final db = DBItems.instance;
@@ -159,15 +197,22 @@ static Future<http.Response> postProducts(List<Product> products) async {
       }
 
       try {
-        // Ajuste do diretório remoto, pode ser customizado conforme sua regra
-        final remoteDir = 'remote_images/$itemId';
 
-        // Envia via FTP + API
-        await ftpUploader.saveTagsImagesFTP(remoteDir, itemId, images, tags);
+        for (final image in images) {
+
+          Product? product = await OxfordLocalLite().getProductDetails(image.productId);
+          if (product != null) {
+            String remoteDir = '${product.prodFamilyDescriptionId}/${product.prodBrandDescriptionId}/'+
+            '${product.prodLinesDescriptionId}/${product.prodDecorationDescriptionId}/${itemId}';
+
+            // Envia via FTP + API
+            await ftpUploader.saveTagsImagesFTP(remoteDir, itemId, images, tags);
+          }
+        }
 
         // Se chegou aqui, marcou com sucesso, então marca os dados como sincronizados no banco local
         for (final image in images) {
-          await db.markImageAsSynced(image);
+          await db. markImageAsSynced(image);
         }
         for (final tag in tags) {
           await db.markTagAsSynced(tag);
@@ -178,6 +223,24 @@ static Future<http.Response> postProducts(List<Product> products) async {
         // Você pode optar por mostrar uma mensagem no UI ou continuar a próxima iteração
       }
     }
+  }
+
+  Future<ProductAll?> getProductById(String itemId) async {
+    final uri = Uri.parse('$_baseUrl/Product/ProductAll')
+        .replace(queryParameters: {'ItemId': itemId});
+
+    final response = await http.get(uri, headers: _headers);
+
+    if (response.statusCode == 200) {
+      final List<dynamic> list = jsonDecode(response.body);
+      if (list.isNotEmpty) {
+        return ProductAll.fromMap(list[0]);
+      }
+    } else {
+      debugPrint('Erro ao buscar produto por ID $itemId: ${response.statusCode}');
+    }
+
+    return null;
   }
 
 }

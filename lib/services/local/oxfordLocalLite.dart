@@ -135,5 +135,30 @@ class OxfordLocalLite {
         }
       }
   }
+
+  Future<List<ProductAll>> fetchLast10Products() async {
+    List<ProductAll> last10Products = await DBItems.instance.getLast10Products();
+    return last10Products;
+  }
   
+  Future<List<ProductAll>> updateProductsWithMainImagePath(List<ProductAll> products) async {
+    final db = await _db;
+
+    for (var product in products) {
+      final result = await db.query(
+        DBItems.tableProductImages,
+        columns: [DBItems.columnImagePath],
+        where: '${DBItems.columnProductId} = ? AND ${DBItems.columnImageSequence} = ?',
+        whereArgs: [product.itemId, 1],
+        limit: 1,
+      );
+
+      if (result.isNotEmpty) {
+        product.path = result.first[DBItems.columnImagePath] as String;
+      }
+    }
+
+    return products;
+  }
+
 }

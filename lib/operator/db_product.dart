@@ -434,6 +434,57 @@ class DBItems {
     }
   }
 
+  Future<List<ProductAll>> getLast10Products() async {
+    final Database db = await instance.database;
+
+    // Busca os 10 últimos produtos inseridos, considerando o ROWID como ordem de inserção
+    final List<Map<String, dynamic>> productMaps = await db.rawQuery('''
+      SELECT p.*, COALESCE(i.$columnImagePath, '') AS $columnImagePath
+      FROM $tableProducts p
+      LEFT JOIN $tableProductImages i
+        ON p.$columnItemId = i.$columnProductId
+        AND i.$columnImageSequence = 1
+      ORDER BY p.ROWID DESC
+      LIMIT 10
+    ''');
+
+    List<ProductAll> productAllList = [];
+
+    for (var productMap in productMaps) {
+      final String itemId = productMap[columnItemId];
+
+      // Busca imagens do produto
+      final List<ProductImage> images = (await db.query(
+        tableProductImages,
+        where: '$columnProductId = ?',
+        whereArgs: [itemId],
+        orderBy: '$columnImageSequence ASC',
+      )).map((map) => ProductImage.fromMap(map)).toList();
+
+      // Busca tags do produto
+      final List<Map<String, dynamic>> tagMaps = await db.query(
+        tableProductTags,
+        where: '$columnTagProductId = ?',
+        whereArgs: [itemId],
+      );
+
+      final List<ProductTag> tags = (await db.query(
+        tableProductTags,
+        where: '$columnTagProductId = ?',
+        whereArgs: [itemId],
+      )).map((tagMap) => ProductTag.fromMap(tagMap)).toList();
+
+      productAllList.add(
+        ProductAll.fromMap({
+          ...productMap,
+          'productImages': images.map((img) => img.toMap()).toList(),
+          'productTags': tags.map((tag) => tag.toMap()).toList(),
+        }),
+      );
+    }
+
+    return productAllList;
+  }
 
   //-----------------------MÉTODO PARA NÃO SINCRONIZADOS//------------------------
 
@@ -505,7 +556,7 @@ class DBItems {
     final db = await database;
     await db.update(
       'product_images',
-      {'is_synced': 1},
+      {'sync': 1},
       where: 'id = ? AND productId = ?',
       whereArgs: [image.imageId, image.productId],
     );
@@ -515,7 +566,7 @@ class DBItems {
     final db = await database;
     await db.update(
       'product_tags',
-      {'is_synced': 1},
+      {'sync': 1},
       where: 'valueTag = ? AND productId = ?',
       whereArgs: [tag.tag, tag.productId],
     );
