@@ -52,4 +52,12 @@ class ProductSearchController extends ChangeNotifier {
     notifyListeners();
   }
 
+  void updateProductPath({required int productId, required String newPath}) {
+    final index = allProducts.indexWhere((product) => product.itemId == productId);
+    if (index != -1) {
+      allProducts[index].path = newPath;
+      notifyListeners();
+    }
+  }
+
 }

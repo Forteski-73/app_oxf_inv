@@ -372,7 +372,7 @@ class FTPUploader {
       await ftpConnect.disconnect();
     }
   }
-  
+
   /*
   Future<Directory> createTempProductDirectory(String path) async {
 
