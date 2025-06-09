@@ -1,3 +1,284 @@
+import 'dart:io';
+
+import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+
+import '../models/product_all.dart';
+import '../models/product_image.dart';
+import '../services/local/oxfordLocalLite.dart';
+import '../utils/globals.dart' as globals;
+import '../controller/product_search.dart';
+import 'productImages.dart';
+import 'package:smooth_page_indicator/smooth_page_indicator.dart';
+import 'package:app_oxf_inv/controller/product_search.dart';
+import 'package:app_oxf_inv/main.dart';
+
+class ProductDetailsPage extends StatefulWidget {
+  final String productId;
+
+  const ProductDetailsPage({super.key, required this.productId});
+
+  @override
+  State<ProductDetailsPage> createState() => _ProductDetailsPageState();
+}
+
+class _ProductDetailsPageState extends State<ProductDetailsPage> with RouteAware {
+  final PageController _pageController = PageController();
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      context.read<ProductSearchController>().loadProductDetails(widget.productId);
+    });
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    routeObserver.subscribe(this, ModalRoute.of(context)!);
+  }
+
+  @override
+  void dispose() {
+    routeObserver.unsubscribe(this);
+    _pageController.dispose();
+    super.dispose();
+  }
+
+  @override
+  void didPopNext() {
+    context.read<ProductSearchController>().loadProductDetails(widget.productId);
+  }
+
+  void _showInfoDialog() {
+    showDialog(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: const Text("Informações"),
+        content: const Text("Oxford Porcelanas \n\nVersão: 1.0\n"),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text("Fechar", style: TextStyle(color: Colors.black)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Consumer<ProductSearchController>(
+      builder: (context, controller, child) {
+        final product = controller.selectedProduct;
+
+        // Proteção contra nulo
+        if (product == null) {
+          return const Scaffold(body: Center(child: CircularProgressIndicator()));
+        }
+
+        // Obter a lista de imagens ProductImage
+        final images = product.productImages ?? [];
+
+        // Converter List<ProductImage> para List<File>
+        final imagens = images.map((img) => File(img.imagePath)).toList();
+
+        return Scaffold(
+          appBar: AppBar(
+            title: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'Aplicativo de Consulta de Estrutura de Produtos. ACEP',
+                  style: TextStyle(color: Colors.white, fontSize: 12),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  'Estrutura do Produto ${product.itemId}',
+                  style: const TextStyle(color: Colors.white, fontSize: 20),
+                ),
+              ],
+            ),
+            backgroundColor: Colors.black,
+            iconTheme: const IconThemeData(color: Colors.white),
+            actions: [
+              IconButton(
+                icon: const Icon(Icons.info_outline),
+                onPressed: _showInfoDialog,
+                tooltip: 'Informações',
+              ),
+            ],
+          ),
+          body: SingleChildScrollView(
+            padding: const EdgeInsets.all(5.0),
+            child: Column(
+              children: [
+                if (imagens.isNotEmpty)
+                  SizedBox(
+                    height: 260,
+                    child: Card(
+                      elevation: 2,
+                      clipBehavior: Clip.antiAlias,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
+                      child: Stack(
+                        children: [
+                          PageView.builder(
+                            controller: _pageController,
+                            itemCount: imagens.length,
+                            itemBuilder: (context, index) => Image.file(
+                              imagens[index],
+                              fit: BoxFit.cover,
+                              width: double.infinity,
+                              height: double.infinity,
+                              errorBuilder: (context, error, stackTrace) => const Center(
+                                child: Icon(Icons.image_not_supported, size: 50, color: Colors.grey),
+                              ),
+                            ),
+                          ),
+                          Positioned(
+                            top: 0,
+                            left: 1,
+                            right: 1,
+                            child: Container(
+                              color: Colors.black.withAlpha(179),
+                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                              child: Text(
+                                product.name,
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 16,
+                                  color: Colors.white,
+                                ),
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                          ),
+                          Positioned(
+                            bottom: 10,
+                            left: 0,
+                            right: 0,
+                            child: Center(
+                              child: SmoothPageIndicator(
+                                controller: _pageController,
+                                count: imagens.length,
+                                effect: const WormEffect(
+                                  dotColor: Colors.white54,
+                                  activeDotColor: Colors.blueAccent,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+
+                buildExpansionTile("Informações do Produto", [
+                  textRow("Código", product.itemId),
+                  textRow("Descrição", product.name),
+                ]),
+                buildExpansionTile("Dimensões e Peso", [
+                  textRow("Peso Bruto", "${product.prodGrossWeight} kg"),
+                  textRow("Peso Líquido", "${product.itemNetWeight} kg"),
+                  textRow("Tara", "${product.prodTaraWeight} kg"),
+                  textRow("Profundidade", "${product.prodGrossDepth} m"),
+                  textRow("Largura", "${product.prodGrossWidth} m"),
+                  textRow("Altura", "${product.prodGrossHeight} m"),
+                  textRow("Volume", "${product.unitVolumeML} m³"),
+                  textRow("Qt Peças Interna", "${product.prodNrOfItems}"),
+                ]),
+                buildExpansionTile("Código de Barras", [
+                  textRow("Master", product.itemBarCode),
+                ]),
+                buildExpansionTile("Classificação Fiscal", [
+                  textRow("Classificação Fiscal", product.prodTaxFiscalClassification),
+                ]),
+                buildExpansionTile("Família e Marca", [
+                  textRow("Família", product.prodFamilyDescriptionId),
+                  textRow("Marca", product.prodBrandDescriptionId),
+                  textRow("Linha", product.prodLinesDescriptionId),
+                  textRow("Decoração", product.prodDecorationDescriptionId),
+                ]),
+
+                // Usar product.productTags para mostrar características
+                buildExpansionTile(
+                  "Características",
+                  product.productTags != null && product.productTags!.isNotEmpty
+                      ? product.productTags!
+                          .map((tag) => textRow("Características", tag.tag))
+                          .toList()
+                      : [const Text('Sem características')],
+                ),
+              ],
+            ),
+          ),
+          bottomNavigationBar: BottomAppBar(
+            color: Colors.white,
+            shape: const CircularNotchedRectangle(),
+            height: 64,
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceAround,
+              children: [
+                IconButton(
+                  icon: const Icon(Icons.home, size: 30),
+                  onPressed: () => Navigator.pushNamed(context, '/'),
+                ),
+                IconButton(
+                  icon: const Icon(Icons.edit, size: 30, color: Colors.blueAccent),
+                  onPressed: () async {
+                    final result = await Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => ProductImagesPage(product: product),
+                      ),
+                    );
+
+                    /*if (result is List<ProductImage>) {
+                      context.read<ProductSearchController>().refreshImages(result);
+                    }*/
+                  },
+                  tooltip: 'Editar imagens',
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget buildExpansionTile(String title, List<Widget> children) {
+    return Card(
+      elevation: 2,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
+      child: ExpansionTile(
+        title: Text(' $title', style: const TextStyle(fontWeight: FontWeight.bold)),
+        children: [
+          Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: Wrap(runSpacing: 3, children: children),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget textRow(String label, String value) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 3.0),
+      child: Row(
+        children: [
+          Text('$label: ', style: const TextStyle(fontWeight: FontWeight.bold)),
+          Expanded(child: Text(value, textAlign: TextAlign.right)),
+        ],
+      ),
+    );
+  }
+}
+
+
+/*
 import 'package:flutter/material.dart';
 import 'package:app_oxf_inv/main.dart'; 
 import '../models/product.dart';
@@ -391,3 +672,4 @@ class _ProductDetailsPageState extends State<ProductDetailsPage> with RouteAware
   }
 
 }
+*/

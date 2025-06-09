@@ -3,7 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import 'package:app_oxf_inv/models/product_all.dart';
-import 'package:app_oxf_inv/controller/product_search.dart'; // seu controller
+import 'package:app_oxf_inv/controller/product_search.dart';
+import 'package:app_oxf_inv/pages/productDetail.dart';
 
 final RouteObserver<PageRoute> routeObserver = RouteObserver<PageRoute>();
 
@@ -44,9 +45,9 @@ class _ProductSearchPageState extends State<ProductSearchPage>
       });
     });
 
-    WidgetsBinding.instance.addPostFrameCallback((_) {
+    /*WidgetsBinding.instance.addPostFrameCallback((_) {
       _loadProducts();
-    });
+    });*/
   }
 
   Future<void> _loadProducts() async {
@@ -261,61 +262,87 @@ class _ProductSearchPageState extends State<ProductSearchPage>
                       elevation: 4,
                       child: ListTile(
                         contentPadding: const EdgeInsets.only(left: 8, right: 8, bottom: 8),
-                        title: SingleChildScrollView(
-                          scrollDirection: Axis.horizontal,
-                          child: Text(product.name ?? '', style: const TextStyle(fontWeight: FontWeight.bold)),
+                        title: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            SingleChildScrollView(
+                              scrollDirection: Axis.horizontal,
+                              child: Text(
+                                product.name ?? '',
+                                style: const TextStyle(fontWeight: FontWeight.bold),
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                          ],
                         ),
-subtitle: Row(
-  crossAxisAlignment: CrossAxisAlignment.start,
-  children: [
-    ClipRRect(
-      borderRadius: BorderRadius.circular(8),
-      child: (product.path != null && product.path!.isNotEmpty)
-          ? (product.path!.startsWith('http')
-              ? Image.network(
-                  product.path!,
-                  height: 100,
-                  width: 100,
-                  fit: BoxFit.cover,
-                  errorBuilder: (_, __, ___) => const Icon(Icons.broken_image, size: 100, color: Colors.grey),
-                )
-              : (File(product.path!).existsSync()
-                  ? Image.file(
-                      File(product.path!),
-                      height: 100,
-                      width: 100,
-                      fit: BoxFit.cover,
-                    )
-                  : Container(
-                      height: 100,
-                      width: 100,
-                      color: Colors.grey.shade300,
-                      child: const Icon(Icons.image_not_supported),
-                    )))
-          : Container(
-              height: 100,
-              width: 100,
-              color: Colors.grey.shade300,
-              child: const Icon(Icons.image_not_supported),
-            ),
-    ),
-    const SizedBox(width: 8),
-    Flexible(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          _buildInfoRow('Código:',           product.itemId.toString()),
-          _buildInfoRow('Código de Barras:', product.itemBarCode),
-          _buildInfoRow('Desc. Linha:',      product.prodLinesDescriptionId),
-          _buildInfoRow('Desc. Decoração:',  product.prodDecorationDescriptionId),
-        ],
-      ),
-    )
-  ],
-),
+                        subtitle: Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            ClipRRect(
+                              borderRadius: BorderRadius.circular(8),
+                              child: () {
+                                final path = product.path;
 
-                        onTap: () {
-                          // Navegação para detalhes ou editar, se quiser
+                                if (path.isEmpty) {
+                                  return Container(
+                                    height: 100,
+                                    width: 100,
+                                    color: Colors.grey.shade300,
+                                    child: const Icon(Icons.image_not_supported),
+                                  );
+                                }
+
+                                if (path.startsWith('http')) {
+                                  return Image.network(
+                                    path,
+                                    height: 100,
+                                    width: 100,
+                                    fit: BoxFit.cover,
+                                    errorBuilder: (_, __, ___) =>
+                                        const Icon(Icons.broken_image, size: 100, color: Colors.grey),
+                                  );
+                                }
+
+                                final file = File(path);
+                                if (file.existsSync()) {
+                                  return Image.file(
+                                    file,
+                                    height: 100,
+                                    width: 100,
+                                    fit: BoxFit.cover,
+                                  );
+                                }
+
+                                return Container(
+                                  height: 100,
+                                  width: 100,
+                                  color: Colors.grey.shade300,
+                                  child: const Icon(Icons.image_not_supported),
+                                );
+                              }(),
+                            ),
+                            const SizedBox(width: 8, height: 8),
+                            Flexible(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  _buildInfoRow('Código:',      product.itemId.toString()),
+                                  _buildInfoRow('Cód. Barras:', product.itemBarCode),
+                                  _buildInfoRow('Linha:',       product.prodLinesDescriptionId),
+                                  _buildInfoRow('Decoração:',   product.prodDecorationDescriptionId),
+                                ],
+                              ),
+                            )
+                          ],
+                        ),
+                        onTap: () async {
+                          await Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => ProductDetailsPage(productId: product.itemId),
+                            ),
+                          );
+                          // Aqui você pode fazer algo quando voltar da página detalhes, se quiser
                         },
                       ),
                     );

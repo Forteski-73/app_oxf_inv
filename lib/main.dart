@@ -83,7 +83,7 @@ class MyApp extends StatelessWidget {
         },
         '/productDetails':  (context) {
           ProductAll product = ProductAll();
-          return ProductDetailsPage(product: product);
+          return ProductDetailsPage(productId: product.itemId);
         },
         '/settingsProfile':         (context) => const SettingsProfilePage(),
         '/inventory':               (context) => const InventoryPage(),

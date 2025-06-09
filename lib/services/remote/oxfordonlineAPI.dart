@@ -166,7 +166,7 @@ static Future<http.Response> postProducts(List<Product> products) async {
       List<ProductAll> products = list.map((json) => ProductAll.fromMap(json)).toList();
 
       // Faz o download das imagens
-      await ftp.downloadImagesFromFTP(products);
+      products = await ftp.downloadImagesFromFTP(products);
 
 
       // Atualiza os paths dos produtos usando o banco local

@@ -266,12 +266,13 @@ class FTPUploader {
     return resizedFile;
   }
 
-  Future<void> downloadImagesFromFTP(List<ProductAll> products) async {
+  Future<List<ProductAll>> downloadImagesFromFTP(List<ProductAll> products) async {
+
     try {
       await ftpConnect.connect();
-      await ftpConnect.setTransferType(TransferType.binary);
-
+      
       for (final product in products) {
+
         final String itemId = product.itemId;
         final List<ProductImage> imagens = product.productImages;
         String remoteDir = (product.path).replaceAll(" ", "_");
@@ -281,7 +282,19 @@ class FTPUploader {
           continue;
         }
 
+        remoteDir = remoteDir.substring(0, remoteDir.lastIndexOf('/'));
+
+        await ftpConnect.setTransferType(TransferType.ascii);
+        await ftpConnect.changeDirectory('/');
+
         final changed = await ftpConnect.changeDirectory(remoteDir);
+        final list = await ftpConnect.listDirectoryContent();
+        print("Conteúdo de :$remoteDir:");
+        for (var f in list) {
+          print("- ${f.name} (${f.type})");
+        }
+
+        //final changed = await ftpConnect.changeDirectory(remoteDir);
         if (!changed) {
           print("Aviso: Diretório remoto não encontrado: $remoteDir");
           continue;
@@ -295,6 +308,8 @@ class FTPUploader {
             .map((f) => f.name)
             .toSet();
 
+        await ftpConnect.setTransferType(TransferType.binary);
+
         for (final img in imagens) {
           final fileName = path.basename(img.imagePath);
           if (ftpFileNames.contains(fileName)) {
@@ -302,6 +317,15 @@ class FTPUploader {
             bool success = await ftpConnect.downloadFile(fileName, localFile);
             if (!success) {
               print("Erro ao baixar arquivo: $fileName para itemId: $itemId");
+            }
+            else
+            {
+              print("imagem baixada..$localFile..: ${img.imagePath}");
+              //await Future.delayed(Duration(milliseconds: 1));
+              if(img.imageSequence == 1)
+              {
+                product.path = localFile.path;
+              }
             }
           } else {
             print("Arquivo $fileName não encontrado no FTP em $remoteDir");
@@ -314,6 +338,7 @@ class FTPUploader {
     } finally {
       await ftpConnect.disconnect();
     }
+    return products;
   }
 
   Future<List<ProductImage>> fetchImagesFromFTP(

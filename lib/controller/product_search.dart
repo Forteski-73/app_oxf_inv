@@ -9,6 +9,7 @@ class ProductSearchController extends ChangeNotifier {
   final OxfordLocalLite db;
 
   List<ProductAll> allProducts = [];
+  ProductAll? selectedProduct;
   List<ProductAll> filteredProducts = [];
   bool isLoading = false;
   String searchTerm = "";
@@ -52,12 +53,10 @@ class ProductSearchController extends ChangeNotifier {
     notifyListeners();
   }
 
-  void updateProductPath({required int productId, required String newPath}) {
-    final index = allProducts.indexWhere((product) => product.itemId == productId);
-    if (index != -1) {
-      allProducts[index].path = newPath;
-      notifyListeners();
-    }
+  Future<void> loadProductDetails(String productId) async {
+    selectedProduct = allProducts.firstWhere(
+      (p) => p.itemId == productId,
+      orElse: () => ProductAll(itemId: productId, name: 'Produto não encontrado'),
+    );
   }
-
 }
