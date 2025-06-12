@@ -3,8 +3,8 @@ import 'product_image.dart';
 import 'product_tag.dart';
 
 class ProductAll extends Product {
-  final List<ProductImage> productImages;
-  final List<ProductTag> productTags;
+  List<ProductImage> productImages;
+  List<ProductTag> productTags;
 
   ProductAll({
     String itemBarCode = "",

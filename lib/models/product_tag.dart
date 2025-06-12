@@ -1,7 +1,7 @@
 class ProductTag {
-  final String tag;
-  final String productId;
-  final int    sync;
+  String tag;
+  String productId;
+  int    sync;
 
   ProductTag({
     this.tag       = '',

@@ -27,16 +27,24 @@ import 'package:app_oxf_inv/utils/network.dart';
 import 'package:app_oxf_inv/controller/product_search.dart';
 import 'package:app_oxf_inv/services/remote/oxfordonlineAPI.dart';
 import 'package:app_oxf_inv/services/local/oxfordLocalLite.dart';
+import 'package:app_oxf_inv/services/app_info_service.dart';
 import '../utils/globals.dart';
 
 final RouteObserver<ModalRoute<void>> routeObserver = RouteObserver<ModalRoute<void>>(); // <-- Global
+final ValueNotifier<String> appVersion = ValueNotifier<String>('...');
+
+Future<void> loadAppVersion() async {
+  final version = await AppInfoService.getAppVersion();
+  appVersion.value = version;
+}
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await checkInternetConnection();
 
   await initGlobals();
-
+  await loadAppVersion();
+  
   runApp(
     MultiProvider(
       providers: [

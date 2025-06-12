@@ -1,9 +1,9 @@
 class ProductImage {
-  final int     imageId;
-  final String  imagePath;
-  final int     imageSequence;
-  final String  productId;
-  final int     sync;
+  int     imageId;
+  String  imagePath;
+  int     imageSequence;
+  String  productId;
+  int     sync;
 
   ProductImage({
     this.imageId        = 0,

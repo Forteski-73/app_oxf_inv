@@ -1,23 +1,30 @@
 import 'package:flutter/material.dart';
+import 'package:app_oxf_inv/main.dart';
 
 class Footer extends StatelessWidget {
   const Footer({super.key});
+  
 
   @override
   Widget build(BuildContext context) {
     return Container(
       color: Colors.grey[200],
       padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 7),
-      child: const Row(
+      child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(
+          const Text(
             "Oxford Porcelanas",
             style: TextStyle(fontSize: 14),
           ),
-          Text(
-            "Versão: 1.0",
-            style: TextStyle(fontSize: 14),
+          ValueListenableBuilder<String>(
+            valueListenable: appVersion,
+            builder: (context, appVersionValue, child) {
+              return Text(
+                'Versão $appVersionValue',
+                style: const TextStyle(fontSize: 14),
+              );
+            },
           ),
         ],
       ),

@@ -10,8 +10,8 @@ import '../utils/globals.dart' as globals;
 import '../controller/product_search.dart';
 import 'productImages.dart';
 import 'package:smooth_page_indicator/smooth_page_indicator.dart';
-import 'package:app_oxf_inv/controller/product_search.dart';
 import 'package:app_oxf_inv/main.dart';
+import 'package:path/path.dart' as p;
 
 class ProductDetailsPage extends StatefulWidget {
   final String productId;
@@ -79,7 +79,7 @@ class _ProductDetailsPageState extends State<ProductDetailsPage> with RouteAware
         }
 
         // Obter a lista de imagens ProductImage
-        final images = product.productImages ?? [];
+        final images = product.productImages;
 
         // Converter List<ProductImage> para List<File>
         final imagens = images.map((img) => File(img.imagePath)).toList();
@@ -127,7 +127,7 @@ class _ProductDetailsPageState extends State<ProductDetailsPage> with RouteAware
                             controller: _pageController,
                             itemCount: imagens.length,
                             itemBuilder: (context, index) => Image.file(
-                              imagens[index],
+                              File(p.join(globals.tempDir.path, imagens[index].path)),
                               fit: BoxFit.cover,
                               width: double.infinity,
                               height: double.infinity,

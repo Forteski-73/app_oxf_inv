@@ -11,6 +11,7 @@ import '../models/product_image.dart';
 import 'package:app_oxf_inv/widgets/customSnackBar.dart';
 import 'package:app_oxf_inv/ftp/ftp_config.dart';
 import '../utils/globals.dart' as globals;
+import 'package:path/path.dart' as p;
 
 
 class FTPUploader {
@@ -37,6 +38,7 @@ class FTPUploader {
       final parts = remoteDir.split("/");
       String currentPath = "";
 
+      await ftpConnect.changeDirectory('/');
       // Criar diretórios se não existirem
       bool changed = await ftpConnect.changeDirectory(remoteDir);
       if (!changed) {
@@ -300,7 +302,9 @@ class FTPUploader {
           continue;
         }
 
-        final tempDir = await createTempProductDirectory(product.path);
+        final tempDir = await createTempProductDirectory(
+          p.join(globals.tempDir.path, remoteDir),
+        );
 
         final files = await ftpConnect.listDirectoryContent();
         final ftpFileNames = files
