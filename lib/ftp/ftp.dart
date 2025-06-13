@@ -30,14 +30,14 @@ class FTPUploader {
     List<ProductImage> imagesForAPI = [];
 
     try {
-      await ftpConnect.connect();
-      await ftpConnect.setTransferType(TransferType.binary);
 
       // Ajustar remoteDir para não ter espaços
       remoteDir = remoteDir.replaceAll(" ", "_");
       final parts = remoteDir.split("/");
       String currentPath = "";
 
+      await ftpConnect.connect();
+      await ftpConnect.setTransferType(TransferType.ascii);
       await ftpConnect.changeDirectory('/');
       // Criar diretórios se não existirem
       bool changed = await ftpConnect.changeDirectory(remoteDir);
@@ -61,6 +61,7 @@ class FTPUploader {
         await productTempDir.create(recursive: true);
       }
 
+      await ftpConnect.setTransferType(TransferType.binary);
       for (int i = 0; i < imagens.length; i++) {
         File image = File(imagens[i].imagePath);
         File resizedImage = await _resizeImage(image);
