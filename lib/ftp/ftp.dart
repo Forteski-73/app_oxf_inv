@@ -56,7 +56,7 @@ class FTPUploader {
       await deleteObsoleteImages(remoteDir, itemId, imagens);
 
       final tempDir = await getTemporaryDirectory();
-      final productTempDir = Directory('${tempDir.path}/$itemId');
+      final productTempDir = Directory('${tempDir.path}');
       if (!await productTempDir.exists()) {
         await productTempDir.create(recursive: true);
       }
